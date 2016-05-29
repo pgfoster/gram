@@ -11,7 +11,7 @@ python rotatedText.py
 python size.py
 python style.py
 #python style_getDefString.py
-textHowBig.py
+p4 textHowBig.py
 python textVerticalAlignment.py
 python unusualText.py
 #python worksAndDoesNotWork.py

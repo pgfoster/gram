@@ -15,5 +15,4 @@ tg.setBracket(2,4, text=brText)
 tg.baseName = 'textHowBig'
 # tg.grid(0,0,5,4)
 tg.pdf()
-tg.svgPxForCm = 50.
 tg.svg()
