@@ -1,0 +1,21 @@
+<svg version="1.1"
+  baseProfile="full"
+  width="399.79" height="43.29"
+  viewBox="-9.60 -21.65 399.79 43.29"
+  xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink">
+
+<style>
+text {
+    font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+    font-weight: 300;
+}
+text.ttfamily {
+    font-family: "Courier New", Courier, monospace;
+}
+</style>
+<rect x="-8.10" y="-20.15"  width="157.92" height="40.29" stroke="black" fill="none" />
+ <text id="text-1"  x="70.87" y="-0.00" font-size="26.93" dx="-71.87" dy="5.79" >A bit of text.</text>
+<text id="text-2"  x="177.17" y="-0.00" font-size="26.93" dx="7.59" dy="5.79" >&#x2211;<tspan style="font-style: italic;">&#x03b1;&#x03b2;</tspan></text>
+<text id="text-3"  x="248.03" y="-0.00" font-size="26.93" dx="7.59" dy="5.79" >0123456789</text>
+</svg>

@@ -1,0 +1,11 @@
+#NEXUS
+
+begin taxa;
+  dimensions ntax=12;
+  taxlabels 1mldr3ceEl Cd8jpP GDrzDLrUeDvZU KJ5 Q5XgHid REyBII TMu2DXfI2rSahLAcaG8_ VcA6qjQkOi _dlpp_zBqXKN dtYAUWu fgZ1nIW k8LOnz;
+end;
+
+begin trees;
+  tree random = [&U] (Q5XgHid:0.466317, _dlpp_zBqXKN:0.111351, (fgZ1nIW:0.204028, (k8LOnz:0.298272, (VcA6qjQkOi:0.243529, ((GDrzDLrUeDvZU:0.109046, KJ5:0.291068, (1mldr3ceEl:0.455582, TMu2DXfI2rSahLAcaG8_:0.326506)0.95:0.115495)0.22:0.183986, ((dtYAUWu:0.473269, REyBII:0.328968)0.22:0.145824, Cd8jpP:0.480644)0.68:0.0884191)0.93:0.145225)0.68:0.190792)0.16:0.175623)0.32:0.113764);
+end;
+
