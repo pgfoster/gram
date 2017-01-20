@@ -1540,7 +1540,7 @@ class GramColor(Gram):
             self.svgColor = theColor.svgColor
             self.svgColorOpacity = theColor.svgColorOpacity
             self.tikzColor = theColor.tikzColor
-            
+
         elif isinstance(theColor, basestring):
             Gram.__init__(self)
             gm = ['GramColor.__init__()']
@@ -1563,20 +1563,34 @@ class GramColor(Gram):
                     gm.append("This week, the colour should be based on svg names.  One of ---")
                     gm.append("%s" % validSvgColorNames)
                     gm.append("Got '%s'" % splColor[0])
-                    raise GramError(gm)
-                self.svgColor = upColor
-                self.svgColorOpacity = "%.2f" % (theNum * 0.01)
-                self.tikzColor = theColor.capitalize()
+                    # raise GramError(gm)
+                    for gmPart in gm:
+                        print(gmPart)
+                    self.svgColor = splColor[0]
+                    self.svgColorOpacity = "%.2f" % (theNum * 0.01)
+                    self.tikzColor = theColor
+                else:
+                    self.svgColor = upColor
+                    self.svgColorOpacity = "%.2f" % (theNum * 0.01)
+                    self.tikzColor = theColor.capitalize()
+                    
             else:
                 upColor = theColor.capitalize()
                 if upColor not in validSvgColorNames:
                     gm.append("This week, the colour should be based on svg names.  One of ---")
                     gm.append("%s" % validSvgColorNames)
                     gm.append("Got '%s'" % theColor)
-                    raise GramError(gm)
-                self.svgColor = upColor
-                self.svgColorOpacity = None
-                self.tikzColor = upColor
+                    for gmPart in gm:
+                        print(gmPart)
+
+                    #raise GramError(gm)
+                    self.svgColor = theColor
+                    self.svgColorOpacity = None
+                    self.tikzColor = theColor
+                else:
+                    self.svgColor = upColor
+                    self.svgColorOpacity = None
+                    self.tikzColor = upColor
 
 
 class GramTikzStyle(Gram):
