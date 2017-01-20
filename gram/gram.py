@@ -681,38 +681,36 @@ class Gram(object):
         gm = ['Gram.startPyX()']
 
         pyx.unit.set(defaultunit='pt')  # 'bp' no workee
-        try:
-            pyx.text.set(
-                #mode='latex', docclass="scrartcl", docopt='%ipt' % self.documentFontSize)
-                mode='latex', docclass="article", docopt='%ipt' % self.documentFontSize)
-            # default 1, changed cuz of PyX upgrade to 0.11
-            pyx.text.defaulttexrunner.pyxgraphics = 0
 
-            # construct pyxTextPreambleString, with latexUsePackages
-            pyxTextPreambleString = self._makeFontLine()
-            if pyxTextPreambleString:
-                pyxTextPreambleString += "\n"
+        pyx.text.set(
+            #mode='latex', docclass="scrartcl", docopt='%ipt' % self.documentFontSize)
+            mode='latex', docclass="article", docopt='%ipt' % self.documentFontSize)
+        # default 1, changed cuz of PyX upgrade to 0.11
+        pyx.text.defaulttexrunner.pyxgraphics = 0
 
-            #pyxTextPreambleString += "\\usepackage{tikz}\n"
-            pyxTextPreambleString += "\\usepackage[svgnames]{xcolor}\n"
-            #if self.useTikzPlotMarkLib:
-            #    pyxTextPreambleString += r"\usetikzlibrary{plotmarks}"
-            #    pyxTextPreambleString += "\n"
+        # construct pyxTextPreambleString, with latexUsePackages
+        pyxTextPreambleString = self._makeFontLine()
+        if pyxTextPreambleString:
+            pyxTextPreambleString += "\n"
 
-            pkgString = self._parseLatexUsePackages()
-            pyxTextPreambleString += pkgString
-            if pkgString:
-                pyxTextPreambleString += "\n"
+        #pyxTextPreambleString += "\\usepackage{tikz}\n"
+        pyxTextPreambleString += "\\usepackage[svgnames]{xcolor}\n"
+        #if self.useTikzPlotMarkLib:
+        #    pyxTextPreambleString += r"\usetikzlibrary{plotmarks}"
+        #    pyxTextPreambleString += "\n"
 
-            for lopc in self.latexOtherPreambleCommands:
-                pyxTextPreambleString += lopc
+        pkgString = self._parseLatexUsePackages()
+        pyxTextPreambleString += pkgString
+        if pkgString:
+            pyxTextPreambleString += "\n"
 
-            #print "|pyxTextPreambleString is %s|" % pyxTextPreambleString
+        for lopc in self.latexOtherPreambleCommands:
+            pyxTextPreambleString += lopc
 
-            pyx.text.preamble(pyxTextPreambleString)
-        except RuntimeError:
-            raise GramError(
-                "Got a RuntimeError with PyX, in method startPyX()")
+        #print "|pyxTextPreambleString is %s|" % pyxTextPreambleString
+
+        pyx.text.preamble(pyxTextPreambleString)
+
         self.haveStartedPyX = True
 
     def _makeFontLine(self):
