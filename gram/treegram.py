@@ -61,7 +61,7 @@ class TreeGram(Gram):
         self.baseName = 'tg'
         self.tgDefaultLineThickness = 'semithick'
 
-        if self._config:
+        if self._config and self._config.sections() and self._config.has_section('Gram'):
             settables = "leafLabelSize internalNodeLabelSize branchLabelSize tgDefaultLineThickness".split()
             for myAttr in settables:
                 try:
