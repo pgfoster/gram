@@ -45,18 +45,19 @@ coverage.xml
 *,cover
 .hypothesis/
 
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-
 # Sphinx documentation
-docs/_build/
+GramDoc/_build/
+GramDoc/TikZPix/*.aux
+GramDoc/TikZPix/*.pdf
+GramDoc/TikZPix/*.png
+GramDoc/TikZPix/*.log
+GramDoc/TikZPix/make_png.sh
+GramDoc/A_gram/*.svg
+GramDoc/B_trees/*.svg
+GramDoc/C_plots/*.svg
+GramDoc/*.org
+GramDoc/A_gram/Gram/
+GramDoc/B_trees/Gram/
+GramDoc/C_plots/Gram/
 
-# PyBuilder
-target/
 
-#Ipython Notebook
-.ipynb_checkpoints

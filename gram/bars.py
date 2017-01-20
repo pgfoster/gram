@@ -269,7 +269,7 @@ class PlotBarsText(GramText):
         ss.append(GramText.getTikz(self))
         return '\n'.join(ss)
 
-    def getTikz(self):
+    def getSvg(self):
         ss = []
         ss.append("\n<!-- bars text in plot -->")
         ss.append(GramText.getSvg(self))

@@ -16,7 +16,7 @@ n2.histo(verbose=False, padMin=-3, padMax=15.)
 binNames = []
 vals1 = []
 vals2 = []
-for bNum in range(n1.nBins - 1):
+for bNum in range(n1.nBins):
     binNames.append('%i' % int(n1.bins[bNum][0]))
     vals1.append(float(n1.bins[bNum][1]))
     vals2.append(float(n2.bins[bNum][1]))

@@ -14,15 +14,16 @@ tgr.gX = 5.0
 tgr.gY = -1.0
 tg.grams.append(tgr)
 
-g = tg.text("Parallel, using the", 0.5, -1.)
-g.anchor = 'west'
-g = tg.text("TreeGram class", 0.5, -1.6)
-g.anchor = 'west'
+if 1:
+    g = tg.text("Parallel, using the", 0.5, -1.)
+    g.anchor = 'west'
+    g = tg.text("TreeGram class", 0.5, -1.6)
+    g.anchor = 'west'
 
-g = tg.text("Radial, using the", 6.5, -1.)
-g.anchor = 'west'
-g = tg.text("TreeGramRadial class", 6.5, -1.6)
-g.anchor = 'west'
+    g = tg.text("Radial, using the", 6.5, -1.)
+    g.anchor = 'west'
+    g = tg.text("TreeGramRadial class", 6.5, -1.6)
+    g.anchor = 'west'
 
 tg.png()
 tg.svg()

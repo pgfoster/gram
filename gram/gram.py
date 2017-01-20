@@ -63,6 +63,10 @@ import ConfigParser
 # | cm   | centimeter 1cm equals 35.43307px (and therefore 35.43307 user units) |
 # | in   | inch 1in equals 90px (and therefore 90 user units)                   |
 
+# svg colors, from the svgnames option of the LaTeX xcolor package.
+validSvgColorNames = ['AliceBlue', 'AntiqueWhite', 'Aqua', 'Aquamarine', 'Azure', 'Beige', 'Bisque', 'Black', 'BlanchedAlmond', 'Blue', 'BlueViolet', 'Brown', 'BurlyWood', 'CadetBlue', 'Chartreuse', 'Chocolate', 'Coral', 'CornflowerBlue', 'Cornsilk', 'Crimson', 'Cyan', 'DarkBlue', 'DarkCyan', 'DarkGoldenrod', 'DarkGray', 'DarkGreen', 'DarkGrey', 'DarkKhaki', 'DarkMagenta', 'DarkOliveGreen', 'DarkOrange', 'DarkOrchid', 'DarkRed', 'DarkSalmon', 'DarkSeaGreen', 'DarkSlateBlue', 'DarkSlateGray', 'DarkSlateGrey', 'DarkTurquoise', 'DarkViolet', 'DeepPink', 'DeepSkyBlue', 'DimGray', 'DimGrey', 'DodgerBlue', 'FireBrick', 'FloralWhite', 'ForestGreen', 'Fuchsia', 'Gainsboro', 'GhostWhite', 'Gold', 'Goldenrod', 'Gray', 'Green', 'GreenYellow', 'Grey', 'Honeydew', 'HotPink', 'IndianRed', 'Indigo', 'Ivory', 'Khaki', 'Lavender', 'LavenderBlush', 'LawnGreen', 'LemonChiffon', 'LightBlue', 'LightCoral', 'LightCyan', 'LightGoldenrod', 'LightGoldenrodYellow', 'LightGray', 'LightGreen', 'LightGrey', 'LightPink', 'LightSalmon', 'LightSeaGreen', 'LightSkyBlue', 'LightSlateBlue', 'LightSlateGray', 'LightSlateGrey', 'LightSteelBlue', 'LightYellow', 'Lime', 'LimeGreen', 'Linen', 'Magenta', 'Maroon', 'MediumAquamarine', 'MediumBlue', 'MediumOrchid', 'MediumPurple', 'MediumSeaGreen', 'MediumSlateBlue', 'MediumSpringGreen', 'MediumTurquoise', 'MediumVioletRed', 'MidnightBlue', 'MintCream', 'MistyRose', 'Moccasin', 'NavajoWhite', 'Navy', 'NavyBlue', 'OldLace', 'Olive', 'OliveDrab', 'Orange', 'OrangeRed', 'Orchid', 'PaleGoldenrod', 'PaleGreen', 'PaleTurquoise', 'PaleVioletRed', 'PapayaWhip', 'PeachPuff', 'Peru', 'Pink', 'Plum', 'PowderBlue', 'Purple', 'Red', 'RosyBrown', 'RoyalBlue', 'SaddleBrown', 'Salmon', 'SandyBrown', 'SeaGreen', 'Seashell', 'Sienna', 'Silver', 'SkyBlue', 'SlateBlue', 'SlateGray', 'SlateGrey', 'Snow', 'SpringGreen', 'SteelBlue', 'Tan', 'Teal', 'Thistle', 'Tomato', 'Turquoise', 'Violet', 'VioletRed', 'Wheat', 'White', 'WhiteSmoke', 'Yellow', 'YellowGreen']
+
+
 
 def cmForLineThickness(lt):
     pts = ptsForLineThickness(lt)
@@ -1556,13 +1560,25 @@ class GramColor(Gram):
                 if theNum < 0 or theNum >= 100:
                     gm.append("The number in the color should be from 0-99.  Got %i" % theNum)
                     raise GramError(gm)
-                self.svgColor = splColor[0]
+                upColor = splColor[0].capitalize()
+                if upColor not in validSvgColorNames:
+                    gm.append("This week, the colour should be based on svg names.  One of ---")
+                    gm.append("%s" % validSvgColorNames)
+                    gm.append("Got '%s'" % splColor[0])
+                    raise GramError(gm)
+                self.svgColor = upColor
                 self.svgColorOpacity = "%.2f" % (theNum * 0.01)
-                self.tikzColor = theColor
+                self.tikzColor = theColor.capitalize()
             else:
-                self.svgColor = theColor
+                upColor = theColor.capitalize()
+                if upColor not in validSvgColorNames:
+                    gm.append("This week, the colour should be based on svg names.  One of ---")
+                    gm.append("%s" % validSvgColorNames)
+                    gm.append("Got '%s'" % theColor)
+                    raise GramError(gm)
+                self.svgColor = upColor
                 self.svgColorOpacity = None
-                self.tikzColor = theColor
+                self.tikzColor = upColor
 
 
 class GramTikzStyle(Gram):
@@ -2904,7 +2920,11 @@ class GramGrid(GramGraphic):
     def getSvg(self):
         ss = []
         ss.append("\n<!-- grid -->\n")
-        ss.append('<path stroke="gray" stroke-width="0.5" d="')
+        if self.color.svgColorOpacity:
+            ss.append('<path stroke="%s" stroke-width="0.5" d="' % self.color.svgColor)
+        else:
+            ss.append('<path stroke="%s" stroke-opacity="%s" stroke-width="0.5" d="' % (
+                      self.color.svgColor, self.color.svgColorOpacity))
         for colNum in range(self.llx, self.urx + 1):
             ss.append('M %.1f %.1f L %.1f %.1f ' % (
                 self.svgPxForCmF(colNum), -self.svgPxForCmF(self.lly),
