@@ -1,3 +1,4 @@
+from __future__ import print_function
 from gram import *
 import os
 import math
@@ -474,23 +475,23 @@ class Plot(Gram):
         if 1:
             spacer1 = ' ' * 10
             spacer2 = '    --    '
-            print "%s %20s  %s" % (spacer1, 'minXInData', self.minXInData)
-            print "%s %20s  %s" % (spacer1, 'minXToShow', self.minXToShow)
-            print "%s %20s  %s" % (spacer1, 'maxXInData', self.maxXInData)
-            print "%s %20s  %s" % (spacer1, 'maxXToShow', self.maxXToShow)
-            print "%s %20s  %s" % (spacer2, 'xYScaleX', self.xYScaleX)
-            print "%s %20s  %s" % (spacer1, 'minYInData', self.minYInData)
-            print "%s %20s  %s" % (spacer1, 'minYToShow', self.minYToShow)
-            print "%s %20s  %s" % (spacer1, 'maxYInData', self.maxYInData)
-            print "%s %20s  %s" % (spacer1, 'maxYToShow', self.maxYToShow)
-            print "%s %20s  %s" % (spacer2, 'xYScaleY', self.xYScaleY)
-            print
-            print "%s %20s  %s" % (spacer1, 'nBars', self.nBars)
-            print "%s %20s  %s" % (spacer1, 'minBarValInData', self.minBarValInData)
-            print "%s %20s  %s" % (spacer1, 'minBarValToShow', self.minBarValToShow)
-            print "%s %20s  %s" % (spacer1, 'maxBarValInData', self.maxBarValInData)
-            print "%s %20s  %s" % (spacer1, 'maxBarValToShow', self.maxBarValToShow)
-            print "%s %20s  %s" % (spacer2, 'barValScale', self.barValScale)
+            print("%s %20s  %s" % (spacer1, 'minXInData', self.minXInData))
+            print("%s %20s  %s" % (spacer1, 'minXToShow', self.minXToShow))
+            print("%s %20s  %s" % (spacer1, 'maxXInData', self.maxXInData))
+            print("%s %20s  %s" % (spacer1, 'maxXToShow', self.maxXToShow))
+            print("%s %20s  %s" % (spacer2, 'xYScaleX', self.xYScaleX))
+            print("%s %20s  %s" % (spacer1, 'minYInData', self.minYInData))
+            print("%s %20s  %s" % (spacer1, 'minYToShow', self.minYToShow))
+            print("%s %20s  %s" % (spacer1, 'maxYInData', self.maxYInData))
+            print("%s %20s  %s" % (spacer1, 'maxYToShow', self.maxYToShow))
+            print("%s %20s  %s" % (spacer2, 'xYScaleY', self.xYScaleY))
+            print()
+            print("%s %20s  %s" % (spacer1, 'nBars', self.nBars))
+            print("%s %20s  %s" % (spacer1, 'minBarValInData', self.minBarValInData))
+            print("%s %20s  %s" % (spacer1, 'minBarValToShow', self.minBarValToShow))
+            print("%s %20s  %s" % (spacer1, 'maxBarValInData', self.maxBarValInData))
+            print("%s %20s  %s" % (spacer1, 'maxBarValToShow', self.maxBarValToShow))
+            print("%s %20s  %s" % (spacer2, 'barValScale', self.barValScale))
 
         if self.xAxis:
             self.xAxis.setPositions()
@@ -681,7 +682,7 @@ class Plot(Gram):
 
     def calcBigBoundingBox(self):
         if self.engine == 'tikz':
-            print "TreeGram.tikzCalcBigBoundingBox() is turned off."
+            print("TreeGram.tikzCalcBigBoundingBox() is turned off.")
             #self.tikzCalcBigBoundingBox()
         else:
             assert self.engine == 'svg'

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from treegram import *
 from p4 import func
 
@@ -123,7 +124,7 @@ class TreeGramRadial(TreeGram):
                 f.close()
                 myCmd = 'drawtree < drawtree_commands > /dev/null'
                 os.system(myCmd)
-                print "finished doing '%s'" % myCmd
+                print("finished doing '%s'" % myCmd)
                 assert os.path.exists(
                     "plotfile"), "Something didn't work.  Probably with the drawtree_commands.  Fix me!"
                 os.remove("intree")
@@ -295,7 +296,7 @@ class TreeGramRadial(TreeGram):
 
                 self.scale = treeLengthFromStrokes / treeLengthOnTree
                 self.yScale = self.scale
-                print "maxLinesDim=%.1f, scale set to %.2f" % (self.maxLinesDim, self.scale)
+                print("maxLinesDim=%.1f, scale set to %.2f" % (self.maxLinesDim, self.scale))
 
             elif savedScale:
                 treeLengthOnTree = self.tree.getLen()
@@ -692,7 +693,7 @@ class TreeGramRadial(TreeGram):
                 n.br.uLabel.cA.yPosn = n.cB.yPosn + \
                     (n.cA.yPosn - n.cB.yPosn) / 2.
 
-        print "Finished TreeGramRadial.setPositions()"
+        print("Finished TreeGramRadial.setPositions()")
             
 
     # def setTitlePosition(self):

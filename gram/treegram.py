@@ -1,3 +1,4 @@
+from __future__ import print_function
 from gram import *
 from p4 import Tree
 
@@ -111,12 +112,12 @@ class TreeGram(Gram):
                 self.tree.root.yPosn0 = self.tree.root.leftChild.yPosn0
 
             if 0:
-                print "index   isLeaf        xPosn0        yPosn0"
+                print("index   isLeaf        xPosn0        yPosn0")
                 for n in self.tree.iterNodes():
-                    print "%4i" % n.nodeNum,
-                    print "%8i" % n.isLeaf,
-                    print "%12s" % n.xPosn0,
-                    print "%12s" % n.yPosn0
+                    print("%4i" % n.nodeNum, end=' ')
+                    print("%8i" % n.isLeaf, end=' ')
+                    print("%12s" % n.xPosn0, end=' ')
+                    print("%12s" % n.yPosn0)
                 # print self.leaves
                 # sys.exit()
 
@@ -137,9 +138,9 @@ class TreeGram(Gram):
                 theHeight = self.tree.nTax * self.yScale
                 self.scale = (self.widthToHeight * theHeight) / \
                     longestTipToRoot
-                print "widthToHeight %.2f, scale set to %f" % (self.widthToHeight, self.scale)
+                print("widthToHeight %.2f, scale set to %f" % (self.widthToHeight, self.scale))
             else:
-                print "given scale %.2f" % self.scale
+                print("given scale %.2f" % self.scale)
 
             # Make coordinates for the nodes.
             for n in self.tree.iterNodes():
@@ -453,12 +454,12 @@ class TreeGram(Gram):
             self.tree.root.yPosn0 = self.tree.root.leftChild.yPosn0
 
         if 0:
-            print "index   isLeaf        xPosn0        yPosn0"
+            print("index   isLeaf        xPosn0        yPosn0")
             for n in self.tree.iterNodes():
-                print "%4i" % n.nodeNum,
-                print "%8i" % n.isLeaf,
-                print "%12s" % n.xPosn0,
-                print "%12s" % n.yPosn0
+                print("%4i" % n.nodeNum, end=' ')
+                print("%8i" % n.isLeaf, end=' ')
+                print("%12s" % n.xPosn0, end=' ')
+                print("%12s" % n.yPosn0)
             # print self.leaves
             # sys.exit()
 
@@ -568,7 +569,7 @@ class TreeGram(Gram):
                     xYuh = 0.22
                 g.yuh = xYuh * myTextSizeCm
             # Now both tikz and svg have yuh set, and we can do the hack
-            print "TreeGram.setBuiltInTikzStyles doLiningNumeralsHack; yuh is %f" % g.yuh
+            print("TreeGram.setBuiltInTikzStyles doLiningNumeralsHack; yuh is %f" % g.yuh)
             g.yShift = -0.4 * g.yuh
         Gram._styleDict[g.name] = g
 
@@ -598,7 +599,7 @@ class TreeGram(Gram):
                     xYuh = 0.22
                 g.yuh = xYuh * myTextSizeCm
             # Now both tikz and svg have yuh set, and we can do the hack
-            print "TreeGram.setBuiltInTikzStyles doLiningNumeralsHack; yuh is %f" % g.yuh
+            print("TreeGram.setBuiltInTikzStyles doLiningNumeralsHack; yuh is %f" % g.yuh)
             g.yShift = -0.4 * g.yuh
         Gram._styleDict[g.name] = g
 
@@ -680,7 +681,7 @@ class TreeGram(Gram):
                         n.label.setBB()
                     #print "%s  textDepth %s" % (n.label.rawText, n.label.textDepth)
                     if ',' in n.label.rawText:
-                        print "wrap", n.label.rawText
+                        print("wrap", n.label.rawText)
                         oldHeight = n.label.bb[3] - n.label.bb[1]
                         #n.label.rawText = n.label.rawText.replace(", ", ",\n")
                         n.label.rawText = ",\n".join([aLine.strip() for aLine in n.label.rawText.split(',')])
@@ -733,7 +734,7 @@ class TreeGram(Gram):
                         self.extraYSpaceAtNode(n, extra=theExtra)
 
         if self.doSmartLabels:  # Either True or 'semi'
-            print "TreeGram.setPositions().  doSmartLabels is %s" % self.doSmartLabels
+            print("TreeGram.setPositions().  doSmartLabels is %s" % self.doSmartLabels)
             for n in self.tree.iterInternalsNoRoot():
                 if n.label:
 
@@ -843,7 +844,7 @@ class TreeGram(Gram):
             #self.scaleBar.cA.yPosn = (0.5 * self.yScale) + self.scaleBar.yOffset
             self.scaleBar.setPositions()            
                 
-        print "Finished TreeGram.setPositions()"
+        print("Finished TreeGram.setPositions()")
 
     def getAllGramTexts(self):
         # to feed into fixTextOverlaps()
@@ -1109,7 +1110,7 @@ class TreeGram(Gram):
 
     def calcBigBoundingBox(self):
         if self.engine == 'tikz':
-            print "TreeGram.tikzCalcBigBoundingBox() is turned off."
+            print("TreeGram.tikzCalcBigBoundingBox() is turned off.")
             #self.tikzCalcBigBoundingBox()
         else:
             assert self.engine == 'svg'
@@ -1331,7 +1332,7 @@ class TreeGramBracket(TreeGramGraphic):
         #if self.engine == 'svg':
         #    theInnerSep = 0.0
         # 0.1 for tikz
-        print "TreeGramBracket.setPositions().  got theInnerSep %f" % theInnerSep
+        print("TreeGramBracket.setPositions().  got theInnerSep %f" % theInnerSep)
         if self.topOverRide:
             self.top = self.topOverRide
         else:
@@ -1366,11 +1367,11 @@ class TreeGramBracket(TreeGramGraphic):
             self.label.setBB()
 
         if 0:
-            print "bracket a.  self.upperNode is node %i, at (%.3f,%.3f)." % (
-                self.upperNode.nodeNum, self.upperNode.label.cA.xPosn, self.upperNode.label.cA.yPosn)
-            print "bracket b.  self.lowerNode is node %i, at (%.3f,%.3f)." % (
-                self.lowerNode.nodeNum, self.lowerNode.label.cA.xPosn, self.lowerNode.label.cA.yPosn)
-            print "bracket c.  self.top is %.3f, self.bottom is %.3f" % (self.top, self.bottom)
+            print("bracket a.  self.upperNode is node %i, at (%.3f,%.3f)." % (
+                self.upperNode.nodeNum, self.upperNode.label.cA.xPosn, self.upperNode.label.cA.yPosn))
+            print("bracket b.  self.lowerNode is node %i, at (%.3f,%.3f)." % (
+                self.lowerNode.nodeNum, self.lowerNode.label.cA.xPosn, self.lowerNode.label.cA.yPosn))
+            print("bracket c.  self.top is %.3f, self.bottom is %.3f" % (self.top, self.bottom))
 
     def getTikz(self):
         ss = []

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from p4 import func
 import pyx
 import os
@@ -315,7 +316,7 @@ class Gram(object):
                                                         (ret, myAttr))
                                 writeInColor("conf file: Setting Gram %s to %s" % (myAttr, ret)) # no \n
                                 sys.stdout.flush()   # Get rid of the colour
-                                print                # line ending, finally
+                                print()                # line ending, finally
                                 setattr(self, myAttr, ret)
                         except ConfigParser.NoOptionError:
                             pass
@@ -935,7 +936,7 @@ class Gram(object):
             for k in theKeys:
                 self.styleDict[k].setBB()
         self.tikzCalcBigBoundingBox()
-        print "Gram.pdf(), bbb is now %s" % self.bbb
+        print("Gram.pdf(), bbb is now %s" % self.bbb)
 
         if maxWidth > 19:
             gm.append(
@@ -950,8 +951,8 @@ class Gram(object):
         assert myWid > 0.0, self.bbb
         assert myHt > 0.0, self.bbb
 
-        print "%s: maxWidth = %.2f, maxHeight = %.2f, myWid=%.2f, myHt=%.2f, %.3f, %.3f" % (
-            gm[0], maxWidth, maxHeight, myWid, myHt, maxWidth / myWid, maxHeight / myHt)
+        print("%s: maxWidth = %.2f, maxHeight = %.2f, myWid=%.2f, myHt=%.2f, %.3f, %.3f" % (
+            gm[0], maxWidth, maxHeight, myWid, myHt, maxWidth / myWid, maxHeight / myHt))
 
         assert myWid > 0.0
         assert myHt > 0.0
@@ -967,7 +968,7 @@ class Gram(object):
                 yScale = float(maxHeight) / myHt
                 if yScale < 1.0:
                     theScale[1] = yScale
-            print "theScale = %s" % theScale
+            print("theScale = %s" % theScale)
             myScale = min(theScale)
             # print "myScale = %s" % myScale
             assert myScale < 1.0
@@ -1162,15 +1163,15 @@ class Gram(object):
     def cat(self):
         assert self.dirName
         if 1:
-            print "=========== t.tex ============="
+            print("=========== t.tex =============")
             os.system('cat %s/t.tex' % self.dirName)
         if 1:
             if os.path.isfile("%s/%s.tikz.tex" % (self.dirName, self.baseName)):
-                print "=========== %s.tikz.tex =============" % self.baseName
+                print("=========== %s.tikz.tex =============" % self.baseName)
                 os.system('cat %s/%s.tikz.tex' % (self.dirName, self.baseName))
         if 0:
             if os.path.isfile("%s/%s.B.tikz.tex" % (self.dirName, self.baseName)):
-                print "=========== %s.B.tikz.tex =============" % self.baseName
+                print("=========== %s.B.tikz.tex =============" % self.baseName)
                 os.system('cat %s/%s.B.tikz.tex' %
                           (self.dirName, self.baseName))
 
@@ -1186,7 +1187,7 @@ class Gram(object):
 
     def calcBigBoundingBox(self):
         if self.engine == 'tikz':
-            print "Gram.calcBigBoundingBox() is turned off for tikz"
+            print("Gram.calcBigBoundingBox() is turned off for tikz")
             #self.tikzCalcBigBoundingBox()
         else:
             assert self.engine == 'svg'
@@ -1254,8 +1255,8 @@ class Gram(object):
                 g.setBB()
 
             if 0:
-                print "b Gram.calcBigBoundingBox(). haveStartedPyX=%s" % (
-                    self.haveStartedPyX)
+                print("b Gram.calcBigBoundingBox(). haveStartedPyX=%s" % (
+                    self.haveStartedPyX))
             # print " ==== ++++ %s, bb=%s" % (g, g.bb)
             if isinstance(g, GramCoord) or isinstance(g, GramCode):
                 pass
@@ -1388,13 +1389,13 @@ class Gram(object):
         if thisVerbose:
             for i in indices:
                 tbNum = indices[-(i + 1)]
-                print "%2i  %.3f  %s" % (tbNum, tbb[tbNum].lly, tbb[tbNum].rawText)
-            print "theCenterY is %.2f" % theCenterY
+                print("%2i  %.3f  %s" % (tbNum, tbb[tbNum].lly, tbb[tbNum].rawText))
+            print("theCenterY is %.2f" % theCenterY)
 
         safety = 0
         while 1:
             if thisVerbose:
-                print "round %i ----" % safety
+                print("round %i ----" % safety)
             safety += 1
             hasOverlap = False
             if 1:
@@ -1413,7 +1414,7 @@ class Gram(object):
                         # tbB.rawText)
                         if bbOverlap(tbA.bb, tbB.bb):
                             if thisVerbose:
-                                print "        %s overlaps with %s" % (tbA.rawText, tbB.rawText)
+                                print("        %s overlaps with %s" % (tbA.rawText, tbB.rawText))
                             hasOverlap = True
                             moveDownBy = (tbA.bb[3] - tbB.bb[1])
                             assert moveDownBy >= 0.0
@@ -1424,7 +1425,7 @@ class Gram(object):
                             tbA.bb[3] -= moveDownBy
                             tbA.lly -= moveDownBy
                             if thisVerbose:
-                                print "        %s moving down by %.3f" % (tbA.rawText, moveDownBy)
+                                print("        %s moving down by %.3f" % (tbA.rawText, moveDownBy))
                             tbB.overlaps.append(tbA)
                             for tb in tbA.overlaps:
                                 tb.yShift -= moveDownBy
@@ -1432,7 +1433,7 @@ class Gram(object):
                                 tb.bb[3] -= moveDownBy
                                 tb.lly -= moveDownBy
                                 if thisVerbose:
-                                    print "        %s moving down by %.3f" % (tb.rawText, moveDownBy)
+                                    print("        %s moving down by %.3f" % (tb.rawText, moveDownBy))
                             break
                     # if hasOverlap:
                     #    break
@@ -1455,7 +1456,7 @@ class Gram(object):
                         # tbB.rawText)
                         if bbOverlap(tbA.bb, tbB.bb):
                             if thisVerbose:
-                                print "        %s overlaps with %s" % (tbA.rawText, tbB.rawText)
+                                print("        %s overlaps with %s" % (tbA.rawText, tbB.rawText))
                             hasOverlap = True
                             moveUpBy = (tbB.bb[3] - tbA.bb[1])
                             assert moveUpBy >= 0.0
@@ -1466,7 +1467,7 @@ class Gram(object):
                             tbA.bb[3] += moveUpBy
                             tbA.lly += moveUpBy
                             if thisVerbose:
-                                print "        %s moving up by %.3f" % (tbA.rawText, moveUpBy)
+                                print("        %s moving up by %.3f" % (tbA.rawText, moveUpBy))
                             tbB.overlaps.append(tbA)
                             for tb in tbA.overlaps:
                                 tb.yShift += moveUpBy
@@ -1474,7 +1475,7 @@ class Gram(object):
                                 tb.bb[3] += moveUpBy
                                 tb.lly += moveUpBy
                                 if thisVerbose:
-                                    print "        %s moving up by %.3f" % (tb.rawText, moveUpBy)
+                                    print("        %s moving up by %.3f" % (tb.rawText, moveUpBy))
                             break
                     # if hasOverlap:
                     #    break
@@ -1483,10 +1484,10 @@ class Gram(object):
             # print "safety=%i" % safety
             if not hasOverlap:
                 if thisVerbose:
-                    print "======== no more overlaps.  breaking out of loop"
+                    print("======== no more overlaps.  breaking out of loop")
                 break
             if safety > 100:
-                print "Gram.fixTextOverlaps() -- too many iterations -- quitting."
+                print("Gram.fixTextOverlaps() -- too many iterations -- quitting.")
                 break
 
         for tb in tbb:
@@ -2204,14 +2205,14 @@ class GramTikzStyle(Gram):
         return "{%s}" % ','.join(options)
 
     def dump(self):
-        print "GramTikzStyle.dump() here"
+        print("GramTikzStyle.dump() here")
         import inspect
         myMembers = inspect.getmembers(self)
         # print myMembers    #2-tuples
         for it in myMembers:
             if it[0].startswith("_"):
                 if it[0] == '__class__':
-                    print "  CLASS: %s" % it[1]
+                    print("  CLASS: %s" % it[1])
             else:
                 if inspect.ismethod(it[1]):
                     # print "method: %s" % it[0]
@@ -2219,7 +2220,7 @@ class GramTikzStyle(Gram):
                 else:
 
                     it1 = getattr(self, it[0])
-                    print "  %-20s   %s" % (it[0], it1)
+                    print("  %-20s   %s" % (it[0], it1))
 
 
 class GramGraphic(GramTikzStyle):
@@ -2265,9 +2266,9 @@ class GramGraphic(GramTikzStyle):
             try:
                 theStyleObject = self.styleDict[theStyleString]
             except KeyError:
-                print self.styleDict
-                print self.styleDict.keys()
-                print "styleDict can't find style '%s'" % theStyleString
+                print(self.styleDict)
+                print(self.styleDict.keys())
+                print("styleDict can't find style '%s'" % theStyleString)
                 raise
             # print " *** theStyleObject.textFamily is %s" % theStyleObject.textFamily
             # print "getTikzOptions()  A  theStyleObject.anchor is %s" %
@@ -2324,9 +2325,9 @@ class GramGraphic(GramTikzStyle):
             try:
                 theStyleObject = self.styleDict[theStyleString]
             except KeyError:
-                print self.styleDict
-                print self.styleDict.keys()
-                print "styleDict can't find style '%s'" % theStyleString
+                print(self.styleDict)
+                print(self.styleDict.keys())
+                print("styleDict can't find style '%s'" % theStyleString)
                 raise
             # print " *** theStyleObject.textFamily is %s" % theStyleObject.textFamily
             # print "getTikzOptions()  A  theStyleObject.anchor is %s" %
@@ -3013,12 +3014,12 @@ class GramText(GramGraphic):
         self.gY = 0.0
 
     def dump(self):
-        print "GramText.dump() anch=%s, xPosn %.3f yPosn %.3f bb=%.3f %.3f %.3f %.3f" % (
-            self.getAnch(), self.cA.xPosn, self.cA.yPosn, self.bb[0], self.bb[1], self.bb[2], self.bb[3]) 
-        print "rawText=%s, cookedText=%s, length=%s" % (
-            self.rawText, self.cookedText, self.length)
-        print "ex=%.3f, exWid=%.3f, bigX=%.3f, yuh=%.3f half_normal_x=%.3f" % (
-            self.ex, self.exWid, self.bigX, self.yuh, self.half_normal_x)
+        print("GramText.dump() anch=%s, xPosn %.3f yPosn %.3f bb=%.3f %.3f %.3f %.3f" % (
+            self.getAnch(), self.cA.xPosn, self.cA.yPosn, self.bb[0], self.bb[1], self.bb[2], self.bb[3])) 
+        print("rawText=%s, cookedText=%s, length=%s" % (
+            self.rawText, self.cookedText, self.length))
+        print("ex=%.3f, exWid=%.3f, bigX=%.3f, yuh=%.3f half_normal_x=%.3f" % (
+            self.ex, self.exWid, self.bigX, self.yuh, self.half_normal_x))
 
     def setCookedText(self):
         self.cookedText = self.cookText(self.rawText)
@@ -3151,7 +3152,7 @@ class GramText(GramGraphic):
             if thisWidth > biggestWidth:
                 biggestWidth = thisWidth
         self.rawText = savedRawText
-        print "getBiggestWidth: %.2fcm" % biggestWidth
+        print("getBiggestWidth: %.2fcm" % biggestWidth)
         return biggestWidth
 
     # def setBB(self):
@@ -3173,7 +3174,7 @@ class GramText(GramGraphic):
                 # type(self.rawText))
                 if booger in self.rawText:
                     if self.style:
-                        print "====== Turning off style for textbox '%s'" % self.rawText
+                        print("====== Turning off style for textbox '%s'" % self.rawText)
                         self.style = None
                     theAnch = self.getAnch()
                     if theAnch == 'south west':
@@ -3639,7 +3640,7 @@ class GramText(GramGraphic):
         # Hack
         if 1:
             if 'fcolorbox' in theText:
-                print "------fixing ------", theText
+                print("------fixing ------", theText)
                 splText = theText.split()
                 for tNum in range(len(splText)):
                     if splText[tNum].startswith("\\fcolorbox"):
@@ -3934,18 +3935,18 @@ class GramText(GramGraphic):
             self.setBB()
             
         if 0:
-            print "GramText.getSvg() for %s" % self.rawText
+            print("GramText.getSvg() for %s" % self.rawText)
             foo = self.getTextSize()
             if foo is None:
                 foo = 'normalsize'
-            print "textSize %s px, svgPxForCm %s svgTextNormalsize %s cm fontSizeMultiplier %s" % (
+            print("textSize %s px, svgPxForCm %s svgTextNormalsize %s cm fontSizeMultiplier %s" % (
                 myTextSizeStr, self.svgPxForCm, self.svgTextNormalsize, 
-                self.fontSizeMultiplierDict[foo])
-            print "bb is ", self.bb
+                self.fontSizeMultiplierDict[foo]))
+            print("bb is ", self.bb)
             bbdx = self.bb[2] - self.bb[0]
             bbdy = self.bb[3] - self.bb[1]
-            print "widthFrom bb %.3f cm (%.2f px), height from bb %.3f cm (%.2f px) " % (
-                bbdx, bbdx * self.svgPxForCm, bbdy, bbdy * self.svgPxForCm)
+            print("widthFrom bb %.3f cm (%.2f px), height from bb %.3f cm (%.2f px) " % (
+                bbdx, bbdx * self.svgPxForCm, bbdy, bbdy * self.svgPxForCm))
 
         ss = []
         myDraw = self.getDraw()
@@ -4363,11 +4364,11 @@ class GramPdf(GramGraphic):
         # print "GramPdf init.  Ugly hack.  Decreasing the pdfWid by 4"
         #self.pdfWid -= 4
 
-        print "GramPdf init. Pdf width: %.2f pt, height %.2f pt" % (self.pdfWid, self.pdfHeight)
+        print("GramPdf init. Pdf width: %.2f pt, height %.2f pt" % (self.pdfWid, self.pdfHeight))
         # 1 PostScript point = 0.35277138 mm
         self.pdfWid_cm = self.pdfWid * 0.035277138
         self.pdfHeight_cm = self.pdfHeight * 0.035277138
-        print "GramPdf init. The pdf is %.2f cm x %.2f cm." % (self.pdfWid_cm, self.pdfHeight_cm)
+        print("GramPdf init. The pdf is %.2f cm x %.2f cm." % (self.pdfWid_cm, self.pdfHeight_cm))
 
         self.gif_pi = None  # gif photoimage, used for tweakerDraw()
 
@@ -4473,7 +4474,7 @@ class GramJpeg(GramGraphic):
                     "Could not find the ImageMagick 'identify' program.  Install it.")
                 raise GramError(gm)
             ret_tup = po.communicate()
-            print "GramJpeg init.  (ImageMagick) identify returns", ret_tup
+            print("GramJpeg init.  (ImageMagick) identify returns", ret_tup)
             if ret_tup[0]:
                 identifyLines = [l.strip() for l in ret_tup[0].split('\n')]
             else:
@@ -4570,15 +4571,15 @@ class GramJpeg(GramGraphic):
         if not self.resolution_dpi:
             raise GramError("GramJpeg.  Failed to get resolution_dpi")
 
-        print "GramJpeg. Got wid_px %i, height_px %i, and resolution (dpi) %i" % (
-            self.jpegWid_px, self.jpegHeight_px, self.resolution_dpi)
+        print("GramJpeg. Got wid_px %i, height_px %i, and resolution (dpi) %i" % (
+            self.jpegWid_px, self.jpegHeight_px, self.resolution_dpi))
 
         self.jpegWid_cm = (
             (float(self.jpegWid_px) / self.resolution_dpi) * 2.54) * self.scale
         self.jpegHeight_cm = (
             (float(self.jpegHeight_px) / self.resolution_dpi) * 2.54) * self.scale
-        print "GramJpeg.__init__()  Got jpegWid_cm %.2f, jpegHeight_cm %.2f" % (
-            self.jpegWid_cm, self.jpegHeight_cm)
+        print("GramJpeg.__init__()  Got jpegWid_cm %.2f, jpegHeight_cm %.2f" % (
+            self.jpegWid_cm, self.jpegHeight_cm))
 
 
         self.gX = 0.0

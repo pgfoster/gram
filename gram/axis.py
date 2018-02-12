@@ -1,3 +1,4 @@
+from __future__ import print_function
 from gram import *
 import sys
 
@@ -109,9 +110,9 @@ class AxisStyles(list):
             if item not in self:
                 list.append(self, item)
             else:
-                print "AxisStyles.append()"
-                print "    Got attempt to append '%s' -- but its already there!" % item
-                print "    styles is currently %s" % self
+                print("AxisStyles.append()")
+                print("    Got attempt to append '%s' -- but its already there!" % item)
+                print("    styles is currently %s" % self)
 
         else:
             gm = ["AxisStyles.append()"]
@@ -125,9 +126,9 @@ class AxisStyles(list):
             if item in self:
                 list.remove(self, item)
             else:
-                print "AxisStyles.append()"
-                print "    Got attempt to remove '%s' -- but it is not one of the current styles!" % item
-                print "    styles is currently %s" % self
+                print("AxisStyles.append()")
+                print("    Got attempt to remove '%s' -- but it is not one of the current styles!" % item)
+                print("    styles is currently %s" % self)
 
         else:
             gm = ["AxisStyles.remove()"]
@@ -405,14 +406,14 @@ class XYAxis(Axis):
             tNum += self.tickLabelsEvery
 
         if 0:
-            print "self.sig = ", self.sig
-            print "self.tickInterval is %f" % self.tickInterval
-            print "niceMin = %f" % niceMin
-            print "niceMax = %f" % niceMax
+            print("self.sig = ", self.sig)
+            print("self.tickInterval is %f" % self.tickInterval)
+            print("niceMin = %f" % niceMin)
+            print("niceMax = %f" % niceMax)
 
             for tick in self.ticks:
-                print "tick: val=%s, textRotate=%s, sig=%s" % (
-                    tick.val, tick.textRotate, tick.sig), tick.sig % tick.val
+                print("tick: val=%s, textRotate=%s, sig=%s" % (
+                    tick.val, tick.textRotate, tick.sig), tick.sig % tick.val)
             sys.exit()
 
     def setPositions(self):
@@ -428,17 +429,17 @@ class XYAxis(Axis):
             theXYScaleY = self.plot.xYScaleY
 
         if 0:
-            print "XYAxis.setPositions()"
-            print "    position = %s, orientation = %s" % (self.position, self.orientation)
+            print("XYAxis.setPositions()")
+            print("    position = %s, orientation = %s" % (self.position, self.orientation))
             if self.orientation == 'h':
-                print "    minXInData = %s, maxXInData = %s" % (self.plot.minXInData, self.plot.maxXInData)
-                print "    minXToShow = %s, maxXToShow = %s" % (self.plot.minXToShow, self.plot.maxXToShow)
+                print("    minXInData = %s, maxXInData = %s" % (self.plot.minXInData, self.plot.maxXInData))
+                print("    minXToShow = %s, maxXToShow = %s" % (self.plot.minXToShow, self.plot.maxXToShow))
             elif self.orientation == 'v':
-                print "    useBarVals = %s" % self.useBarVals
-                print "    minYInData = %s, maxYInData = %s" % (self.plot.minYInData, self.plot.maxYInData)
-                print "    minYToShow = %s, maxYToShow = %s" % (theMinYToShow, theMaxYToShow)
-            print "    framePosnX = %.1f, framePosnY = %.1f" % (self.plot.framePosnX, self.plot.framePosnY)
-            print "    self.styles = %s" % self.styles
+                print("    useBarVals = %s" % self.useBarVals)
+                print("    minYInData = %s, maxYInData = %s" % (self.plot.minYInData, self.plot.maxYInData))
+                print("    minYToShow = %s, maxYToShow = %s" % (theMinYToShow, theMaxYToShow))
+            print("    framePosnX = %.1f, framePosnY = %.1f" % (self.plot.framePosnX, self.plot.framePosnY))
+            print("    self.styles = %s" % self.styles)
             # sys.exit()
 
         if 'ticks' in self.styles:
@@ -608,15 +609,15 @@ class BarsAxis(Axis):
 
     def setPositions(self):
         if 1:
-            print "BarsAxis.setPositions()"
-            print "    position = %s, orientation = %s" % (self.position, self.orientation)
+            print("BarsAxis.setPositions()")
+            print("    position = %s, orientation = %s" % (self.position, self.orientation))
             if self.orientation == 'h':
-                print "    nBars %s" % self.plot.nBars
-                print "    barNames = %s" % self.plot.barNames
+                print("    nBars %s" % self.plot.nBars)
+                print("    barNames = %s" % self.plot.barNames)
             elif self.orientation == 'v':
                 raise GramError("vertical position is not implemented")
-            print "    framePosnX = %.1f, framePosnY = %.1f" % (self.plot.framePosnX, self.plot.framePosnY)
-            print "    self.styles = %s" % self.styles
+            print("    framePosnX = %.1f, framePosnY = %.1f" % (self.plot.framePosnX, self.plot.framePosnY))
+            print("    self.styles = %s" % self.styles)
 
         if 'ticks' in self.styles:
 
