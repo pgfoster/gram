@@ -1117,7 +1117,7 @@ class Gram(object):
         flob.write('\n')
 
         if self.font == 'cm':
-            raise GramError, "Font cm does not work with svg"
+            raise GramError("Font cm does not work with svg")
         elif self.font == 'helvetica':
             myFont = "Helvetica, sans-serif"
         elif self.font == "palatino":
@@ -2709,7 +2709,7 @@ class GramSvgMarker(GramGraphic):
             else:
                 if not self.fill:
                     #gm.append("No color (OK), but also no fill --- invisible?")
-                    #raise GramError, gm
+                    #raise GramError(gm)
                     #self.fill = 'black'
                     pass
                 #ss2.append('stroke="black"')
