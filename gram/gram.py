@@ -5,12 +5,11 @@ import os
 import math
 import string
 import sys
-import types
-import cStringIO
+import io
 from subprocess import Popen, PIPE
 import textwrap
 import copy
-import ConfigParser
+import configparser
 
 # I got these definitions of points from the web somewhere.
 # The didot system originated in France but was used in most of Europe.
@@ -79,7 +78,7 @@ def cmForLineThickness(lt):
 def ptsForLineThickness(lt):
     if lt is None:  # assume 'thin'
         pts = 0.4
-    elif isinstance(lt, basestring):
+    elif isinstance(lt, str):
         if lt == 'ultra thin':
             pts = 0.1
         elif lt == 'very thin':
@@ -287,7 +286,7 @@ class Gram(object):
                 Gram._haveReadGramRC = True
 
         if not Gram._config:
-            config = ConfigParser.SafeConfigParser()
+            config = configparser.SafeConfigParser()
             Gram._config = config
             config.optionxform = str
             filesRead = config.read([os.path.expanduser('~/.gram.conf'), 'gram.conf'])
@@ -318,7 +317,7 @@ class Gram(object):
                                 sys.stdout.flush()   # Get rid of the colour
                                 print()                # line ending, finally
                                 setattr(self, myAttr, ret)
-                        except ConfigParser.NoOptionError:
+                        except configparser.NoOptionError:
                             pass
 
     
@@ -328,7 +327,7 @@ class Gram(object):
 
     def _setDirName(self, theDirName):
         gm = ['Gram._setDirName()']
-        assert isinstance(theDirName, basestring)
+        assert isinstance(theDirName, str)
         if ' ' in theDirName:
             gm.append("The dirName should not have any spaces.")
             raise GramError(gm)
@@ -347,7 +346,7 @@ class Gram(object):
 
     def _setBaseName(self, theBaseName):
         gm = ['Gram._setBaseName()']
-        assert isinstance(theBaseName, basestring)
+        assert isinstance(theBaseName, str)
         if ' ' in theBaseName:
             gm.append("The baseName should not have any spaces.")
             raise GramError(gm)
@@ -365,8 +364,8 @@ class Gram(object):
         return Gram._font
     def _setFont(self, theFont):
         gm = ['Gram._setFont()']
-        assert isinstance(theFont, basestring)
-        lowFont = string.lower(theFont)
+        assert isinstance(theFont, str)
+        lowFont = theFont.lower()
         goodFonts = ['cm', 'helvetica', 'palatino', 'times']
         if lowFont not in goodFonts:
             gm.append("You can only set property 'font' to one of")
@@ -610,7 +609,7 @@ class Gram(object):
         for gr in self.graphics:
             try:
                 ret = gr.getTikz()
-                if not isinstance(ret, basestring):
+                if not isinstance(ret, str):
                     gm.append('graphic %s' % gr)
                     gm.append('getTikz() returned %s' % ret)
                     raise GramError(gm)
@@ -631,7 +630,7 @@ class Gram(object):
 
         for gr in self.graphics:
             ret = gr.getSvg()
-            if not isinstance(ret, basestring):
+            if not isinstance(ret, str):
                 gm.append('graphic %s' % gr)
                 gm.append('getSvg() returned %s' % ret)
                 raise GramError(gm)
@@ -766,7 +765,7 @@ class Gram(object):
                  (self.documentFontSize, self.font))
 
         # tikzset styles
-        theKeys = self.styleDict.keys()
+        theKeys = list(self.styleDict.keys())
         if theKeys:
             fA.write('\\tikzset{')
             for tzs in theKeys[:-1]:
@@ -856,7 +855,7 @@ class Gram(object):
 
         texStuffFontLine = self._makeFontLine()
 
-        f = file('Makefile', 'w')
+        f = open('Makefile', 'w')
         f.write("TEXFILEROOT = %s\n" % self.baseName)
         #f.write("JOBNAME=%s\n" % self.baseName)
         #f.write("OUTFILEROOT=%s\n" % self.baseName)
@@ -873,7 +872,7 @@ class Gram(object):
         f.write(makeStuff_4)
         f.close()
 
-        f = file('%s.tex' % self.baseName, 'w')
+        f = open('%s.tex' % self.baseName, 'w')
         if flavour == 'pdfPage':
             # or scrartcl?
             f.write(
@@ -906,7 +905,7 @@ class Gram(object):
         f.close()
 
         if self.theGpdf:
-            f = file('c.tex', 'w')
+            f = open('c.tex', 'w')
             f.write(tTexStuff_5 % self.documentFontSize)
             f.write("\\begin{textblock}{1}(0,0)\n")
             #f.write("\\includegraphics[scale=1.0023]{%s.pdf}\n" % self.baseName)
@@ -1073,7 +1072,7 @@ class Gram(object):
         self.render()
         self.calcBigBoundingBox()
         svgFName = "%s.svg" % self.baseName
-        f = file(svgFName, 'w')
+        f = open(svgFName, 'w')
         writeInColour("Writing SVG file %s : svgPxForCm %.2f, extraMarginHack %.1f\n" % (
             svgFName, self.svgPxForCm, extraMarginHack), 'blue')
         sys.stdout.flush()
@@ -1196,28 +1195,38 @@ class Gram(object):
     def svgCalcBigBoundingBox(self):
         gm = ["Gram.svgCalcBigBoundingBox()"]
         # print gm[0], "Gram._svgHackDoRotate is %s" % Gram._svgHackDoRotate
-        flob = cStringIO.StringIO()
+        flob = io.StringIO()
         self.svgWriteToOpenFile(flob, theBBB=[0., 0., 1., 1.])
-        flob.reset()
-        # print flob.read()
-        # flob.reset()
+        flob.seek(0)
+        thisRet = flob.read().encode('utf-8')
+        #print(thisRet)
+        #print("thisRet type is %s" % type(thisRet))
+        #flob.seek(0)
         p = Popen(['inkscape', '-z', '-S', '-f', '/dev/stdin'],
                   stdout=PIPE, stdin=PIPE, stderr=PIPE)
-        ret = p.communicate(input=flob.read())
+
+        # In Py3 if I used a StringIO()  then read() gives a str, and 
+        # TypeError: memoryview: a bytes-like object is required, not 'str'
+        # So do theUnicodeStuff.encode('utf-8')
+        ret = p.communicate(input=thisRet)
+        #print("========================")
+        #print(ret)
+        #print(type(ret[0]))
+        #print("-------------------------")
         if not ret[0]:
-            # f = file("debug.svg", "w")
+            # f = open("debug.svg", "w")
             # self.svgWriteToOpenFile(f, theBBB=[0., 0., 1., 1.])
             # f.close()
             gm.append("No string returned from inkscape.")
             raise GramError(gm)
-        if not ret[0].startswith("svg2"):
+        if not ret[0].startswith(b"svg2"):
             gm.append("Bad string returned from inkscape.  Got %s %s" % ret)
             raise GramError(gm)
         #print ret[0]
-        ll = [l for l in ret[0].split('\n') if l]
-        splL = ll[0].split(',')
+        ll = [l for l in ret[0].split(b'\n') if l]
+        splL = ll[0].split(b',')
         #print splL
-        assert splL[0] == 'svg2'
+        assert splL[0] == b'svg2'
         # pxPerCm = 35.43307   # official
         self.bbb[0] = float(splL[1]) / self.svgPxForCm
         self.bbb[1] = float(splL[2]) / self.svgPxForCm
@@ -1228,8 +1237,8 @@ class Gram(object):
 
         if not Gram._svgHackDoRotate:
             for l in ll[1:]:
-                if l.startswith('text'):
-                    splL = l.split(',')
+                if l.startswith(b'text'):
+                    splL = l.split(b',')
                     g = self.svgGForIdDict.get(splL[0])
                     if g:
                         # print splL
@@ -1542,7 +1551,7 @@ class GramColor(Gram):
             self.svgColorOpacity = theColor.svgColorOpacity
             self.tikzColor = theColor.tikzColor
 
-        elif isinstance(theColor, basestring):
+        elif isinstance(theColor, str):
             Gram.__init__(self)
             gm = ['GramColor.__init__()']
             self.svgColor = None
@@ -1674,7 +1683,7 @@ class GramTikzStyle(Gram):
         if theSize is None:
             self._textSize = None
         else:
-            assert isinstance(theSize, basestring)
+            assert isinstance(theSize, str)
             gm = ['GramTikzStyle._setSize()']
             goodSizes = self.goodTextSizes
             if theSize not in goodSizes:
@@ -1695,8 +1704,8 @@ class GramTikzStyle(Gram):
 
     def _setTextFamily(self, newVal):
         gm = ['GramTikzStyle._setTextFamily()']
-        assert isinstance(newVal, basestring)
-        lowVal = string.lower(newVal)
+        assert isinstance(newVal, str)
+        lowVal = newVal.lower()
         goodVals = self.goodTextFamilies
         if lowVal not in goodVals:
             gm.append("You can only set property 'textFamily' to one of")
@@ -1727,8 +1736,8 @@ class GramTikzStyle(Gram):
 
     def _setTextSeries(self, newVal):
         gm = ['GramTikzStyle._setTextSeries()']
-        assert isinstance(newVal, basestring)
-        lowVal = string.lower(newVal)
+        assert isinstance(newVal, str)
+        lowVal = newVal.lower()
         goodVals = self.goodTextSeries
         if lowVal not in goodVals:
             gm.append("You can only set property 'textSeries' to one of")
@@ -1749,8 +1758,8 @@ class GramTikzStyle(Gram):
 
     def _setTextShape(self, newVal):
         gm = ['GramTikzStyle._setTextShape()']
-        assert isinstance(newVal, basestring)
-        lowVal = string.lower(newVal)
+        assert isinstance(newVal, str)
+        lowVal = newVal.lower()
         goodVals = self.goodTextShapes
         if lowVal not in goodVals:
             gm.append("You can only set property 'textShape' to one of")
@@ -2077,7 +2086,7 @@ class GramTikzStyle(Gram):
         if self.shape:
             options.append("shape=%s" % self.shape)
         if self.lineThickness is not None:
-            if isinstance(self.lineThickness, basestring):
+            if isinstance(self.lineThickness, str):
                 options.append("%s" % self.lineThickness)
             else:
                 options.append("line width=%spt" % self.lineThickness)
@@ -2158,7 +2167,7 @@ class GramTikzStyle(Gram):
         # if self.shape:
         #     options.append('shape=%s' % self.shape)
         if self.lineThickness is not None:
-            #if isinstance(self.lineThickness, basestring):
+            #if isinstance(self.lineThickness, str):
             myLineThickness = cmForLineThickness(self.lineThickness)
             myLineThickness = self.svgPxForCmF(myLineThickness)
             options.append('stroke-width="%.2f"' % myLineThickness)
@@ -3728,6 +3737,8 @@ class GramText(GramGraphic):
             #xEx = 0.3
             xBigX = 0.67
             xExWid = 0.49
+        elif self.font == 'cm':
+            raise GramError("GramText.getSvg() svg does not work with cm")
         self.yuh = xYuh * myTextSizeCm
         if self.getTextShape() == 'scshape':
             self.yuh = 0.0
@@ -4779,7 +4790,7 @@ class GramError(Exception):
 
     def __init__(self, msg=''):
         myIndent = ' ' * 4
-        if type(msg) in [types.StringType, types.UnicodeType]:
+        if isinstance(msg, str):
             #self.msg = '\n\n' + textwrap.fill(msg, 70, initial_indent=myIndent, subsequent_indent=myIndent)
             try:
                 if msg.startswith('\n\n'):
@@ -4804,18 +4815,16 @@ class GramError(Exception):
                 firstLine = ''
             niceMsgList = [firstLine]
             for i in range(len(msg))[1:]:
-                if type(msg[i]) in [types.StringType, types.UnicodeType]:
+                if isinstance(msg[i], str):
                     #  If it is short, use it as is.  If it is long, wrap it.
                     if len(msg[i]) < 66:
                         niceMsgList.append(myIndent + msg[i])
                     else:
-                        wLine = textwrap.fill(
-                            msg[i], 70, initial_indent=myIndent, subsequent_indent=myIndent)
+                        wLine = textwrap.fill(msg[i], 70, initial_indent=myIndent, subsequent_indent=myIndent)
                         niceMsgList.append(wLine)
                 else:
                     pass
 
-            #self.msg = string.join(niceMsgList, '\n')
             self.msg = '\n'.join(niceMsgList)
         else:
             self.msg = ''

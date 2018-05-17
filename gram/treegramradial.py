@@ -1,5 +1,5 @@
 from __future__ import print_function
-from treegram import *
+from gram.treegram import *
 from p4 import func
 
 # drawtree_commands = """
@@ -118,7 +118,7 @@ class TreeGramRadial(TreeGram):
                 # Do the phylip drawtree command
                 dupeTree.writePhylip("intree")
                 # sys.exit()
-                f = file("drawtree_commands", 'w')
+                f = open("drawtree_commands", 'w')
                 drawtree_commands2 = "\nintree\np\nl\nv\nn\nr\n%i\ny\n" % rotate
                 f.write(drawtree_commands2)
                 f.close()
@@ -129,7 +129,7 @@ class TreeGramRadial(TreeGram):
                     "plotfile"), "Something didn't work.  Probably with the drawtree_commands.  Fix me!"
                 os.remove("intree")
                 os.remove("drawtree_commands")
-                f = file("plotfile")
+                f = open("plotfile")
                 ll = f.readlines()
                 f.close()
                 #os.system('open plotfile')

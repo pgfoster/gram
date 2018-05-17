@@ -543,13 +543,13 @@ class Plot(Gram):
         return c
 
     def xYText(self, x, y, theText):
-        assert isinstance(theText, basestring), "The arg theText should be a string."
+        assert isinstance(theText, str), "The arg theText should be a string."
         c = PlotXYText(self, x, y, theText)
         self.graphics.append(c)
         return c
 
     def barsText(self, barNum, val, theText):
-        assert isinstance(theText, basestring)
+        assert isinstance(theText, str)
         c = PlotBarsText(self, barNum, val, theText)
         self.graphics.append(c)
         return c
@@ -711,6 +711,6 @@ class Plot(Gram):
 #         #    PlotGraphic.setBB == Plot.setBB)
 
 
-from xy import *
-from axis import *
-from bars import *
+from gram.xy import *
+from gram.axis import *
+from gram.bars import *

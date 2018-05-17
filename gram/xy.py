@@ -1,6 +1,6 @@
-from gram import *
-from plot import Plot
-from axis import XYAxis
+from gram.gram import *
+from gram.plot import Plot
+from gram.axis import XYAxis
 
 
 class XYPoint(object):

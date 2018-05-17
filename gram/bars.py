@@ -1,6 +1,6 @@
-from plot import Plot
-from gram import GramGraphic, GramText, GramCoord, GramRect, GramError, GramColor
-from axis import XYAxis, BarsAxis
+from gram.plot import Plot
+from gram.gram import GramGraphic, GramText, GramCoord, GramRect, GramError, GramColor
+from gram.axis import XYAxis, BarsAxis
 import math
 import sys
 
@@ -26,7 +26,7 @@ class PlotBarSets(GramGraphic):
             raise GramError(gm)
         else:
             firstOne = barNames[0]
-            if not isinstance(firstOne, basestring):
+            if not isinstance(firstOne, str):
                 gm.append(
                     "***** First barName (%s) is not a string." % firstOne)
                 raise GramError(gm)
@@ -163,7 +163,7 @@ class PlotBarSet(GramGraphic):
         self.plot = plot
         self.barSetNum = barSetNum
         self.barSetsObject = barSetsObject
-        assert isinstance(fillColor, basestring)
+        assert isinstance(fillColor, str)
         self.fillColor = fillColor
         self.bars = []
 
