@@ -485,9 +485,9 @@ class TreeGram(Gram):
         self.brackets.append(uN.bracket)
         return uN.bracket
 
-    def setThickBranch(self, nodeSpecifier, thickness):
+    def setThickBranch(self, nodeSpecifier, thickness, colour):
         theNode = self.tree.node(nodeSpecifier)
-        theNode.thickBranch = TreeGramThickBranch(self, theNode, thickness)
+        theNode.thickBranch = TreeGramThickBranch(self, theNode, thickness, colour)
         self.thickBranches.append(theNode.thickBranch)
 
     def setNodeConfidenceBox(self, theNode):
@@ -668,19 +668,6 @@ class TreeGram(Gram):
                 n.cB.xPosn = n.parent.xPosn0 * self.scale
                 n.cB.yPosn = n.yPosn0 * self.yScale
 
-        # Node.br.label and Node.br.uLabel
-        for n in self.tree.iterNodes():
-            if n.br and n.br.label:
-                n.br.label.cA.xPosn = n.cB.xPosn + \
-                    (n.cA.xPosn - n.cB.xPosn) / 2.
-                n.br.label.cA.yPosn = n.cB.yPosn + \
-                    (n.cA.yPosn - n.cB.yPosn) / 2.
-            if n.br and n.br.uLabel:
-                n.br.uLabel.cA.xPosn = n.cB.xPosn + \
-                    (n.cA.xPosn - n.cB.xPosn) / 2.
-                n.br.uLabel.cA.yPosn = n.cB.yPosn + \
-                    (n.cA.yPosn - n.cB.yPosn) / 2.
-
         if self.wrapLeafLabelsAt:
             if self.wrapLeafLabelsAt == 'commas':
                 #raise GramError("no workee! fix me!")
@@ -741,6 +728,19 @@ class TreeGram(Gram):
                         theExtra = newHeight - oldHeight
                         self.extraYSpaceAtNode(n, extra=theExtra)
 
+        # Node.br.label and Node.br.uLabel
+        for n in self.tree.iterNodes():
+            if n.br and n.br.label:
+                n.br.label.cA.xPosn = n.cB.xPosn + \
+                    (n.cA.xPosn - n.cB.xPosn) / 2.
+                n.br.label.cA.yPosn = n.cB.yPosn + \
+                    (n.cA.yPosn - n.cB.yPosn) / 2.
+            if n.br and n.br.uLabel:
+                n.br.uLabel.cA.xPosn = n.cB.xPosn + \
+                    (n.cA.xPosn - n.cB.xPosn) / 2.
+                n.br.uLabel.cA.yPosn = n.cB.yPosn + \
+                    (n.cA.yPosn - n.cB.yPosn) / 2.
+
         if self.doSmartLabels:  # Either True or 'semi'
             print("TreeGram.setPositions().  doSmartLabels is %s" % self.doSmartLabels)
             for n in self.tree.iterInternalsNoRoot():
@@ -770,8 +770,7 @@ class TreeGram(Gram):
                     # too long for the branch, then it goes on
                     # the right.
 
-                    # print "n %2i %s        %s" % (n.nodeNum,
-                    # n.label.style, n.label.myStyle)
+                    # print("n %2i %s        %s" % (n.nodeNum,n.label.style, n.label.myStyle))
                     if self.doSmartLabels is True:
                         if n.parent.leftChild == n:
                             n.label.style = 'node upper left'
@@ -782,8 +781,7 @@ class TreeGram(Gram):
                             if self.engine == 'svg':
                                 theLabelLen += 0.1  # a mm
                             theBrLen = n.cA.xPosn - n.parent.cA.xPosn
-                            # print "theLabelLen %.3f     theBrLen  %.3f" %
-                            # (theLabelLen, theBrLen)
+                            # print("theLabelLen %.3f     theBrLen  %.3f" %(theLabelLen, theBrLen))
                             if theLabelLen <= theBrLen:
                                 # print "The label is short enough, so it goes
                                 # on upper left (anchor='')."
@@ -928,12 +926,6 @@ class TreeGram(Gram):
             for b in self.brackets:
                 ss.append(b.getTikz())
 
-        if self.thickBranches:
-            ss.append('')
-            ss.append("%% thickBranches, behind everything, so first")
-            for b in self.thickBranches:
-                ss.append(b.getTikz())
-
         if self.cBoxes:
             ss.append('')
             ss.append("%% node confidence boxes")
@@ -964,6 +956,14 @@ class TreeGram(Gram):
             ss.append("%% broken branches")
             for bb in self.brokenBranches:
                 ss.append(bb.getTikz())
+
+        if self.thickBranches:
+            ss.append('')
+            ss.append("%% thickBranches, in front, so after")
+            for b in self.thickBranches:
+                ss.append(b.getTikz())
+
+
 
         ss.append('')
         ss.append("%% leaf labels")
@@ -1312,8 +1312,8 @@ class TreeGramBracket(TreeGramGraphic):
         self.lowerNode = lowerNode
         self.leftNode = leftNode
         self.fill = 'Black!5'
-        self.svgFill = 'Black'
-        self.svgFillOpacity = 0.05
+        #self.svgFill = 'Black'
+        #self.svgFillOpacity = 0.05
         self.bottom = None
         self.top = None
         self.left = None
@@ -1408,8 +1408,13 @@ class TreeGramBracket(TreeGramGraphic):
         if self.leftNode:
             theFill = self.getFill()
             if theFill:
-                ss.append(r"\path [fill=%s] (%.3f,%.3f) rectangle (%.3f,%.3f);" % (
-                    theFill.tikzColor, self.left, self.bottom, theRight, self.top))
+                cA = GramCoord(xPosn=self.left, yPosn=self.bottom)
+                cB = GramCoord(xPosn=theRight, yPosn=self.top)
+                aRect = GramRect(cA, cB)
+                aRect.draw = None
+                aRect.fill = theFill
+                ssB = aRect.getTikz()
+                ss.append(ssB)
         ss.append(r"\draw [thin,line cap=round] (%.3f,%.3f) -- (%.3f,%.3f) -- (%.3f,%.3f) -- (%.3f,%.3f);" % (
             theRight - 0.1, self.top, theRight, self.top, theRight, self.bottom, theRight - 0.1, self.bottom))
         if self.label:
@@ -1423,29 +1428,20 @@ class TreeGramBracket(TreeGramGraphic):
             theRight = self.alignedRight
         else:
             theRight = self.right
-        # Hack alert.  Compensate 0.1 for svg tight bounding box.
+        # Hack alert.  Compensate for svg tight bounding box.
         # Add 0.1 to make it a bit less tight agains the text
-        if self.engine == 'svg':
-            theRight += 0.2
-        if self.engine == 'tikz':
-            theRight += 0.1
-
-        if self.rightExtra:
-            theRight += self.rightExtra
+        theRight += 0.2
 
         if self.leftNode:
             theFill = self.getFill()
             if theFill:
-                theRect = []            
-                theRect.append('<rect fill="%s" x="%.2f" y="%.2f" width="%.2f" height="%.2f"' % (
-                    theFill.svgColor, self.left * self.svgPxForCm, -
-                    self.top * self.svgPxForCm,
-                    (theRight - self.left) * self.svgPxForCm, (self.top - self.bottom) * self.svgPxForCm))
-                if theFill.svgColorOpacity:
-                    #print "bracket fill-opacity is %s" % theFill.svgColorOpacity
-                    theRect.append('fill-opacity="%s"' % theFill.svgColorOpacity)
-                theRect.append('/>')
-                ss.append(' '.join(theRect))
+                cA = GramCoord(xPosn=self.left, yPosn=self.bottom)
+                cB = GramCoord(xPosn=theRight, yPosn=self.top)
+                aRect = GramRect(cA, cB)
+                aRect.draw = None
+                aRect.fill = theFill
+                ssB = aRect.getSvg()
+                ss.append(ssB)
         ss.append('<path d="M%.2f,%.2f L%.2f,%.2f L%.2f,%.2f L%.2f,%.2f" stroke-width="1" fill="none" stroke="black"/>' % (
             (theRight - 0.1) * self.svgPxForCm, -self.top * self.svgPxForCm,
             theRight * self.svgPxForCm, -self.top * self.svgPxForCm,
@@ -1460,44 +1456,35 @@ class TreeGramBracket(TreeGramGraphic):
 
 class TreeGramThickBranch(TreeGramGraphic):
 
-    def __init__(self, treeGram, theNode, thickness):
+    def __init__(self, treeGram, theNode, thickness, colour):
         TreeGramGraphic.__init__(self)
-        self.tg = treeGram
+        assert theNode.parent
+        # self.tg = treeGram
         self.node = theNode
-        self.thickness = thickness
-        # self.cA = GramCoord(0, 0)
-        # self.cB = GramCoord(1, 1)
-        # self.cBox = GramRect(self.cA, self.cB)
-        # if self.engine == 'tikz':
-        #     self.cBox.fill = 'black!10'
-        #     self.cBox.color = 'black!50'
-        # elif self.engine == 'svg':
-        #     self.cBox.fill = 'black'
-        #     self.cBox.color = 'black'
-        #     self.cBox.fillOpacity = 0.1
-        #     self.cBox.colorOpacity = 0.5
+        #self.thickness = thickness
+        self.cA = GramCoord(0, 0)
+        self.cB = GramCoord(1, 1)
+
+        self.gl = GramLine(self.cA, self.cB)
+        self.gl.color = colour
+        self.gl.lineThickness = thickness
             
 
     def setPositions(self):
-        print("ThickBranches() setPosisions() here")
-        self.cA.xPosn = self.node.cA.xPosn - (self.down * self.tg.scale)
-        self.cA.yPosn = self.node.cA.yPosn - 0.1
-        self.cB.xPosn = self.node.cA.xPosn + (self.up * self.tg.scale)
-        self.cB.yPosn = self.node.cA.yPosn + 0.1
+        self.cA.xPosn = self.node.cA.xPosn
+        self.cA.yPosn = self.node.cA.yPosn
+        self.cB.xPosn = self.node.parent.cA.xPosn
+        self.cB.yPosn = self.node.cA.yPosn
+        
 
     def getTikz(self):
-        return self.cBox.getTikz()
+        return self.gl.getTikz()
 
     def getSvg(self):
-        return self.cBox.getSvg()
+        pass
 
     def setBB(self):
-        #theLineThickness = cmForLineThickness(self.getLineThickness())
-        #halfLineThick = theLineThickness/2.
-        self.bb[0] = self.cA.xPosn  # - halfLineThick
-        self.bb[1] = self.cA.yPosn  # - halfLineThick
-        self.bb[2] = self.cB.xPosn  # + halfLineThick
-        self.bb[3] = self.cB.xPosn  # + halfLineThick
+        pass
 
 
 class TreeGramNodeConfidenceBox(TreeGramGraphic):
@@ -1513,12 +1500,12 @@ class TreeGramNodeConfidenceBox(TreeGramGraphic):
         self.cBox = GramRect(self.cA, self.cB)
         if self.engine == 'tikz':
             self.cBox.fill = 'black!10'
-            self.cBox.color = 'black!50'
+            self.cBox.draw = 'black!50'
+            self.cBox.fill.transparent = True
         elif self.engine == 'svg':
-            self.cBox.fill = 'black'
-            self.cBox.color = 'black'
-            self.cBox.fillOpacity = 0.1
-            self.cBox.colorOpacity = 0.5
+            self.cBox.draw = 'black!50'
+            self.cBox.fill = 'black!10'
+            self.cBox.fill.transparent = True
             
 
     def setPositions(self):
