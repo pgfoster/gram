@@ -1,4 +1,3 @@
-from __future__ import print_function
 from p4 import func
 import pyx
 import os
@@ -66,6 +65,25 @@ import configparser
 # svg colors, from the svgnames option of the LaTeX xcolor package.
 validSvgColorNames = ['AliceBlue', 'AntiqueWhite', 'Aqua', 'Aquamarine', 'Azure', 'Beige', 'Bisque', 'Black', 'BlanchedAlmond', 'Blue', 'BlueViolet', 'Brown', 'BurlyWood', 'CadetBlue', 'Chartreuse', 'Chocolate', 'Coral', 'CornflowerBlue', 'Cornsilk', 'Crimson', 'Cyan', 'DarkBlue', 'DarkCyan', 'DarkGoldenrod', 'DarkGray', 'DarkGreen', 'DarkGrey', 'DarkKhaki', 'DarkMagenta', 'DarkOliveGreen', 'DarkOrange', 'DarkOrchid', 'DarkRed', 'DarkSalmon', 'DarkSeaGreen', 'DarkSlateBlue', 'DarkSlateGray', 'DarkSlateGrey', 'DarkTurquoise', 'DarkViolet', 'DeepPink', 'DeepSkyBlue', 'DimGray', 'DimGrey', 'DodgerBlue', 'FireBrick', 'FloralWhite', 'ForestGreen', 'Fuchsia', 'Gainsboro', 'GhostWhite', 'Gold', 'Goldenrod', 'Gray', 'Green', 'GreenYellow', 'Grey', 'Honeydew', 'HotPink', 'IndianRed', 'Indigo', 'Ivory', 'Khaki', 'Lavender', 'LavenderBlush', 'LawnGreen', 'LemonChiffon', 'LightBlue', 'LightCoral', 'LightCyan', 'LightGoldenrod', 'LightGoldenrodYellow', 'LightGray', 'LightGreen', 'LightGrey', 'LightPink', 'LightSalmon', 'LightSeaGreen', 'LightSkyBlue', 'LightSlateBlue', 'LightSlateGray', 'LightSlateGrey', 'LightSteelBlue', 'LightYellow', 'Lime', 'LimeGreen', 'Linen', 'Magenta', 'Maroon', 'MediumAquamarine', 'MediumBlue', 'MediumOrchid', 'MediumPurple', 'MediumSeaGreen', 'MediumSlateBlue', 'MediumSpringGreen', 'MediumTurquoise', 'MediumVioletRed', 'MidnightBlue', 'MintCream', 'MistyRose', 'Moccasin', 'NavajoWhite', 'Navy', 'NavyBlue', 'OldLace', 'Olive', 'OliveDrab', 'Orange', 'OrangeRed', 'Orchid', 'PaleGoldenrod', 'PaleGreen', 'PaleTurquoise', 'PaleVioletRed', 'PapayaWhip', 'PeachPuff', 'Peru', 'Pink', 'Plum', 'PowderBlue', 'Purple', 'Red', 'RosyBrown', 'RoyalBlue', 'SaddleBrown', 'Salmon', 'SandyBrown', 'SeaGreen', 'Seashell', 'Sienna', 'Silver', 'SkyBlue', 'SlateBlue', 'SlateGray', 'SlateGrey', 'Snow', 'SpringGreen', 'SteelBlue', 'Tan', 'Teal', 'Thistle', 'Tomato', 'Turquoise', 'Violet', 'VioletRed', 'Wheat', 'White', 'WhiteSmoke', 'Yellow', 'YellowGreen']
 
+baseColors = ['black',
+ 'darkgray',
+ 'blue',
+ 'gray',
+ 'brown',
+ 'green',
+ 'cyan',
+ 'lightgray',
+ 'lime',
+ 'magenta',
+ 'olive',
+ 'orange',
+ 'pink',
+ 'purple',
+ 'red',
+ 'teal',
+ 'violet',
+ 'white',
+ 'yellow']
 
 
 def cmForLineThickness(lt):
@@ -203,6 +221,8 @@ class Gram(object):
     _engine = 'tikz'  # or 'svg'
     _documentFontSize = 10   # 10, 11, or 12
     _pdfViewer = 'ls'
+    _pngViewer = 'ls'
+    _svgViewer = 'ls'
     _pngResolution = 140
 
     _haveReadGramRC = False
@@ -228,6 +248,7 @@ class Gram(object):
                        'dashed', 'densely dashed', 'loosely dashed']
     _styleDict = {}
     _tikzPictureDefaults = None
+    _htmlColorDict = {}
     _haveStartedPyX = False
     _defaultInnerSep = 0.1
     
@@ -258,6 +279,7 @@ class Gram(object):
         self.haveSetBuiltInTikzStyles = False
         self.bbb = [0.0] * 4  # big bounding box, ie of the whole gram
         self.haveDone_calcBigBoundingBox = False
+        # self.startPyX()     Too early to start this, because we do not know what packages to add yet.
 
         self.graphics = []
         self.grams = []
@@ -267,23 +289,6 @@ class Gram(object):
         #self.defaultLineThickness = 'thin'
 
         self.theGpdf = None
-
-        if 0:
-            if not Gram._haveReadGramRC:
-                fName = os.path.expanduser('~/.gramrc')
-                if os.path.isfile(fName):
-                    loc = {}
-                    execfile(fName, {}, loc)
-                    theFont = loc.get('font')
-                    if theFont:
-                        self.font = theFont
-                    theDocumentFontSize = loc.get('documentFontSize')
-                    if theDocumentFontSize:
-                        self.documentFontSize = theDocumentFontSize
-                    thePdfViewer = loc.get('pdfViewer')
-                    if thePdfViewer:
-                        self.pdfViewer = thePdfViewer
-                Gram._haveReadGramRC = True
 
         if not Gram._config:
             config = configparser.SafeConfigParser()
@@ -302,7 +307,7 @@ class Gram(object):
                     #     ret = config.get('Gram', anOpt)
                     #     print anOpt, ret, type(ret)
                     
-                    canSet = "font documentFontSize pdfViewer pngResolution svgPxForCm svgTextNormalWeight".split()
+                    canSet = "font documentFontSize pdfViewer pngViewer svgViewer pngResolution svgPxForCm svgTextNormalWeight".split()
                     for myAttr in canSet:
                         try:
                             ret = config.get('Gram', myAttr)
@@ -412,6 +417,18 @@ class Gram(object):
         Gram._pdfViewer = thePdfViewer
     pdfViewer = property(_getPdfViewer, _setPdfViewer)
 
+    def _getPngViewer(self):
+        return Gram._pngViewer
+    def _setPngViewer(self, thePngViewer):
+        Gram._pngViewer = thePngViewer
+    pngViewer = property(_getPngViewer, _setPngViewer)
+
+    def _getSvgViewer(self):
+        return Gram._svgViewer
+    def _setSvgViewer(self, theSvgViewer):
+        Gram._svgViewer = theSvgViewer
+    svgViewer = property(_getSvgViewer, _setSvgViewer)
+
     def _getPngResolution(self):
         return Gram._pngResolution
     def _setPngResolution(self, thePngResolution):
@@ -459,6 +476,13 @@ class Gram(object):
         Gram._tikzPictureDefaults = newVal
     tikzPictureDefaults = property(
         _getTikzPictureDefaults, _setTikzPictureDefaults)
+
+    def _getHtmlColorDict(self):
+        return Gram._htmlColorDict
+
+    def _setHtmlColorDict(self, newVal):
+        raise GramError("Don't set htmlColorDict, just modify it.")
+    htmlColorDict = property(_getHtmlColorDict, _setHtmlColorDict)
 
     def _getHaveStartedPyX(self):
         return Gram._haveStartedPyX
@@ -606,9 +630,14 @@ class Gram(object):
         gm = ['Gram.getTikz()']
         ss = []
 
+        if not self.haveStartedPyX:
+            self.startPyX()
+
         for gr in self.graphics:
             try:
+                #print(gr)
                 ret = gr.getTikz()
+                #print(ret)
                 if not isinstance(ret, str):
                     gm.append('graphic %s' % gr)
                     gm.append('getTikz() returned %s' % ret)
@@ -684,9 +713,10 @@ class Gram(object):
 
         pyx.text.set(
             #mode='latex', docclass="scrartcl", docopt='%ipt' % self.documentFontSize)
-            mode='latex', docclass="article", docopt='%ipt' % self.documentFontSize)
+            #mode='latex', docclass="article", docopt='%ipt' % self.documentFontSize)
+            cls=pyx.text.LatexRunner, docclass="article", docopt='%ipt' % self.documentFontSize)
         # default 1, changed cuz of PyX upgrade to 0.11
-        pyx.text.defaulttexrunner.pyxgraphics = 0
+        #pyx.text.defaulttexrunner.pyxgraphics = 0
 
         # construct pyxTextPreambleString, with latexUsePackages
         pyxTextPreambleString = self._makeFontLine()
@@ -707,11 +737,12 @@ class Gram(object):
         for lopc in self.latexOtherPreambleCommands:
             pyxTextPreambleString += lopc
 
-        #print "|pyxTextPreambleString is %s|" % pyxTextPreambleString
+        print("|pyxTextPreambleString is %s|" % pyxTextPreambleString)
 
         pyx.text.preamble(pyxTextPreambleString)
 
         self.haveStartedPyX = True
+        
 
     def _makeFontLine(self):
         ss = []
@@ -1002,6 +1033,13 @@ class Gram(object):
 
     def pdf(self):
         assert self.documentFontSize in [10, 11, 12]
+
+        if not self.haveStartedPyX:
+            for k,v in self.htmlColorDict.items():
+                print(k,v)
+                myColorDef = r"\definecolor{%s}{HTML}{%s}" % (k, v)
+                self.latexOtherPreambleCommands.append(myColorDef)
+
         self.render()
         theKeys = self.styleDict.keys()
         if theKeys:
@@ -1048,13 +1086,22 @@ class Gram(object):
             resolution = self.pngResolution
         pdfFileName = "%s/%s.pdf" % (self.dirName, self.baseName)
         #if not os.path.isfile(pdfFileName):
-        # We want to re-make the pdf, in case there have been changes
+
+        # We want to re-make the pdf, in case there have been changes.
+        # But we don't want to see it, so turn off pdfViewer
+        savedPdfViewer = self.pdfViewer
+        self.pdfViewer = 'ls'
+        pdfFileName = "%s/%s.pdf" % (self.dirName, self.baseName)
+        writeInColour("Making PDF file %s\n" % (pdfFileName), 'blue')
         self.pdf()
+        self.pdfViewer = savedPdfViewer
+
         pngFileName = "%s/%s.png" % (self.dirName, self.baseName)
         writeInColour("Writing PNG file %s : resolution %i\n" % (pngFileName, resolution), 'blue')
         sys.stdout.flush()
         os.system("gs -dNOPAUSE -sDEVICE=pngalpha -r%i -dBATCH -sOutputFile=%s %s" % (
             resolution, pngFileName, pdfFileName))
+        os.system("%s %s" % (self.pngViewer, pngFileName))
         
     def svg(self, extraMarginHack=1.0):
         self.engine = 'svg'
@@ -1078,7 +1125,7 @@ class Gram(object):
         sys.stdout.flush()
         self.svgWriteToOpenFile(f, self.bbb, doHackExtra=extraMarginHack)
         f.close()
-        #os.system("open -a firefox %s.svg" % self.baseName) 
+        os.system("%s %s" % (self.svgViewer, svgFName)) 
                   
     def svgWriteToOpenFile(self, flob, theBBB, doHackExtra=0.0):
         gm = ['Gram.svgWriteToOpenFile()']
@@ -1116,8 +1163,15 @@ class Gram(object):
         flob.write('\n')
 
         if self.font == 'cm':
-            raise GramError("Font cm does not work with svg")
-        elif self.font == 'helvetica':
+            #raise GramError("Font cm does not work with svg")
+            print()
+            print("=" * 75)
+            print("Font is currently 'cm', Computer Modern, which won't work with SVG files.")
+            print("Switching to Helvetica.")
+            print("=" * 75, "\n")
+            self.font = 'helvetica'
+
+        if self.font == 'helvetica':
             myFont = "Helvetica, sans-serif"
         elif self.font == "palatino":
             myFont = '"Palatino Linotype", "Book Antiqua", Palatino, serif'
@@ -1162,8 +1216,8 @@ class Gram(object):
     def cat(self):
         assert self.dirName
         if 1:
-            print("=========== t.tex =============")
-            os.system('cat %s/t.tex' % self.dirName)
+            print("=========== %s/%s.tex =============" % (self.dirName, self.baseName))
+            os.system('cat %s/%s.tex' % (self.dirName, self.baseName))
         if 1:
             if os.path.isfile("%s/%s.tikz.tex" % (self.dirName, self.baseName)):
                 print("=========== %s.tikz.tex =============" % self.baseName)
@@ -1194,7 +1248,7 @@ class Gram(object):
 
     def svgCalcBigBoundingBox(self):
         gm = ["Gram.svgCalcBigBoundingBox()"]
-        # print gm[0], "Gram._svgHackDoRotate is %s" % Gram._svgHackDoRotate
+        #print(gm[0], "Gram._svgHackDoRotate is %s" % Gram._svgHackDoRotate)
         flob = io.StringIO()
         self.svgWriteToOpenFile(flob, theBBB=[0., 0., 1., 1.])
         flob.seek(0)
@@ -1213,6 +1267,9 @@ class Gram(object):
         #print(ret)
         #print(type(ret[0]))
         #print("-------------------------")
+
+        flob.close()
+
         if not ret[0]:
             # f = open("debug.svg", "w")
             # self.svgWriteToOpenFile(f, theBBB=[0., 0., 1., 1.])
@@ -1225,32 +1282,39 @@ class Gram(object):
         #print ret[0]
         ll = [l for l in ret[0].split(b'\n') if l]
         splL = ll[0].split(b',')
-        #print splL
         assert splL[0] == b'svg2'
         # pxPerCm = 35.43307   # official
         self.bbb[0] = float(splL[1]) / self.svgPxForCm
         self.bbb[1] = float(splL[2]) / self.svgPxForCm
         self.bbb[2] = self.bbb[0] + float(splL[3]) / self.svgPxForCm
         self.bbb[3] = self.bbb[1] + float(splL[4]) / self.svgPxForCm
+        #print("got bbb:", self.bbb[0], self.bbb[1], self.bbb[2], self.bbb[3]) 
 
-        # print "svgGForIdDict is now", self.svgGForIdDict
+        #print("svgGForIdDict is now", self.svgGForIdDict)
 
+        # For this hack, if Gram._svgHackDoRotate is turned on, then the text is
+        # not rotated, and we can get the length from the inkscape bounding box.
         if not Gram._svgHackDoRotate:
             for l in ll[1:]:
                 if l.startswith(b'text'):
                     splL = l.split(b',')
-                    g = self.svgGForIdDict.get(splL[0])
+                    #print(splL)
+                    #print("svgGForIdDict", self.svgGForIdDict)
+                    g = self.svgGForIdDict.get(splL[0].decode("utf-8"))
+                    assert g # Do I want this?
                     if g:
-                        # print splL
                         g.length = float(splL[3]) / self.svgPxForCm
-                        #print "setting length for %s to %.2f cm" % (g.rawText, g.length)
+                        #print("%s setting length for '%s' to %.2f cm" % (gm[0], g.rawText, g.length))
+
+                        # The tight bounding box could be obtained, but I don't do that here anymore.
                         # g.bb[0] = (float(splL[1])) / self.svgPxForCm
                         # top = -(float(splL[2])) / self.svgPxForCm
                         # g.bb[2] = g.bb[0] + (float(splL[3])) / self.svgPxForCm
                         # myHeight = (float(splL[4])) / self.svgPxForCm
                         # g.bb[1] = top - myHeight
                         # g.bb[3] = top
-                        #print "svgCalcBigBoundingBox(), in cm:", splL[0], g.bb
+                        #print("svgCalcBigBoundingBox(), in cm:", splL[0], g.bb)
+                        #sys.exit()
 
     def tikzCalcBigBoundingBox(self):
         # print "a Gram.calcBigBoundingBoxTikz(). self is %s" % self
@@ -1311,7 +1375,7 @@ class Gram(object):
         GramCode(self, theCode)
         # The instantiation above puts it in ...?
 
-    def grid(self, llx, lly, urx, ury, color='gray'):
+    def grid(self, llx, lly, urx, ury, color='Gray'):
         g = GramGrid(llx, lly, urx, ury, color=color)
         self.graphics.append(g)
         return g
@@ -1543,64 +1607,89 @@ class GramCode(Gram):
         return '%s' % self.code
                   
 
+
 class GramColor(Gram):
-    def __init__(self, theColor):
-        if isinstance(theColor, GramColor):
-            Gram.__init__(self)
-            self.svgColor = theColor.svgColor
-            self.svgColorOpacity = theColor.svgColorOpacity
-            self.tikzColor = theColor.tikzColor
+    def __init__(self):
+        #self.svgColor = None
+        #self.svgColorOpacity = None
+        #self.tikzColor = None
+        #self.tikzColorOpacity = None 
+        self.color = None
+        self.value = None
+        self.type = None       # svg, base (ie latex), html
+        self.transparent = True
+        
+    def setColorFromString(self, theColor):
+        assert isinstance(theColor, str)
+        gm = ['GramColor.setColorFromString(%s)' % theColor]
 
-        elif isinstance(theColor, str):
-            Gram.__init__(self)
-            gm = ['GramColor.__init__()']
-            self.svgColor = None
-            self.svgColorOpacity = None
-            self.tikzColor = None
-            if "!" in theColor:
-                splColor = theColor.split('!')
-                assert len(splColor) == 2
-                try:
-                    theNum = int(splColor[1])
-                except ValueError:
-                    gm.append("Can't make sense of color '%s'" % theColor)
+        # theColor string might be "red" or it might be "red!20".  First, split
+        # off the number if it exists and put that in self.value.  The rest goes
+        # into theColorNoValue.
+        if "!" in theColor:
+            splColor = theColor.split('!')
+            assert len(splColor) == 2
+            try:
+                theNum = int(splColor[1])
+            except ValueError:
+                gm.append("Can't make sense of color '%s'" % theColor)
+                raise GramError(gm)
+            if theNum < 0 or theNum >= 100:
+                gm.append("The number in the color should be from 0-99.  Got %i" % theNum)
+                raise GramError(gm)
+            self.value = "%.2f" % (0.01 * theNum)
+            theColorNoValue = splColor[0]
+        else:
+            theColorNoValue = theColor
+
+        # Now see if theColorNoValue is a base color (eg "red") or an svg color
+        # (eg "Red") or an html color (eg 99ff33 or #FF00AA)
+        if theColorNoValue in baseColors:
+            self.type = "base"
+        elif theColorNoValue in validSvgColorNames:
+            self.type = 'svg'
+        elif len(theColorNoValue) in [6,7]:
+            if len(theColorNoValue) == 7:
+                if not theColorNoValue.startswith("#"):
+                    gm.append("HTML colour?  I don't understand this.")
                     raise GramError(gm)
-                if theNum < 0 or theNum >= 100:
-                    gm.append("The number in the color should be from 0-99.  Got %i" % theNum)
+
+                theColorNoValue = theColorNoValue[1:]
+
+            # Make the hex value uppercase
+            theColorNoValue = theColorNoValue.upper()
+
+            # Check for only digits and uppercase A-F
+            goods = string.digits + string.ascii_uppercase[:6]
+            for c in theColorNoValue:
+                if c not in goods:
+                    gm.append("Got non-hex character '%s' " % c)
+                    gm.append("problem with HTML? colour %s." % theColorNoValue)
                     raise GramError(gm)
-                upColor = splColor[0].capitalize()
-                if upColor not in validSvgColorNames:
-                    gm.append("This week, the colour should be based on svg names.  One of ---")
-                    gm.append("%s" % validSvgColorNames)
-                    gm.append("Got '%s'" % splColor[0])
-                    # raise GramError(gm)
-                    for gmPart in gm:
-                        print(gmPart)
-                    self.svgColor = splColor[0]
-                    self.svgColorOpacity = "%.2f" % (theNum * 0.01)
-                    self.tikzColor = theColor
+
+            # Put it in the self.latexHtmlColorDefsDict, but first check if we have seen it before
+            theKey = "gCol" + theColorNoValue
+            ret = self.htmlColorDict.get(theKey)
+            if ret:
+                if ret != theColorNoValue:
+                    gm.append("Duplicate key '%s' in GramColor.htmlColorDict" % theKey)
+                    gm.append("Old value '%s', new value '%s'" % (ret, theColorNoValue))
+                    raise GramError(gm)
                 else:
-                    self.svgColor = upColor
-                    self.svgColorOpacity = "%.2f" % (theNum * 0.01)
-                    self.tikzColor = theColor.capitalize()
-                    
+                    pass
             else:
-                upColor = theColor.capitalize()
-                if upColor not in validSvgColorNames:
-                    gm.append("This week, the colour should be based on svg names.  One of ---")
-                    gm.append("%s" % validSvgColorNames)
-                    gm.append("Got '%s'" % theColor)
-                    for gmPart in gm:
-                        print(gmPart)
+                self.htmlColorDict[theKey] = theColorNoValue
+            theColorNoValue = theKey  # switcheroo, so self.color becomes gColXXXXXX
+            self.type = 'html'
+        else:
+            gm.append("I don't understand the color '%s'" % theColorNoValue)
+            print("This week, the colour should be based on base or svg names.  One of ---")
+            print("%s" % baseColors)
+            print("%s" % validSvgColorNames)
+            raise GramError(gm)
 
-                    #raise GramError(gm)
-                    self.svgColor = theColor
-                    self.svgColorOpacity = None
-                    self.tikzColor = theColor
-                else:
-                    self.svgColor = upColor
-                    self.svgColorOpacity = None
-                    self.tikzColor = upColor
+        self.color = theColorNoValue
+        
 
 
 class GramTikzStyle(Gram):
@@ -1609,6 +1698,7 @@ class GramTikzStyle(Gram):
         Gram.__init__(self)
         self.name = None
         self._color = None
+        #self._opacity = None
         self._draw = None
         self._fill = None
         self._textSize = None
@@ -1639,7 +1729,15 @@ class GramTikzStyle(Gram):
         if theColor is None:
             self._color = None
         else:
-            self._color = GramColor(theColor)
+            if isinstance(theColor, GramColor):
+                self._color = theColor
+            elif isinstance(theColor, str):
+                self._color = GramColor()
+                self._color.setColorFromString(theColor)
+            else:
+                gm = ['GramTikzStyle._setColor()']
+                gm.append("Can't set color to '%s'" % theColor)
+                raise GramError(gm)
 
     def _delColor(self):
         self._color = None
@@ -1655,7 +1753,15 @@ class GramTikzStyle(Gram):
         if theDraw in [None, True, False]:
             self._draw = theDraw
         else:
-            self._draw = GramColor(theDraw)
+            if isinstance(theDraw, GramColor):
+                self._draw = theDraw
+            elif isinstance(theDraw, str):
+                self._draw = GramColor()
+                self._draw.setColorFromString(theDraw)
+            else:
+                gm = ['GramTikzStyle._setDraw()']
+                gm.append("Can't set color to '%s'" % theDraw)
+                raise GramError(gm)
 
     def _delDraw(self):
         self._draw = None
@@ -1669,7 +1775,15 @@ class GramTikzStyle(Gram):
         if theColor is None:
             self._fill = None
         else:
-            self._fill = GramColor(theColor)
+            if isinstance(theColor, GramColor):
+                self._fill = theColor
+            elif isinstance(theColor, str):
+                self._fill = GramColor()
+                self._fill.setColorFromString(theColor)
+            else:
+                gm = ['GramTikzStyle._setFill()']
+                gm.append("Can't set color to '%s'" % theColor)
+                raise GramError(gm)
 
     def _delFill(self):
         self._fill = None
@@ -2048,6 +2162,7 @@ class GramTikzStyle(Gram):
     # def getTikz(self):
     #    return ''
     def getTikzOptions(self):
+        # print("  ------- GramTikzStyle.getTikzOptions()  self=%s" % self)
         options = []
         # or self.font=='helvetica':
         if self.textSize or self.textFamily or self.textSeries or self.textShape:
@@ -2065,14 +2180,53 @@ class GramTikzStyle(Gram):
                 fStr += '\\%s' % self.textShape
             options.append(fStr)
         if self.color:
-            options.append("%s" % self.color.tikzColor)
+            assert isinstance(self.color, GramColor)
+            # if self.color.value and not self.color.transparent:
+            #     options.append("%s!%s" % (self.color.color, self.color.value[2:]))
+            # else:
+            #     options.append("%s" % self.color.color)
+            # if self.color.transparent and self.color.value:
+            #     options.append("opacity=%s" % self.color.value)
+
+            if self.color.value:
+                if self.color.transparent:
+                    options.append("%s" % self.color.color)
+                    options.append("opacity=%s" % self.color.value)
+                else:
+                    options.append("%s!%s" % (self.color.color, self.color.value[2:]))
+            else:
+                options.append("%s" % self.color.color)
+            
         if self.draw:
             if self.draw is True:
                 options.append("draw")
             else:
-                options.append("draw=%s" % self.draw.tikzColor)
+                assert isinstance(self.draw, GramColor)
+                if self.draw.value:
+                    if self.draw.transparent:
+                        options.append("draw=%s" % self.draw.color)
+                        options.append("opacity=%s" % self.draw.value)
+                    else:
+                        options.append("draw=%s!%s" % (self.draw.color, self.draw.value[2:]))
+                else:
+                    options.append("draw=%s" % self.draw.color)
+
         if self.fill:
-            options.append("fill=%s" % self.fill.tikzColor)
+            assert isinstance(self.fill, GramColor)
+            # options.append("fill=%s" % self.fill.color)
+            # if self.fill.transparent and self.fill.value:
+            #     options.append("fill opacity=%s" % self.fill.value)
+
+            if self.fill.value:
+                if self.fill.transparent:
+                    options.append("fill=%s" % self.fill.color)
+                    options.append("fill opacity=%s" % self.fill.value)
+                else:
+                    options.append("fill=%s!%s" % (self.fill.color, self.fill.value[2:]))
+            else:
+                options.append("fill=%s" % self.fill.color)
+
+
         if self.anch:
             options.append("anchor=%s" % self.anch)
         elif self.anchor:
@@ -2128,28 +2282,55 @@ class GramTikzStyle(Gram):
                 fStr += '\\%s' % self.textShape
             options.append(fStr)
 
-        if self.color:
-            options.append('stroke="%s"' % self.color.svgColor)
-            if self.color.svgColorOpacity:
-                options.append('stroke-opacity="%s"' % self.color.svgColorOpacity)
-        else:
-            # The problem with this being a css property is that I then need to
-            # use a different syntax to over-ride it.
-            options.append('stroke="black"')
 
-        # if self.draw:
-        #     if self.draw is True:
-        #         options.append('draw')
-        #     else:
-        #         options.append('draw=%s' % self.draw.svgColor)
-        #         if self.draw.svgColorOpacity:
-        #             options.append('%s' % self.draw.svgColorOpacity)
+        if self.color:
+            #print("    SVG.getSvgOptions() self is %s,  self.color is %s" % (self, self.color))
+            assert isinstance(self.color, GramColor)
+            if self.color.value:
+                if self.color.transparent:
+                    options.append('stroke="%s"' % self.color.color)
+                    options.append('stroke-opacity="%s"' % self.color.value)
+                else:
+                    # color.value, eg red!50, does not work for non-tranaparent svg 
+                    options.append('stroke="%s"' % self.color.color) 
+            else:
+                options.append('stroke="%s"' % self.color.color)
+
+        
+        if self.draw:
+            if self.draw == True:
+                options.append('stroke="black"')
+            else:
+                assert isinstance(self.draw, GramColor)
+                if self.draw.value:
+                    if self.draw.transparent:
+                        options.append('stroke="%s"' % self.draw.color)
+                        options.append('stroke-opacity="%s"' % self.draw.value)
+                    else:
+                        # color.value, eg red!50, does not work for non-tranaparent svg 
+                        options.append('stroke="%s"' % self.draw.color) 
+                else:
+                    options.append('stroke="%s"' % self.draw.color)
+
         if self.fill:
-            options.append('fill="%s"' % self.fill.svgColor)
-            if self.fill.svgColorOpacity:
-                options.append('fill-opacity="%s"' % self.fill.svgColorOpacity)
-        else:
-            if isinstance(self, GramLine):
+            #print("    SVG.getSvgOptions() self is %s,  self.fill is %s" % (self, self.fill))
+            if self.fill == True:
+                options.append('fill="black"')
+            else:
+                assert isinstance(self.fill, GramColor)
+                if self.fill.value:
+                    if self.fill.transparent:
+                        options.append('fill="%s"' % self.fill.color)
+                        options.append('fill-opacity="%s"' % self.fill.value)
+                    else:
+                        # color.value, eg red!50, does not work for non-tranaparent svg 
+                        options.append('fill="%s"' % self.fill.color) 
+                else:
+                    options.append('fill="%s"' % self.fill.color)
+        elif self.fill == None:
+            if isinstance(self, GramRect):
+                options.append('fill="none"')
+            elif isinstance(self, GramLine):
                 pass
             else:
                 options.append('fill="none"')
@@ -2171,8 +2352,6 @@ class GramTikzStyle(Gram):
             myLineThickness = cmForLineThickness(self.lineThickness)
             myLineThickness = self.svgPxForCmF(myLineThickness)
             options.append('stroke-width="%.2f"' % myLineThickness)
-            #else:
-            #    options.append('stroke-width="%.2fpt"' % self.lineThickness)
         else:
             if self.tikzPictureDefaults.lineThickness:
                 myLineThickness = cmForLineThickness(self.tikzPictureDefaults.lineThickness)
@@ -2255,7 +2434,8 @@ class GramGraphic(GramTikzStyle):
         raise GramError("setBB() called.  self is %s" % self)
 
     def getTikzOptions(self):
-        # print "------- GramGraphic.getTikzOptions()  self=%s" % self
+        #print("------- GramGraphic.getTikzOptions()  self=%s" % self)
+        #print("self.draw is %s" % self.draw)
         options = []
 
         # First get the style string.
@@ -2283,11 +2463,11 @@ class GramGraphic(GramTikzStyle):
             # print "getTikzOptions()  A  theStyleObject.anchor is %s" %
             # theStyleObject.anchor
             options.append(theStyleString)
-        # print "getTikzOptions()  B  options = %s" % options
+        #print("getTikzOptions()  B  options = %s" % options)
 
         # Then get options not associated with the style from the style string.
         nonStyleOptions = GramTikzStyle.getTikzOptions(self)
-        # print "getTikzOptions()  C  nonStyleOptions = %s" % nonStyleOptions
+        #print("getTikzOptions()  C  nonStyleOptions = %s" % nonStyleOptions)
 
         # Avoid repetition of font=\sffamily and anchor
         booger = 'font=\\sffamily'
@@ -2302,7 +2482,7 @@ class GramGraphic(GramTikzStyle):
         if theStyleObject:
             if theStyleObject.fill:
                 if isinstance(theStyleObject.fill, GramColor):
-                    nonStyleOptions.append("fill=%s" % theStyleObject.fill.tikzColor)
+                    nonStyleOptions.append("fill=%s" % theStyleObject.fill.color)
 
         # if theStyleObject and theStyleObject.anchor:
         #    booger = "anchor=%s" % theStyleObject.anchor
@@ -2314,7 +2494,7 @@ class GramGraphic(GramTikzStyle):
         return options
 
     def getSvgOptions(self):
-        #print "------- GramGraphic.getSvgOptions()  self=%s" % self
+        #print("------- GramGraphic.getSvgOptions()  self=%s" % self)
         options = []
 
         # First get the style string.
@@ -2346,7 +2526,7 @@ class GramGraphic(GramTikzStyle):
 
         # Then get options not associated with the style from the style string.
         nonStyleOptions = GramTikzStyle.getSvgOptions(self)
-        #print "getSvgOptions()  C  nonStyleOptions = %s" % nonStyleOptions
+        #print("getSvgOptions()  C  nonStyleOptions = %s" % nonStyleOptions)
 
         # Avoid repetition of font=\sffamily and anchor
         booger = 'font=\\sffamily'
@@ -2711,23 +2891,24 @@ class GramSvgMarker(GramGraphic):
             ss2 = []
             ss2.append('    <circle cx="%.2f" cy="%.2f" r="%.2f"' % (
                 mySc2, mySc2, myScR))
-            if self.color:
-                ss2.append('stroke="%s"' % self.color.svgColor)
-                if self.color.svgColorOpacity:
-                    ss2.append('stroke-opacity="%s"' % self.color.svgColorOpacity)
-            else:
-                if not self.fill:
-                    #gm.append("No color (OK), but also no fill --- invisible?")
-                    #raise GramError(gm)
-                    #self.fill = 'black'
-                    pass
-                #ss2.append('stroke="black"')
-            if self.fill:
-                ss2.append('fill="%s"' % self.fill.svgColor)
-                if self.fill.svgColorOpacity:
-                    ss2.append('fill-opacity="%s"' % self.fill.svgColorOpacity)
-            else:
-                ss2.append('fill="black"')
+            # if self.color:
+            #     ss2.append('stroke="%s"' % self.color.svgColor)
+            #     if self.color.svgColorOpacity:
+            #         ss2.append('stroke-opacity="%s"' % self.color.svgColorOpacity)
+            # else:
+            #     if not self.fill:
+            #         #gm.append("No color (OK), but also no fill --- invisible?")
+            #         #raise GramError(gm)
+            #         #self.fill = 'black'
+            #         pass
+            #     #ss2.append('stroke="black"')
+            # if self.fill:
+            #     ss2.append('fill="%s"' % self.fill.svgColor)
+            #     if self.fill.svgColorOpacity:
+            #         ss2.append('fill-opacity="%s"' % self.fill.svgColorOpacity)
+            # else:
+            #     ss2.append('fill="black"')
+            ss2 += self.getSvgOptions()
             ss2.append('/>')
             ss.append(' '.join(ss2))
 
@@ -2735,12 +2916,13 @@ class GramSvgMarker(GramGraphic):
             ss2 = []
             ss2.append('    <path d="M%.2f,0 L%.2f,%.2f M0,%.2f L%.2f,%.2f"' % (
                 mySc2, mySc2, mySc4, mySc2, mySc4, mySc2))
-            if self.color:
-                ss2.append('stroke="%s"' % self.color.svgColor)
-                if self.color.svgColorOpacity:
-                    ss2.append('stroke-opacity="%s"' % self.color.svgColorOpacity)
-            else:
-                ss2.append('stroke="black"')
+            # if self.color:
+            #     ss2.append('stroke="%s"' % self.color.svgColor)
+            #     if self.color.svgColorOpacity:
+            #         ss2.append('stroke-opacity="%s"' % self.color.svgColorOpacity)
+            # else:
+            #     ss2.append('stroke="black"')
+            ss2 += self.getSvgOptions()
             ss2.append('/>')
             ss.append(' '.join(ss2))
 
@@ -2750,12 +2932,13 @@ class GramSvgMarker(GramGraphic):
             ss2 = []
             ss2.append('    <path d="M %.2f,%.2f L %.2f,%.2f M %.2f,%.2f L %.2f,%.2f"' % (
                 mySc01, mySc01, mySc39, mySc39, mySc39, mySc01, mySc01, mySc39))
-            if self.color:
-                ss2.append('stroke="%s"' % self.color.svgColor)
-                if self.color.svgColorOpacity:
-                    ss2.append('stroke-opacity="%s"' % self.color.svgColorOpacity)
-            else:
-                ss2.append('stroke="black"')
+            # if self.color:
+            #     ss2.append('stroke="%s"' % self.color.svgColor)
+            #     if self.color.svgColorOpacity:
+            #         ss2.append('stroke-opacity="%s"' % self.color.svgColorOpacity)
+            # else:
+            #     ss2.append('stroke="black"')
+            ss2 += self.getSvgOptions()
             ss2.append('/>')
             ss.append(' '.join(ss2))
 
@@ -2763,12 +2946,13 @@ class GramSvgMarker(GramGraphic):
             ss2 = []
             ss2.append('    <path d="M 0,%.2f L%.2f,%.2f"' % (
                 mySc2, mySc4, mySc2))
-            if self.color:
-                ss2.append('stroke="%s"' % self.color.svgColor)
-                if self.color.svgColorOpacity:
-                    ss2.append('stroke-opacity="%s"' % self.color.svgColorOpacity)
-            else:
-                ss2.append('stroke="black"')
+            # if self.color:
+            #     ss2.append('stroke="%s"' % self.color.svgColor)
+            #     if self.color.svgColorOpacity:
+            #         ss2.append('stroke-opacity="%s"' % self.color.svgColorOpacity)
+            # else:
+            #     ss2.append('stroke="black"')
+            ss2 += self.getSvgOptions()
             ss2.append('/>')
             ss.append(' '.join(ss2))
 
@@ -2776,12 +2960,13 @@ class GramSvgMarker(GramGraphic):
             ss2 = []
             ss2.append('    <path d="M%.2f,0 L%.2f,%.2f"' % (
                 mySc2, mySc2, mySc4))
-            if self.color:
-                ss2.append('stroke="%s"' % self.color.svgColor)
-                if self.color.svgColorOpacity:
-                    ss2.append('stroke-opacity="%s"' % self.color.svgColorOpacity)
-            else:
-                ss2.append('stroke="black"')
+            # if self.color:
+            #     ss2.append('stroke="%s"' % self.color.svgColor)
+            #     if self.color.svgColorOpacity:
+            #         ss2.append('stroke-opacity="%s"' % self.color.svgColorOpacity)
+            # else:
+            #     ss2.append('stroke="black"')
+            ss2 += self.getSvgOptions()
             ss2.append('/>')
             ss.append(' '.join(ss2))
 
@@ -2790,12 +2975,13 @@ class GramSvgMarker(GramGraphic):
             ss2.append('    <circle cx="%.2f" cy="%.2f" r="%.2f"' % (
                 mySc2, mySc2, myScR))
             if self.color:
-                ss2.append('stroke="%s"' % self.color.svgColor)
-                if self.color.svgColorOpacity:
-                    ss2.append('stroke-opacity="%s"' % self.color.svgColorOpacity)
+                ss2.append('stroke="%s"' % self.color.color)
+                if self.color.value and self.color.transparent:
+                    ss2.append('stroke-opacity="%s"' % self.color.value)
             else:
                 ss2.append('stroke="black"')
             ss2.append('fill="none"')
+            # ss2 += self.getSvgOptions()
             ss2.append('/>')
             ss.append(' '.join(ss2))
 
@@ -2808,12 +2994,13 @@ class GramSvgMarker(GramGraphic):
                 mySc2, mySc4, 
                 mySc * 0.268, mySc, 
                 mySc * 3.732, mySc * 3.))
-            if self.color:
-                ss2.append('stroke="%s"' % self.color.svgColor)
-                if self.color.svgColorOpacity:
-                    ss2.append('stroke-opacity="%s"' % self.color.svgColorOpacity)
-            else:
-                ss2.append('stroke="black"')
+            # if self.color:
+            #     ss2.append('stroke="%s"' % self.color.svgColor)
+            #     if self.color.svgColorOpacity:
+            #         ss2.append('stroke-opacity="%s"' % self.color.svgColorOpacity)
+            # else:
+            #     ss2.append('stroke="black"')
+            ss2 += self.getSvgOptions()
             ss2.append('/>')
             ss.append(' '.join(ss2))
 
@@ -2824,9 +3011,9 @@ class GramSvgMarker(GramGraphic):
             ss2.append('    <path d="M%.2f,%.2f L%.2f,%.2f %.2f,%.2f %.2f,%.2f z"' % (
                 mySc03, mySc03, mySc37, mySc03, mySc37, mySc37, mySc03, mySc37))
             if self.color:
-                ss2.append('stroke="%s"' % self.color.svgColor)
-                if self.color.svgColorOpacity:
-                    ss2.append('stroke-opacity="%s"' % self.color.svgColorOpacity)
+                ss2.append('stroke="%s"' % self.color.color)
+                if self.color.value and self.color.transparent:
+                    ss2.append('stroke-opacity="%s"' % self.color.value)
             #else:
             #    ss2.append('stroke="black"')
             isFilled = False
@@ -2836,9 +3023,9 @@ class GramSvgMarker(GramGraphic):
                 ss2.append('stroke="black"')
             if isFilled:
                 if self.fill:
-                    ss2.append('fill="%s"' % self.fill.svgColor)
-                    if self.fill.svgColorOpacity:
-                        ss2.append('fill-opacity="%s"' % self.fill.svgColorOpacity)
+                    ss2.append('fill="%s"' % self.fill.color)
+                    if self.fill.value and self.fill.transparent:
+                        ss2.append('fill-opacity="%s"' % self.fill.value)
                 else:
                     ss2.append('fill="black"')
             else:
@@ -2853,9 +3040,9 @@ class GramSvgMarker(GramGraphic):
             ss2.append('    <path d="M%.2f,0 L%.2f,%.2f 0,%.2f z"' % (
                 mySc2, mySc4, mySc37, mySc37))
             if self.color:
-                ss2.append('stroke="%s"' % self.color.svgColor)
-                if self.color.svgColorOpacity:
-                    ss2.append('stroke-opacity="%s"' % self.color.svgColorOpacity)
+                ss2.append('stroke="%s"' % self.color.color)
+                if self.color.value and self.color.transparent:
+                    ss2.append('stroke-opacity="%s"' % self.color.value)
             #else:
             #    ss2.append('stroke="black"')
             isFilled = False
@@ -2865,9 +3052,9 @@ class GramSvgMarker(GramGraphic):
                 ss2.append('stroke="black"')
             if isFilled:
                 if self.fill:
-                    ss2.append('fill="%s"' % self.fill.svgColor)
-                    if self.fill.svgColorOpacity:
-                        ss2.append('fill-opacity="%s"' % self.fill.svgColorOpacity)
+                    ss2.append('fill="%s"' % self.fill.color)
+                    if self.fill.value and self.fill.transparent:
+                        ss2.append('fill-opacity="%s"' % self.fill.value)
                 else:
                     ss2.append('fill="black"')
             else:
@@ -2881,9 +3068,9 @@ class GramSvgMarker(GramGraphic):
             ss2.append('    <path d="M%.2f,0 L%.2f,%.2f %.2f,%.2f 0,%.2f z"' % (
                 mySc2, mySc4, mySc2, mySc2, mySc4, mySc2))
             if self.color:
-                ss2.append('stroke="%s"' % self.color.svgColor)
-                if self.color.svgColorOpacity:
-                    ss2.append('stroke-opacity="%s"' % self.color.svgColorOpacity)
+                ss2.append('stroke="%s"' % self.color.color)
+                if self.color.value and self.color.transparent:
+                    ss2.append('stroke-opacity="%s"' % self.color.value)
             #else:
             #    ss2.append('stroke="black"')
             isFilled = False
@@ -2893,9 +3080,9 @@ class GramSvgMarker(GramGraphic):
                 ss2.append('stroke="black"')
             if isFilled:
                 if self.fill:
-                    ss2.append('fill="%s"' % self.fill.svgColor)
-                    if self.fill.svgColorOpacity:
-                        ss2.append('fill-opacity="%s"' % self.fill.svgColorOpacity)
+                    ss2.append('fill="%s"' % self.fill.color)
+                    if self.fill.value and self.fill.transparent:
+                        ss2.append('fill-opacity="%s"' % self.fill.value)
                 else:
                     ss2.append('fill="black"')
             else:
@@ -2934,7 +3121,7 @@ class GramGrid(GramGraphic):
         # if self.comment:
         #    ss.append("%% %s" % self.comment)
         ss.append("\draw[%s,very thin] (%i,%i) grid (%i,%i);" %
-                  (self.color.tikzColor, self.llx, self.lly, self.urx, self.ury))
+                  (self.color.color, self.llx, self.lly, self.urx, self.ury))
         for gr in self.graphics:
             ss.append(gr.getTikz())
         return '\n'.join(ss)
@@ -2942,11 +3129,11 @@ class GramGrid(GramGraphic):
     def getSvg(self):
         ss = []
         ss.append("\n<!-- grid -->\n")
-        if self.color.svgColorOpacity:
-            ss.append('<path stroke="%s" stroke-width="0.5" d="' % self.color.svgColor)
-        else:
+        if self.color.transparent:
             ss.append('<path stroke="%s" stroke-opacity="%s" stroke-width="0.5" d="' % (
-                      self.color.svgColor, self.color.svgColorOpacity))
+                      self.color.color, self.color.value))
+        else:
+            ss.append('<path stroke="%s" stroke-width="0.5" d="' % self.color.color)
         for colNum in range(self.llx, self.urx + 1):
             ss.append('M %.1f %.1f L %.1f %.1f ' % (
                 self.svgPxForCmF(colNum), -self.svgPxForCmF(self.lly),
@@ -2990,6 +3177,7 @@ class GramText(GramGraphic):
         # self.svgId = None
         # Plus all the stuff inherited from GramTikzStyle
         
+        #print("GramText.__init__(%s)" % text)
         self.rawText = text
         self.cookedText = None
         self.corners = None
@@ -3043,8 +3231,8 @@ class GramText(GramGraphic):
         if not rawText:
             return ''
         theText = func.fixCharsForLatex(rawText)
-        # print "cookText() the raw text is %s" % rawText
-        # print "cookText() theText (a) is %s" % theText
+        #print("cookText() the raw text is %s" % rawText)
+        #print("cookText() theText (a) is %s" % theText)
         #theText = self.rawText
         cookedText = ''
         theTextFamily = self.getTextFamily()
@@ -3066,9 +3254,10 @@ class GramText(GramGraphic):
         # then we stick the text in a minipage.
         theTextWidth = self.getTextWidth()
         if theTextWidth:
-            theInnerSep = self.getInnerSep()
-            if theInnerSep:
-                theTextWidth = theTextWidth - theInnerSep
+            # Not sure why these next three lines were here.
+            #theInnerSep = self.getInnerSep()
+            #if theInnerSep:
+            #    theTextWidth = theTextWidth - theInnerSep
             theText = r"\begin{minipage}{%.3fcm}%s\end{minipage}" % (
                 theTextWidth, theText)
 
@@ -3079,12 +3268,12 @@ class GramText(GramGraphic):
 
         # 1 PostScript point = 0.35277138 mm
         ptToCm = 0.035277138
-        # print "setTextLengthHeightAndMetrics() cookedText: %s" % self.cookedText
+        #print("setTextLengthHeightAndMetrics() cookedText: %s" % self.cookedText)
 
         try:
-            #print self.cookedText
+            #print("cookedText is", self.cookedText)
             t = pyx.text.text(0.0, 0.0, self.cookedText)
-        except IOError:
+        except:
             raise GramError("pyx gagged on '%s', which was cooked to '%s'" % (
                 self.rawText, self.cookedText))
 
@@ -3095,13 +3284,14 @@ class GramText(GramGraphic):
         theTextWidth = self.getTextWidth()
         if 1 and theTextWidth:
             theInnerSep = self.getInnerSep()
+            print("theInnerSep", theInnerSep)
             if theInnerSep:
                 self.length += theInnerSep
 
         self.height = (tbb.ury_pt - tbb.lly_pt) * ptToCm
         # self.underhang = -tbb.lly_pt * ptToCm
         # self.rise = tbb.ury_pt * ptToCm
-        # print "The text '%s' is %.3f cm long, and %.3f cm  high" % (self.rawText, self.length, self.height)
+        #print("setTextLengthHeightAndMetrics() The text '%s' is %.3f cm long, and %.3f cm  high" % (self.cookedText, self.length, self.height))
         # sys.exit()
 
         #self.length = 3.
@@ -3136,7 +3326,7 @@ class GramText(GramGraphic):
         self.half_normal_x = 0.5 * tbb.ury_pt * ptToCm
 
     def getBiggestWidth(self):
-        """This assumes a multi-line rawText, with newlines '\\n' 
+        """This assumes a multi-line rawText, with newlines r'\n' 
 
         This is used by TreeGram.
         """
@@ -3161,7 +3351,7 @@ class GramText(GramGraphic):
             if thisWidth > biggestWidth:
                 biggestWidth = thisWidth
         self.rawText = savedRawText
-        print("getBiggestWidth: %.2fcm" % biggestWidth)
+        #print("getBiggestWidth: %.3fcm" % biggestWidth)
         return biggestWidth
 
     # def setBB(self):
@@ -3172,6 +3362,7 @@ class GramText(GramGraphic):
 
     def setBB(self):
         # print "GramText '%s'  setBB_tikz()" % self.rawText
+        
         if not self.cA:
             self.cA = GramCoord()
 
@@ -3265,10 +3456,10 @@ class GramText(GramGraphic):
 
                     return
 
-        if self.font == 'helvetica':
-            # This should not be needed, but it is!  Is it still?
-            # self.textFamily = 'sffamily'
-            pass
+        #if self.font == 'helvetica':
+        #    # This should not be needed, but it is!  Is it still?
+        #    # self.textFamily = 'sffamily'
+        #    pass
 
         if self.engine == 'tikz':
             self.setCookedText()
@@ -3280,7 +3471,7 @@ class GramText(GramGraphic):
         # Width for wrapping, or None
         theTextWidth = self.getTextWidth()
 
-        if not theTextWidth:
+        if not theTextWidth:     # usually this
             # if 1:
             #self.textHeight = self.bigX
             #self.textDepth = self.yuh
@@ -3322,16 +3513,18 @@ class GramText(GramGraphic):
             theTextHeight = 0.0
             theTextDepth = 0.0
 
+        #print("a GramText.setBB() for '%s';  self.length is %s, self.height is %s, bb is %s" % (self.rawText, self.length, self.height, self.bb))
+
         halfHeight = self.height / 2.0
         halfLength = self.length / 2.0
         # oneSep = (self.normal_em * 0.3333) + 0.009 # The 0.009 is a total
         # fudge, but it appears to be right.
 
         theAnch = self.getAnch()
+        #print("xxy GramText.setBB() theAnch is %s" % theAnch)
         oneInnerSep = self.getInnerSep()
         if oneInnerSep is None:
-            raise GramError(
-                "GramText.setBB(). %s getInnerSep() returned None." % self.rawText)
+            raise GramError("GramText.setBB(). %s getInnerSep() returned None." % self.rawText)
 
         theLineThickness = self.getLineThickness()
         # if oneInnerSep is None:
@@ -3474,14 +3667,10 @@ class GramText(GramGraphic):
                     (theTextHeight + oneInnerSep + oneOuterSep)
 
         elif theAnch == 'center' or theAnch is None:
-            self.bb[0] = self.cA.xPosn - \
-                (halfLength + oneInnerSep + oneOuterSep)
-            self.bb[1] = self.cA.yPosn - \
-                (halfHeight + oneInnerSep + oneOuterSep)
-            self.bb[2] = self.cA.xPosn + \
-                (halfLength + oneInnerSep + oneOuterSep)
-            self.bb[3] = self.cA.yPosn + \
-                (halfHeight + oneInnerSep + oneOuterSep)
+            self.bb[0] = self.cA.xPosn - (halfLength + oneInnerSep + oneOuterSep)
+            self.bb[1] = self.cA.yPosn - (halfHeight + oneInnerSep + oneOuterSep)
+            self.bb[2] = self.cA.xPosn + (halfLength + oneInnerSep + oneOuterSep)
+            self.bb[3] = self.cA.yPosn + (halfHeight + oneInnerSep + oneOuterSep)
 
         # ====================================
         elif theAnch == 'mid west':
@@ -3540,6 +3729,8 @@ class GramText(GramGraphic):
 
         else:
             raise GramError("anch '%s' not implemented." % theAnch)
+
+        #print("b GramText.setBB() for '%s';  self.length is %s, bb is %s" % (self.rawText, self.length, self.bb))
 
         theRotate = self.getRotate()
         if theRotate:
@@ -3620,7 +3811,10 @@ class GramText(GramGraphic):
 
     def getTikz(self):
         gm = ['GramText.getTikz() rawText=%s' % self.rawText]
-        #print gm[0]
+        #print(gm[0])
+
+        if not self.haveStartedPyX:
+            self.startPyX()
 
         if not self.cA:
             if 0:
@@ -3661,8 +3855,14 @@ class GramText(GramGraphic):
         ss.append(r'\node')
 
         options = self.getTikzOptions()
-        #print "%s, options %s" % (self.rawText, options)
+        #print("%s, options %s" % (self.rawText, options))
         # print "self.textHeight is %s" % self.textHeight
+
+        # If fill.value and fill.transparent, then fill-opacity is set to
+        # fill.value (good) but the text gets that same opacity (bad).
+        # Here is a fix.
+        if self.fill and self.fill.value and self.fill.transparent:
+            options.append("text opacity=1.0")
 
         if options:
             ss.append('[%s]' % ','.join(options))
@@ -3685,7 +3885,7 @@ class GramText(GramGraphic):
                 self.cA.xPosn, self.cA.yPosn))
         return ' '.join(ss)
 
-    def getSvg(self):
+    def getSvg(self):   # GramText
         # gm = ['GramText.getSvg() rawText=%s' % self.rawText]
         # print gm[0]
         if not self.cA:
@@ -3928,6 +4128,7 @@ class GramText(GramGraphic):
 
         # print "%20s  %+.2f  %+6.2f" % (myAnch, myDx, myDy)
 
+        #print("b GramText.getSvg() self.length is %s; svgHackDoRotate is %s" % (self.length, Gram._svgHackDoRotate))
 
         if Gram._svgHackDoRotate is True:
             if True:
@@ -3945,24 +4146,26 @@ class GramText(GramGraphic):
 
             self.setBB()
             
-        if 0:
-            print("GramText.getSvg() for %s" % self.rawText)
-            foo = self.getTextSize()
-            if foo is None:
-                foo = 'normalsize'
-            print("textSize %s px, svgPxForCm %s svgTextNormalsize %s cm fontSizeMultiplier %s" % (
-                myTextSizeStr, self.svgPxForCm, self.svgTextNormalsize, 
-                self.fontSizeMultiplierDict[foo]))
-            print("bb is ", self.bb)
+        if 1:
+            #print("wx GramText.getSvg() for '%s'" % self.rawText, "; Gram._svgHackDoRotate is %s" % Gram._svgHackDoRotate)
+            thisTextSize = self.getTextSize()
+            if thisTextSize is None:
+                thisTextSize = 'normalsize'
+            if 0:
+                print("textSize %s px, svgPxForCm %s svgTextNormalsize %s cm fontSizeMultiplier %s" % (
+                    myTextSizeStr, self.svgPxForCm, self.svgTextNormalsize, 
+                    self.fontSizeMultiplierDict[thisTextSize]))
+            #print("bb is ", self.bb)
             bbdx = self.bb[2] - self.bb[0]
             bbdy = self.bb[3] - self.bb[1]
-            print("widthFrom bb %.3f cm (%.2f px), height from bb %.3f cm (%.2f px) " % (
-                bbdx, bbdx * self.svgPxForCm, bbdy, bbdy * self.svgPxForCm))
+            if 0:
+                print("widthFrom bb %.3f cm (%.2f px), height from bb %.3f cm (%.2f px) " % (
+                    bbdx, bbdx * self.svgPxForCm, bbdy, bbdy * self.svgPxForCm))
 
         ss = []
         myDraw = self.getDraw()
         myFill = self.getFill()
-        # print "GramText.getSvg() for %s --- myDraw is %s, myFill is %s" % (self.rawText, myDraw, myFill)
+        #print("GramText.getSvg() for %s --- myDraw is %s, myFill is %s" % (self.rawText, myDraw, myFill))
         if myDraw or myFill:
             myDrDx *= self.svgPxForCm
             myDrDy *= self.svgPxForCm
@@ -3989,18 +4192,18 @@ class GramText(GramGraphic):
                 myDrX, myDrY, myDrWid, myDrHeight))
             # ss.append('stroke="black" fill="none" stroke-width="1" />\n')
             if myColor:
-                ss.append('stroke="%s"' % myColor.svgColor)
-                if myColor.svgColorOpacity:
-                    ss.append('stroke-opacity="%s"' % myColor.svgColorOpacity)
+                ss.append('stroke="%s"' % myColor.color)
+                if myColor.transparent:
+                    ss.append('stroke-opacity="%s"' % myColor.value)
             else:
                 if myDraw is True:
                     ss.append('stroke="black"')
                 else:
                     ss.append('stroke="none"')
             if myFill:
-                ss.append('fill="%s"' % myFill.svgColor)
-                if myFill.svgColorOpacity:
-                    ss.append('fill-opacity="%s"' % myFill.svgColorOpacity)
+                ss.append('fill="%s"' % myFill.color)
+                if myFill.transparent:
+                    ss.append('fill-opacity="%s"' % myFill.value)
             else:
                 ss.append('fill="none"')
             if theLineThickness:
@@ -4051,9 +4254,9 @@ class GramText(GramGraphic):
 
         myColor = self.getColor()
         if myColor:
-            ss.append('fill="%s"' % myColor.svgColor)
-            if myColor.svgColorOpacity:
-                ss.append('fill-opacity="%s"' % myColor.svgColorOpacity)
+            ss.append('fill="%s"' % myColor.color)
+            if myColor.transparent:
+                ss.append('fill-opacity="%s"' % myColor.value)
 
         if Gram._svgHackDoRotate:
             myRotate = self.getRotate()
@@ -4083,6 +4286,7 @@ class GramLine(GramGraphic):
         GramGraphic.__init__(self)
         self.cA = cA
         self.cB = cB
+        self.color = 'black'
 
     def getTikz(self):
         #gm = ['GramLine.getTikz()']
@@ -4109,50 +4313,50 @@ class GramLine(GramGraphic):
         #    ss.append("\\draw [green] plot[only marks,mark=*] coordinates {(%.3f,%.3f)};" % (self.cB.xPosn, self.cB.yPosn))
         return ' '.join(ss)
 
-    def getSvg_oldWorks(self):
-        gm = ['GramLine.getSvg()']
-        if self.svgId:
-            assert self.svgGForIdDict.get(self.svgId)
-        else:
-            self.setSvgIdAndAddToDict('line')
-        # print gm[0], self.svgId
+    # def getSvg_oldWorks(self):
+    #     gm = ['GramLine.getSvg()']
+    #     if self.svgId:
+    #         assert self.svgGForIdDict.get(self.svgId)
+    #     else:
+    #         self.setSvgIdAndAddToDict('line')
+    #     # print gm[0], self.svgId
 
-        ss = []
-        ss.append('<line id="%s" ' % self.svgId)
+    #     ss = []
+    #     ss.append('<line id="%s" ' % self.svgId)
 
-        #options = self.getTikzOptions()
-        # if options:
-        #    ss.append('[%s]' % ','.join(options))
-        myLineThickness = self.getLineThickness()
-        # print "GramLine.getSvg()  myLineThickness %s" % myLineThickness
-        myLineThickness = cmForLineThickness(myLineThickness)
-        myLineThickness = self.svgPxForCmF(myLineThickness)
+    #     #options = self.getTikzOptions()
+    #     # if options:
+    #     #    ss.append('[%s]' % ','.join(options))
+    #     myLineThickness = self.getLineThickness()
+    #     # print "GramLine.getSvg()  myLineThickness %s" % myLineThickness
+    #     myLineThickness = cmForLineThickness(myLineThickness)
+    #     myLineThickness = self.svgPxForCmF(myLineThickness)
 
-        myColor = self.getColor()
-        if myColor:
-            assert isinstance(myColor, GramColor)
+    #     myColor = self.getColor()
+    #     if myColor:
+    #         assert isinstance(myColor, GramColor)
 
-        # tikz caps ['rect', 'butt', 'round']
-        # svg caps butt square round
-        theCap = self.getCap()
-        # print "GramLine.getSvg() cap is %s" % theCap
-        if theCap == 'rect':
-            theCap = 'square'
+    #     # tikz caps ['rect', 'butt', 'round']
+    #     # svg caps butt square round
+    #     theCap = self.getCap()
+    #     # print "GramLine.getSvg() cap is %s" % theCap
+    #     if theCap == 'rect':
+    #         theCap = 'square'
 
-        ss.append('x1="%.1f" y1="%.1f"' % (
-            self.svgPxForCmF(self.cA.xPosn), -self.svgPxForCmF(self.cA.yPosn)))
-        ss.append('x2="%.1f" y2="%.1f"' % (
-            self.svgPxForCmF(self.cB.xPosn), -self.svgPxForCmF(self.cB.yPosn)))
-        ss.append('stroke-width="%.1f"' % (myLineThickness))
-        if theCap:
-            ss.append('stroke-linecap="%s"' % theCap)
-        if myColor:
-            if myColor.svgColor and myColor.svgColorOpacity:
-                ss.append('style="stroke:%s; stroke-opacity:%s"' % (myColor.svgColor, myColor.svgColorOpacity))
-            elif myColor.svgColor:
-                ss.append('style="stroke:%s"' % myColor.svgColor)
-        ss.append('/>')
-        return ' '.join(ss)
+    #     ss.append('x1="%.1f" y1="%.1f"' % (
+    #         self.svgPxForCmF(self.cA.xPosn), -self.svgPxForCmF(self.cA.yPosn)))
+    #     ss.append('x2="%.1f" y2="%.1f"' % (
+    #         self.svgPxForCmF(self.cB.xPosn), -self.svgPxForCmF(self.cB.yPosn)))
+    #     ss.append('stroke-width="%.1f"' % (myLineThickness))
+    #     if theCap:
+    #         ss.append('stroke-linecap="%s"' % theCap)
+    #     if myColor:
+    #         if myColor.svgColor and myColor.svgColorOpacity:
+    #             ss.append('style="stroke:%s; stroke-opacity:%s"' % (myColor.svgColor, myColor.svgColorOpacity))
+    #         elif myColor.svgColor:
+    #             ss.append('style="stroke:%s"' % myColor.svgColor)
+    #     ss.append('/>')
+    #     return ' '.join(ss)
 
     def getSvg(self):
         gm = ['GramLine.getSvg()']
@@ -4193,13 +4397,16 @@ class GramRect(GramLine):
 
     def __init__(self, cA, cB):
         GramLine.__init__(self, cA, cB)
+        self.color = None
+        self.draw = True
 
     def getTikz(self):
         ss = []
 
         #ss.append(r"\draw[gray,very thin] (0,0) grid (4,4);")
 
-        ss.append('\draw')
+        #ss.append('\draw')
+        ss.append('\path')
 
         options = self.getTikzOptions()
         if options:
@@ -4240,50 +4447,57 @@ class GramRect(GramLine):
 
         ss = []
         ss.append('<rect id="%s" ' % self.svgId)
-
-        #options = self.getTikzOptions()
-        # if options:
-        #    ss.append('[%s]' % ','.join(options))
-        myLineThickness = self.getLineThickness()
-        # print "GramLine.getSvg()  myLineThickness %s" % myLineThickness
-        myLineThickness = cmForLineThickness(myLineThickness)
-        myLineThickness = self.svgPxForCmF(myLineThickness)
-
-        # cId is color object, fId is the fill object
-        # Both are GramColor objects
-        cId = self.getColor()
-        if cId is None:
-            pass
-        else:
-            assert isinstance(cId, GramColor), "Got %s, should be a GramColor instance." % cId
-        #if cId.svgColor.lower() == 'black':
-        #    myColor = None
-        
-        fId = self.getFill()
-        if fId is None:
-            pass
-        else:
-            assert isinstance(fId, GramColor), "Got %s, should be a GramColor instance." % fId
-
         ss.append('x="%.2f" y="%.2f"' % (
             self.svgPxForCmF(self.cA.xPosn), -self.svgPxForCmF(self.cB.yPosn)))
         ss.append('width="%.2f" height="%.2f"' % (
             self.svgPxForCmF(self.cB.xPosn - self.cA.xPosn),
             self.svgPxForCmF(self.cB.yPosn - self.cA.yPosn)))
-        ss.append('stroke-width="%.1f"' % (myLineThickness))
+        
 
-        if cId and cId.svgColor:
-            ss.append('stroke="%s"' % cId.svgColor)
-            if cId.svgColorOpacity:
-                ss.append('stroke-opacity="%s"' % cId.svgColorOpacity)
+        if 1:
+            options = self.getSvgOptions()
+            if 0:
+                print("SVG options")
+                for opti in options:
+                    print("            %s" % opti)
+            ss += options
+            
 
-        if fId is None:
-            ss.append('fill="none"')
-        elif fId and fId.svgColor:
-            ss.append('fill="%s"' % fId.svgColor)
-            if fId.svgColorOpacity:
-                ss.append('fill-opacity="%s"' % fId.svgColorOpacity)
+        else:
+            myLineThickness = self.getLineThickness()
+            # print "GramLine.getSvg()  myLineThickness %s" % myLineThickness
+            myLineThickness = cmForLineThickness(myLineThickness)
+            myLineThickness = self.svgPxForCmF(myLineThickness)
+            ss.append('stroke-width="%.1f"' % (myLineThickness))
+
+            # cId is color object, fId is the fill object
+            # Both are GramColor objects
+            cId = self.getColor()
+            if cId is None:
+                pass
+            else:
+                assert isinstance(cId, GramColor), "Got %s, should be a GramColor instance." % cId
+
+            fId = self.getFill()
+            if fId is None:
+                pass
+            else:
+                assert isinstance(fId, GramColor), "Got %s, should be a GramColor instance." % fId
+
+            if cId and cId.color:
+                ss.append('stroke="%s"' % cId.color)
+                if cId.transparent:
+                    ss.append('stroke-opacity="%s"' % cId.value)
+
+            if fId is None:
+                ss.append('fill="none"')
+            elif fId and fId.color:
+                ss.append('fill="%s"' % fId.color)
+                if fId.transparent:
+                    ss.append('fill-opacity="%s"' % fId.value)
+
         ss.append('/>')
+        #print(' '.join(ss))
         return ' '.join(ss)
 
 
