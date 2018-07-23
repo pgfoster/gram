@@ -213,7 +213,7 @@ class PlotBar(GramGraphic):
         self.cA = GramCoord()
         self.cB = GramCoord()
         self.rect = GramRect(self.cA, self.cB)
-        self.rect.color = 'black'
+        self.rect.draw = 'black'
         # We have xPosn, yPosn, length, height, _frame, _color, graphics, and
         # bb, inherited.
 
@@ -245,7 +245,6 @@ class PlotBar(GramGraphic):
         if yDiff == 0.0:   # maybe should be math.fabs() < epsilon?
             return "<!-- val=%s -->" % self.val
         return self.rect.getSvg() + " <!-- val=%s -->" % self.val
-
 
 class PlotBarsText(GramText):
 

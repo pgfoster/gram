@@ -528,6 +528,7 @@ class Plot(Gram):
 
     def line(self, xx, yy, smooth=False):
         c = PlotLine(self, xx, yy, smooth)
+        c.color = 'black'
         self.lines.append(c)
         return c
 
