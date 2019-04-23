@@ -21,6 +21,6 @@ g = tg.setBracket(2,4, text="Bracket", rotated=False)
 tg.bracketsLineUp = False
 #tg.render()
 #tg.styleDict['bracket label'].textSize = 'tiny'
-tg.png()
-n.label.rawText = r'Ab<tspan fill="blue">cde</tspan>fgh <tspan fill="blue"> &#x2B1B;</tspan>'
+tg.pdf()
+n.label.rawText = r'Ab<tspan fill="blue">cde</tspan>fgh <tspan fill="blue"> &#x2587;</tspan>'
 tg.svg()

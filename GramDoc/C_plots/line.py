@@ -1,5 +1,5 @@
 from gram import Plot
-execfile("data1.py")
+from data1 import xx1, yy1
 gp = Plot()
 gp.baseName = 'line'
 gp.line(xx1, yy1)

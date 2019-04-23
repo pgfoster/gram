@@ -3,7 +3,7 @@ from gram import Plot
 gp = Plot()
 gp.baseName = 'xyText'
 # make an invisible plot
-xx = range(17)
+xx = list(range(17))
 yy = [math.sin(x) for x in xx]
 c = gp.line(xx, yy)
 c.colour = 'green'
@@ -24,4 +24,4 @@ gp.frameB = None
 gp.frameL = None 
 gp.frameR = None 
 gp.png() 
-# gp.svg()  # yuk!
+gp.svg()  # squares, not circles.

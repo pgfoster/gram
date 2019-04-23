@@ -33,5 +33,5 @@ for nNum in [0,1]:
     n = t.node(nNum)
     n.label.myStyle = 'wrappedNode'
 
-tg.png()
-tg.svg()  # no wrapping in svg
+tg.pdf()
+#tg.svg()  # no wrapping in svg

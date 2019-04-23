@@ -1,5 +1,5 @@
 from gram import Plot
-read('data5.py')
+from data5 import xx1, yy1, binNames, binVals
 gp = Plot()
 gp.baseName = 'lineAndBar_good'
 c = gp.bars(binNames,binVals)
@@ -18,5 +18,6 @@ gp.maxXToShow = 4.0
 gp.xAxis.tickLabelsEvery = 1
 gp.maxBarValToShow = 5000
 gp.maxYToShow = 1.0
+gp.font = 'helvetica'
 gp.png()
 gp.svg()

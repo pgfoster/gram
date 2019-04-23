@@ -1,6 +1,10 @@
+from __future__ import print_function
 from gram import Gram,GramCoord,GramGrid,GramText
 
+Gram.pdflatexOutputGoesToDevNull = True
+
 gr = Gram()
+gr.pdfViewer = 'open'
 gr.baseName = 'anchors'
 gr.font = 'helvetica'
 gr.defaultInnerSep = 0.1
@@ -19,7 +23,7 @@ for i in range(3):
     for j in range(4):
         indx = (i * 4) + j
         refPt = gr.goodAnchors[indx]
-        print indx, refPt
+        print(indx, refPt)
         n = GramCoord((2 * j) + 1,
                       (2 * i) + 1,
                       refPt)
@@ -31,7 +35,7 @@ myStr = 'Xxy'
 theTextSize = 'normalsize'
 for i in range(12):
     anch = gr.goodAnchors[i]
-    print "i=%i, anch=%s" % (i, anch)
+    print("i=%i, anch=%s" % (i, anch))
     g = GramText(anch)
     g.cA = nnDict[anch]
     g.textAnchor = 'base'
@@ -46,9 +50,9 @@ for i in range(12):
     gB.cA.yPosn = g.cA.yPosn + 1
     gB.anchor = anch
     gB.color = 'orange'
-    #gB.draw = 'blue!20'
+    gB.draw = 'blue'
     gB.lineThickness = 2
-    gB.draw = True
+    #gB.draw = True
     gB.textSize = theTextSize
     gB.rotate = 0
     gr.graphics.append(gB)
@@ -65,5 +69,8 @@ for i in range(12):
         gr.graphics.append(gB)
 
 #gr.showTextBB = True
-gr.png()
-gr.svg()
+#print(gr.graphics)
+#print(gr.getTikz())
+gr.pdf()
+#gr.png()
+#gr.svg()

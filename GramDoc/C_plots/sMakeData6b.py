@@ -5,7 +5,7 @@ import math
 from RStats import RStats
 r = RStats()
 m = r.polyModel(xx1, yy1, 3)
-print m
+print(m)
 
 maxX = max(xx1)
 minX = min(xx1)

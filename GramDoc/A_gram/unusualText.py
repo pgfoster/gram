@@ -51,6 +51,8 @@ gr.font = "palatino"
 gr.latexUsePackages.append('mdwlist')
 gr.latexUsePackages.append('booktabs')
 gr.latexUsePackages.append('graphicx')
+gr.showTextAnchor=True
+gr.showTextBB=True
 
 bNames = ['t1', 't2', 't3', 't3x', 't4', 't5']
 tt = [t1, t2, t3, t3x, t4, t5]
@@ -59,5 +61,5 @@ for dNum in range(6):
     gr.graphics = []
     gr.baseName = bNames[dNum]
     gr.text(tt[dNum],0,0)
-    print "about to do %s" % tt[dNum]
-    gr.png()
+    print("about to do %s" % tt[dNum])
+    gr.pdf()

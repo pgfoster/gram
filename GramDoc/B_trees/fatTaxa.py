@@ -45,5 +45,5 @@ b.label.anchor = 'north'
 b.label.rotate = 90
 b.label.textJustification = 'badly centered'
 tg.bracketsLineUp = False
-tg.png()
-# tg.svg()  # no workee
+tg.pdf()
+# tg.svg()  # no workee, svg does not do wrapping

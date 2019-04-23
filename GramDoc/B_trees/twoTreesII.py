@@ -4,13 +4,13 @@ t = var.trees[0]
 t.node(1).br.uName = 'X'
 t.node(5).br.uName = 'Y'
 tg = TreeGram(t, scale=7.)
-print "a", tg.internalNodeLabelSize
+print("a", tg.internalNodeLabelSize)
 tg.baseName = 'twoTreesII'
 t = t.dupe()
 tgB = TreeGramRadial(t, scale=8.,
                      slopedBrLabels=True,
                      rotate=90)
-print "b", tg.internalNodeLabelSize
+print("b", tg.internalNodeLabelSize)
 tgB.tree.root.label.yShift = 0.1
 tgB.gX = 4.8
 tgB.gY = -1.5

@@ -8,7 +8,7 @@ if 1:
     for i in range(31):
         x = i / 10.
         g = pf.gsl_ran_gamma_pdf(x, a, b)
-        print "%6.3f %6.3f" % (x, g)
+        print("%6.3f %6.3f" % (x, g))
         xx1.append(x)
         yy1.append(g)
 
@@ -23,7 +23,7 @@ if 1:
     n = Numbers(rr)
     n.binSize = 0.5
     n.histo()
-    print n.bins
+    print(n.bins)
 
     binNames = []
     binVals = []

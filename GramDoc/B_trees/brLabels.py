@@ -7,5 +7,5 @@ tg.scale = 8. # 7.035 otherwise, so a bit wider
 tg.baseName = 'brLabels'
 n = t.node('B')
 tg.setBranchULabel(n, 'uLabel')
-tg.png()
-tg.svg()
+tg.pdf()
+#tg.svg()

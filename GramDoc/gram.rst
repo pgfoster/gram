@@ -12,7 +12,7 @@ Hello World!
 
 A minimum Hello World! script would be 
 
-.. code-block:: python
+.. code:: python
 
     from gram import Gram
     gr = Gram()
@@ -108,7 +108,7 @@ The graphics are positioned in centimetre units.  The ``text``, ``line``, and
 further modification, as for example
 
 
-.. code-block:: python
+.. code:: python
 
     g = text('my text', 0,0)
     g.color = 'orange'
@@ -118,13 +118,13 @@ How to make a Gram
 
 1. Instantiate a ``Gram`` object
 
-   .. code-block:: python
+   .. code:: python
 
        gr = Gram()
 
 2. Add some GramGraphics, such as text, lines, and so on, by calling the methods 
 
-   .. code-block:: python
+   .. code:: python
 
        gr.text(...)
        gr.line(...)
@@ -134,19 +134,19 @@ How to make a Gram
 
 3. Make a graphics output file, such as a PDF, ``gr.pdf()``
 
-   .. code-block:: python
+   .. code:: python
 
        gr.pdf()
 
    or a PNG
 
-   .. code-block:: python
+   .. code:: python
 
        gr.png()
 
    or an SVG
 
-   .. code-block:: python
+   .. code:: python
 
        gr.svg()
 
@@ -186,7 +186,7 @@ A Gram can be embedded in another Gram.  To do that you put the embedded gram in
 the list of an enclosing Gram's list of ``grams``.  You can shift entire Gram
 objects with ``gX`` and ``gY``.
 
-.. code-block:: python
+.. code:: python
 
     from gram import Gram
     gr1 = Gram()
@@ -250,6 +250,7 @@ You can make PDFLaTeX verbose again for debugging by
 
     gm = Gram()
     gm.pdflatexOutputGoesToDevNull = False # default True
+
 
 This affects lines in the ``Makefile`` (mentioned above) that calls PDFLaTeX.  To get the same effect, you could just edit that ``Makefile``.   Sometimes you can see the problem when you can see that output. 
 
@@ -348,7 +349,7 @@ For GramLines, the ``lineThickness`` is given either in ``pt`` or in words as in
 One PostScript point is exactly 1/72 of an inch, and so is 0.035277138 cm.  See `lineThickness`_ for line thicknesses using words.
 For example,
 
-.. code-block:: python
+.. code:: python
 
     from gram import Gram
     gr = Gram()
@@ -357,6 +358,7 @@ For example,
     gr.grid(0,0,4,4)
     g = gr.line(1,1,2,3)
     g.colour = 'black!20'
+    g.colour.transparent = True
     g.lineThickness = 28. # pts
     g = gr.line(3, 3.5, 2, 1)
     g.lineThickness = 'semithick'
@@ -408,7 +410,7 @@ GramRect
 
 You can draw a rectangle as
 
-.. code-block:: python
+.. code:: python
 
     from gram import Gram
     gr = Gram()
@@ -431,12 +433,12 @@ GramCode
 
 Adding raw TikZ or SVG code is also possible, which would allow you to do things that Gram cannot do on its own, such as drawing curves.
 
-.. code-block:: python
+.. code:: python
 
     from gram import Gram,GramCode
     gr = Gram()
     gr.svgPxForCm = 100
-    gr.baseName = 'code'
+    gr.baseName = 'rawcode'
     gr.grid(0,0,3,3)
     gr.code("% some tikz code")
     gr.code(r"""\draw [->] (1,1) .. controls
@@ -455,9 +457,9 @@ Adding raw TikZ or SVG code is also possible, which would allow you to do things
 
     gr.svg()
 
-.. image:: ./A_gram/Gram/code.png
+.. image:: ./A_gram/Gram/rawcode.png
 
-.. image:: ./A_gram/code.svg
+.. image:: ./A_gram/rawcode.svg
 
 Text
 ----
@@ -473,7 +475,7 @@ that Gram does it.  In TikZ, one of the ways to specify where something goes is
 to use *coordinates*, and that is the way that Gram does it.  In raw TikZ
 you could say
 
-.. code-block:: latex
+.. code:: tex
 
     \begin{tikzpicture}
     \coordinate  (n1) at (-1,1);
@@ -494,7 +496,7 @@ following is raw TikZ again, and so the default there is ``0.3333em``.  The gram
 default really should not be absolute --- it should depend on the font size (eg
 using ``em``), and this can be considered a bug.
 
-.. code-block:: latex
+.. code:: tex
 
     \begin{tikzpicture} 
     \draw (0cm,6em) node[draw] {default for TikZ}
@@ -615,7 +617,7 @@ was not done, and so ``bunny1`` remains in the option list for the 'Peter' node.
 In other examples, leaving the ``style`` defined might cause problems.  In the
 output files the styles are given in a ``tikzset`` command.
 
-.. code-block:: python
+.. code:: python
 
     from gram import Gram
     gr = Gram()
@@ -668,19 +670,19 @@ output files the styles are given in a ``tikzset`` command.
 
 The resulting ``bunnies.tikz.tex`` file is
 
-.. code-block:: latex
+.. code:: tex
 
     %% This is a tikz file
 
     % This file is set up to use 10pt palatino font.
-    \tikzset{bunny2/.style={font=\small,darkgray,draw,rotate=45.0,text height=0.223cm,text depth=0.089cm},
-    bunny1/.style={font=\scshape,violet,text height=0.248cm,text depth=-0.000cm}}
+    \tikzset{bunny1/.style={font=\scshape,violet,text height=0.248cm,text depth=-0.000cm},
+    bunny2/.style={font=\small,darkgray,draw,rotate=45.0,text height=0.223cm,text depth=0.089cm}}
     \begin{tikzpicture}[inner sep=0.1cm]
-    \draw[gray,very thin] (0,-1) grid (4,2);
+    \draw[Gray,very thin] (0,-1) grid (4,2);
     \node [bunny1,text height=0.248cm] at (1.000,1.200) {Flopsy};
     \node [bunny1,text height=0.248cm] at (3.000,1.200) {Mopsy};
     \node [bunny2,text height=0.223cm,text depth=0.089cm] at (1.000,0.000) {Cottontail};
-    \node [bunny1,font=\Large\itshape,blue!85,draw,fill=cyan!10,anchor=south west,text height=0.348cm,text depth=0.140cm] at (3.000,0.000) {Peter};
+    \node [bunny1,font=\Large\itshape,blue,opacity=0.85,draw,fill=cyan,fill opacity=0.10,anchor=south west,text height=0.348cm,text depth=0.140cm,text opacity=1.0] at (3.000,0.000) {Peter};
     \end{tikzpicture}
 
 .. image:: ./A_gram/Gram/bunnies.png
@@ -691,7 +693,7 @@ Unusual text
 Using TikZ, you can have text in the form of other LaTeX constructs, including graphics.
 Note that these might require using LaTeX packages, and so they will need to be imported.
 
-.. code-block:: python
+.. code:: python
 
     t1 = """This is
     some
@@ -746,6 +748,8 @@ Note that these might require using LaTeX packages, and so they will need to be 
     gr.latexUsePackages.append('mdwlist')
     gr.latexUsePackages.append('booktabs')
     gr.latexUsePackages.append('graphicx')
+    gr.showTextAnchor=True
+    gr.showTextBB=True
 
     bNames = ['t1', 't2', 't3', 't3x', 't4', 't5']
     tt = [t1, t2, t3, t3x, t4, t5]
@@ -754,8 +758,8 @@ Note that these might require using LaTeX packages, and so they will need to be 
         gr.graphics = []
         gr.baseName = bNames[dNum]
         gr.text(tt[dNum],0,0)
-        print "about to do %s" % tt[dNum]
-        gr.png()
+        print("about to do %s" % tt[dNum])
+        gr.pdf()
 
 .. image:: ./A_gram/Gram/t1.png
 
@@ -776,7 +780,8 @@ Text can also be rotated, as shown here.  In this example, the bounding box and 
     gr.showTextBB = True 
     gr.showTextAnchor = True
 
-.. code-block:: python
+
+.. code:: python
 
     from gram import Gram
     gr = Gram()
@@ -793,7 +798,7 @@ Text can also be rotated, as shown here.  In this example, the bounding box and 
     g.rotate = -120
     g.draw = 'cyan'
     gr.pdf()
-    gr.svg()
+    #gr.svg()
 
 .. image:: ./A_gram/rotatedText.svg
 

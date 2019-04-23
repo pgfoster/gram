@@ -11,5 +11,6 @@ gp.frameT = None
 gp.frameB = None
 gp.frameL = None
 gp.frameR = None
+gp.font = 'helvetica'
 gp.png()
 gp.svg()

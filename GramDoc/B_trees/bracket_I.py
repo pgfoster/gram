@@ -8,5 +8,5 @@ tg.setBracket(2, 3, text='these brackets line',
               leftNode=1)
 tg.setBracket(6, 10, text='up with each other',
               leftNode=None, rotated=True)
-tg.png()
+tg.pdf()
 tg.svg()

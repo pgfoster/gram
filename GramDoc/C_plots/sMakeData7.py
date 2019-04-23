@@ -10,6 +10,6 @@ for i in range(len(rr)):
     h = 0.001 * hh[i]
     h += 1.
     pt = func.polar2square([r,h])
-    print pt
+    print(pt)
 
     

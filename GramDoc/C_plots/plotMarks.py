@@ -59,5 +59,6 @@ gp.contentSizeY = 7.0
 gp.minXToShow = 0
 gp.maxYToShow = 16
 
-gp.png()
+gp.pdf()
+gp.font = 'helvetica'
 gp.svg()

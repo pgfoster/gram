@@ -1,5 +1,5 @@
 from gram import Plot
-read('data5.py')
+from data5 import xx1, yy1, binNames, binVals
 gp = Plot()
 gp.baseName = 'lineAndBar_better'
 c = gp.bars(binNames,binVals)
@@ -16,4 +16,5 @@ gp.xAxis.title = None
 gp.xAxis.tickLabelsEvery = 2
 gp.yAxis.title = 'density'
 gp.png()
+gp.font = 'helvetica'
 gp.svg() # line plot is not smooth

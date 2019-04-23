@@ -20,5 +20,5 @@ b = tg.setBracket(6, 10, text='Rotated label',
 b.label.textSize='large'
 tg.bracketsLineUp = False
 #tg.showTextAnchor = True
-tg.png()
+tg.pdf()
 tg.svg()

@@ -13,7 +13,7 @@ if 1:
         y = (a * x * x * x) + (b * x * x) + (c * x) + d
         r1 = ((random.random() - 0.5) * 0.5)
         y += y * r1
-        print "%6.3f %6.3f" % (x, y)
+        print("%6.3f %6.3f" % (x, y))
         xx1.append(x)
         yy1.append(y)
 

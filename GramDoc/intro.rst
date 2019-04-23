@@ -131,6 +131,7 @@ in Gram by default is
     pdfViewer = 'ls'
     svgTextNormalWeight = 400
 
+
 You can set some defaults in a ``~/.gram.conf`` file, or in a ``gram.conf`` file in your working directory.  Such a file is like this, for example
 
 ::
@@ -139,6 +140,7 @@ You can set some defaults in a ``~/.gram.conf`` file, or in a ``gram.conf`` file
     font = palatino
     documentFontSize = 11
     pdfViewer = open
+
 
 Notice in a Python script that strings need to be quoted, but in the ``conf`` file they do not.
 
@@ -149,6 +151,7 @@ over-riding defaults that you or the program set.
 
     gr = Gram()
     gr.font = 'palatino'
+
 
 The ``documentFontSize`` is the size of font that is ``normalsize`` in the enclosing
 document.  Font sizes are relative to that, as in LaTeX (small, normalsize, large, and so on).
@@ -212,7 +215,7 @@ Dimensions of PDF, PNG, and SVG made by gram
 
 Here I make a simple 1 cm × 1 cm square, output in a PNG and an SVG file.  The PNG is made from a PDF so we get that as well.  Here are ``size.png`` and ``size.svg``.
 
-.. code-block:: python
+.. code:: python
 
     from gram import Gram
 
@@ -259,7 +262,7 @@ We can start with an SVG or PDF from gram and tweak it further in Inkscape.  Thi
 
 - whether we get `old style figures <https://en.wikipedia.org/wiki/Text_figures>`_ (OSF) in Palatino
 
-.. code-block:: python
+.. code:: python
 
     from gram import Gram
 

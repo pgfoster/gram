@@ -13,5 +13,6 @@ c.colour = 'gray'
 c.lineThickness = 'very thick'
 gp.xAxis.title = None
 gp.yAxis.title = None
+gp.font = 'helvetica'
 gp.png()
 gp.svg()

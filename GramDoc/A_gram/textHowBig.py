@@ -3,6 +3,7 @@ tString = "(('TreeGram needs to', 'know how big this':0.05, 'text is':0.5), (Boo
 t = func.readAndPop(tString)
 t.draw()
 tg = TreeGram(t)
+tg.font = 'helvetica'
 # for nNum in [2,3,4]:
 #     n = t.node(nNum)
 #     n.label.draw = True

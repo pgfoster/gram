@@ -1,4 +1,4 @@
-aa = range(1000)
+aa = list(range(1000))
 for i in range(len(aa)):
     aa[i] /= 10.
 
@@ -13,12 +13,14 @@ for i in range(len(aa)):
 from gram import Plot
 gp = Plot()
 gp.baseName = 'circle'
-gp.line(xx, yy)
+g = gp.line(xx, yy)
+g.color = 'red'
 
 gp.xAxis.title = None
 gp.yAxis.title = None
 gp.maxYToShow = 10000
 
+gp.font = 'helvetica'
 gp.png()
 gp.svg()
 

@@ -13,4 +13,4 @@ g.anchor = 'south west'
 g.rotate = -120
 g.draw = 'cyan'
 gr.pdf()
-gr.svg()
+#gr.svg()

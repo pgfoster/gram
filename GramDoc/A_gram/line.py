@@ -5,6 +5,7 @@ gr.font = 'Helvetica'
 gr.grid(0,0,4,4)
 g = gr.line(1,1,2,3)
 g.colour = 'black!20'
+g.colour.transparent = True
 g.lineThickness = 28. # pts
 g = gr.line(3, 3.5, 2, 1)
 g.lineThickness = 'semithick'

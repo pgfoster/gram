@@ -2,7 +2,7 @@ from gram import Gram
 myText = r"""This is some\\ multi-line text that
 does not work so well.\\ With $\alpha$  unusual $\beta$ characters."""
 
-if 1:  # This works
+if 0:  # This works
     gr = Gram()
     gr.baseName = 'minipage'
     stuff = r"\begin{minipage}{12cm}%s\end{minipage}" % myText
@@ -35,7 +35,20 @@ if 0:  # This does not work
     gr = Gram()
     gr.baseName = 'verbatim'
     gr.latexUsePackages.append('fancyvrb')
+    print("appended fancyvrb")
     stuff = r"""\begin{Verbatim}This is some verbatim.\end{Verbatim}"""
+    #stuff = myText
+    g = gr.text(stuff, 1,2)
+    gr.pdflatexOutputGoesToDevNull = False
+    gr.pdf()
+
+if 0:  # This does not work
+    gr = Gram()
+    gr.baseName = 'shortverbatim'
+    gr.latexUsePackages.append('fancyvrb')
+    print("appended fancyvrb")
+    stuff = r"""This is |short verbatim|"""
+    #stuff = myText
     g = gr.text(stuff, 1,2)
     gr.pdflatexOutputGoesToDevNull = False
     gr.pdf()

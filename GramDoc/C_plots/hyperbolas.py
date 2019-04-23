@@ -39,5 +39,5 @@ gp.yAxis.title = None
 gp.yAxis.sig = '%.1f'
 gp.baseName = 'hyperbolas'
 gp.png()
-#gp.svg()
+gp.svg() # does not work, due to latex math
 

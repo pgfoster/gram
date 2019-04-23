@@ -1,5 +1,5 @@
 from gram import Plot
-read("data4.py")
+from data4 import nv1, nv2
 
 # Prepare the numbers, using p4.Numbers.  Make the padMin and padMax
 # the same for both data, so that the histo lists are the same size.

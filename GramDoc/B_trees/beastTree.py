@@ -8,5 +8,5 @@ tg.baseName = 'beastA'
 for n in t.iterNodes():
     if not n.isLeaf:
         tg.setNodeConfidenceBox(n)
-tg.png()
-tg.svg()
+tg.pdf()
+#tg.svg()

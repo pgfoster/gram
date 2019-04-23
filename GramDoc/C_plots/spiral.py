@@ -27,7 +27,7 @@ for rev in range(8):
     yy = yyy[rev]
     g = gp.line(xx,yy,smooth=True)
     g.lineStyle = gp.goodLineStyles[rev]
-    print g.lineStyle
+    print(g.lineStyle)
 gp.contentSizeX = 4.5
 gp.contentSizeY = gp.contentSizeX
 gp.xAxis.title = None
