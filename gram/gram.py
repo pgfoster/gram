@@ -1029,7 +1029,7 @@ class Gram(object):
 
     def epdf(self):
         """For backward compatability.  Calls pdf()"""
-        pdf(self)
+        self.pdf()
 
     def pdf(self):
         assert self.documentFontSize in [10, 11, 12]
