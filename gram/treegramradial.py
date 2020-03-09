@@ -594,6 +594,8 @@ class TreeGramRadial(TreeGram):
         g.anchor = 'center'
         g.innerSep = 0.0
         g.textSize = self.leafLabelSize
+        if g.defaultTextFamily:
+            g.textFamily = g.defaultTextFamily
         #g.textShape = 'itshape'
         if self.engine == 'tikz':
             g.setBB()
@@ -606,6 +608,8 @@ class TreeGramRadial(TreeGram):
         g.innerSep = 0.07
         g.fill = 'white'
         g.textSize = self.internalNodeLabelSize
+        if g.defaultTextFamily:
+            g.textFamily = g.defaultTextFamily
         if self.engine == 'tikz':
             g.setBB()
         Gram._styleDict[g.name] = g
@@ -617,6 +621,8 @@ class TreeGramRadial(TreeGram):
         g.innerSep = 0.07
         g.fill = 'white'
         g.textSize = self.internalNodeLabelSize
+        if g.defaultTextFamily:
+            g.textFamily = g.defaultTextFamily
         if self.engine == 'tikz':
             g.setBB()
         Gram._styleDict[g.name] = g
@@ -625,6 +631,8 @@ class TreeGramRadial(TreeGram):
         g.cA = GramCoord(0, 0)
         g.name = 'tgr branch'
         g.textSize = self.branchLabelSize
+        if g.defaultTextFamily:
+            g.textFamily = g.defaultTextFamily
         g.innerSep = 0.05
         if self.engine == 'tikz':
             g.setBB()

@@ -218,6 +218,7 @@ unsetTerminalColor = unsetTerminalColour
 class Gram(object):
 
     _font = 'Helvetica'
+    _defaultTextFamily = None
     _engine = 'tikz'  # or 'svg'
     _documentFontSize = 10   # 10, 11, or 12
     _pdfViewer = 'ls'
@@ -307,7 +308,9 @@ class Gram(object):
                     #     ret = config.get('Gram', anOpt)
                     #     print anOpt, ret, type(ret)
                     
-                    canSet = "font documentFontSize pdfViewer pngViewer svgViewer pngResolution svgPxForCm svgTextNormalWeight".split()
+                    canSet = """font documentFontSize pdfViewer pngViewer svgViewer
+                              defaultTextFamily
+                              pngResolution svgPxForCm svgTextNormalWeight""".split()
                     for myAttr in canSet:
                         try:
                             ret = config.get('Gram', myAttr)
@@ -383,6 +386,24 @@ class Gram(object):
         gm.append("Caught an attempt to delete self.font-- don't do that.")
         raise GramError(gm)
     font = property(_getFont, _setFont, _delFont)
+
+    def _getDefaultTextFamily(self):
+        return Gram._defaultTextFamily
+    def _setDefaultTextFamily(self, theDefaultTextFamily):
+        gm = ['Gram._setDefaultTextFamily()']
+        if theDefaultTextFamily == None:
+            self._defaultTextFamily = None
+        else:
+            assert isinstance(theDefaultTextFamily, str)
+            lowDefaultTextFamily = theDefaultTextFamily.lower()
+            goodDefaultTextFamilies = self._goodTextFamilies
+            if lowDefaultTextFamily not in goodDefaultTextFamilies:
+                gm.append("You can only set property 'defaultTextFamily' to one of")
+                gm.append("%s" % goodDefaultTextFamilies)
+                gm.append("or None. Got attempt to set to '%s'" % theDefaultTextFamily)
+                raise GramError(gm)
+            Gram._defaultTextFamily = lowDefaultTextFamily
+    defaultTextFamily = property(_getDefaultTextFamily, _setDefaultTextFamily)
 
     def _getEngine(self):
         return Gram._engine
@@ -617,9 +638,10 @@ class Gram(object):
 
     ##################################
     def setPositions(self):
-
+        # print(self, "setPositions()")
         # if hasattr(self, 'tikzPictureDefaults') and self.tikzPictureDefaults:
         self.tikzPictureDefaults.innerSep = self.defaultInnerSep
+        self.tikzPictureDefaults.textFamily = self.defaultTextFamily
 
         # print "\nGram.setPositions() engine=%s  There are %i graphics." %
         # (self.engine, len(self.graphics))
@@ -646,6 +668,7 @@ class Gram(object):
             except:
                 gm.append('getTikz() failed for graphic %s' % gr)
                 raise GramError(gm)
+
         try:
             return '\n'.join(ss)
         except:
@@ -2460,14 +2483,13 @@ class GramGraphic(GramTikzStyle):
                 print("styleDict can't find style '%s'" % theStyleString)
                 raise
             # print " *** theStyleObject.textFamily is %s" % theStyleObject.textFamily
-            # print "getTikzOptions()  A  theStyleObject.anchor is %s" %
-            # theStyleObject.anchor
+            # print("getTikzOptions()  A  theStyleObject.anchor is %s" % theStyleObject.anchor)
             options.append(theStyleString)
-        #print("getTikzOptions()  B  options = %s" % options)
+        # print("getTikzOptions()  B  options = %s" % options)
 
         # Then get options not associated with the style from the style string.
         nonStyleOptions = GramTikzStyle.getTikzOptions(self)
-        #print("getTikzOptions()  C  nonStyleOptions = %s" % nonStyleOptions)
+        # print("getTikzOptions()  C  nonStyleOptions = %s" % nonStyleOptions)
 
         # Avoid repetition of font=\sffamily and anchor
         booger = 'font=\\sffamily'
@@ -2490,7 +2512,7 @@ class GramGraphic(GramTikzStyle):
         #        nonStyleOptions.remove(booger)
 
         options += nonStyleOptions
-        # print "getTikzOptions()  D  (final) options = %s" % options
+        # print("getTikzOptions()  D  (final) options = %s" % options)
         return options
 
     def getSvgOptions(self):
@@ -2601,6 +2623,11 @@ class GramGraphic(GramTikzStyle):
             st = self.styleDict[self.style]
             if st.textFamily is not None:
                 ret = st.textFamily
+        elif ret is None and self.tikzPictureDefaults:
+            if self.tikzPictureDefaults.textFamily is not None:
+                ret = self.tikzPictureDefaults.textFamily
+        elif ret is None and self.defaultTextFamily:
+            ret = self.defaultTextFamily
         return ret
 
     def getTextSeries(self):
@@ -3261,7 +3288,7 @@ class GramText(GramGraphic):
             theText = r"\begin{minipage}{%.3fcm}%s\end{minipage}" % (
                 theTextWidth, theText)
 
-        # print "cookText() theText (b) is %s" % theText
+        # print("cookText() theText (b) is %s" % theText)
         return theText
 
     def setTextLengthHeightAndMetrics(self):
@@ -3855,7 +3882,7 @@ class GramText(GramGraphic):
         ss.append(r'\node')
 
         options = self.getTikzOptions()
-        #print("%s, options %s" % (self.rawText, options))
+        # print("%s, options %s" % (self.rawText, options))
         # print "self.textHeight is %s" % self.textHeight
 
         # If fill.value and fill.transparent, then fill-opacity is set to

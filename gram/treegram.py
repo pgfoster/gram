@@ -505,6 +505,8 @@ class TreeGram(Gram):
         g.name = 'leaf'
         g.anchor = 'west'
         g.textSize = self.leafLabelSize
+        if g.defaultTextFamily:
+            g.textFamily = g.defaultTextFamily
         g.innerSep = 0.13
         if self.engine in ['tikz']:
             g.setBB()
@@ -515,6 +517,8 @@ class TreeGram(Gram):
         g.name = 'root'
         g.anchor = 'east'
         g.textSize = self.leafLabelSize
+        if g.defaultTextFamily:
+            g.textFamily = g.defaultTextFamily
         if self.engine in ['tikz']:
             g.setBB()
         Gram._styleDict[g.name] = g
@@ -524,6 +528,8 @@ class TreeGram(Gram):
         g.name = 'node right'
         g.anchor = 'west'
         g.textSize = self.internalNodeLabelSize
+        if g.defaultTextFamily:
+            g.textFamily = g.defaultTextFamily
         g.innerSep = 0.03
         if self.engine in ['tikz']:
             g.setBB()
@@ -534,6 +540,8 @@ class TreeGram(Gram):
         g.name = 'node upper right'
         g.anchor = 'south west'
         g.textSize = self.internalNodeLabelSize
+        if g.defaultTextFamily:
+            g.textFamily = g.defaultTextFamily
         g.innerSep = 0.03
         if self.engine in ['tikz']:
             g.setBB()
@@ -544,6 +552,8 @@ class TreeGram(Gram):
         g.name = 'node lower right'
         g.anchor = 'north west'
         g.textSize = self.internalNodeLabelSize
+        if g.defaultTextFamily:
+            g.textFamily = g.defaultTextFamily
         g.innerSep = 0.03
         if self.engine in ['tikz']:
             g.setBB()
@@ -554,6 +564,8 @@ class TreeGram(Gram):
         g.name = 'node upper left'
         g.anchor = 'south east'
         g.textSize = self.internalNodeLabelSize
+        if g.defaultTextFamily:
+            g.textFamily = g.defaultTextFamily
         g.innerSep = 0.03
         if self.engine in ['tikz']:
             g.setBB()
@@ -586,6 +598,8 @@ class TreeGram(Gram):
         g.name = 'node lower left'
         g.anchor = 'north east'
         g.textSize = self.internalNodeLabelSize
+        if g.defaultTextFamily:
+            g.textFamily = g.defaultTextFamily
         g.innerSep = 0.03
         if self.engine in ['tikz']:
             g.setBB()
@@ -615,6 +629,8 @@ class TreeGram(Gram):
         g.cA = GramCoord(0, 0)
         g.name = 'branch'
         g.textSize = self.branchLabelSize
+        if g.defaultTextFamily:
+            g.textFamily = g.defaultTextFamily
         g.innerSep = 0.025
         #g.anchor = 'south'
         if self.engine in ['tikz']:
@@ -626,6 +642,8 @@ class TreeGram(Gram):
         g.name = 'bracket label'
         g.anchor = 'west'
         g.textSize = self.leafLabelSize
+        if g.defaultTextFamily:
+            g.textFamily = g.defaultTextFamily
         g.innerSep = 0.2
         if self.engine in ['tikz']:
             g.setBB()

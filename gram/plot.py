@@ -443,6 +443,8 @@ class Plot(Gram):
         g.cA = GramCoord(0, 0)
         g.name = 'tickLabel'
         g.textSize = self.tickLabelSize
+        if g.defaultTextFamily:
+            g.textFamily = g.defaultTextFamily
         if self.engine == 'tikz':
             g.setBB()
         Gram._styleDict[g.name] = g
@@ -451,6 +453,8 @@ class Plot(Gram):
         g.cA = GramCoord(0, 0)
         g.name = 'axisLabel'
         g.textSize = self.axisLabelSize
+        if g.defaultTextFamily:
+            g.textFamily = g.defaultTextFamily
         if self.engine == 'tikz':
             g.setBB()
         Gram._styleDict[g.name] = g
