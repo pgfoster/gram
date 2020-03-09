@@ -853,23 +853,7 @@ class Gram(object):
                 "\n\\path[ultra thin, draw=red] (current bounding box.south west) ")
             fA.write("rectangle (current bounding box.north east);\n")
 
-        for gr in self.grams:
-            if 0:
-                if gr.baseName == self.baseName:
-                    gm.append("Embedded gram baseName '%s'." % (gr.baseName))
-                    gm.append(
-                        "is the same as parent gram baseName '%s'." % (self.baseName))
-                    gm.append("That is too confusing.  Make them different.")
-                    raise GramError(gm)
-            if gr.gX or gr.gY:
-                fA.write(
-                    '\\begin{scope}[xshift=%.3fcm,yshift=%.3fcm]\n' % (gr.gX, gr.gY))
-            #fA.write('\\input{%s.B.tikz.tex}\n' % gr.baseName)
-            tricks = gr.getTikz()
-            fA.write(tricks)
-            fA.write("\n")
-            if gr.gX or gr.gY:
-                fA.write('\\end{scope}\n')
+        self.writeTikzOfEmbeddedGrams(fA)
 
         bbb = self.bbb[:]
         # if self.makeEpdfBoundingBoxBiggerBy:
@@ -889,6 +873,18 @@ class Gram(object):
         fA.write('\\end{tikzpicture}\n')
         fA.close()
         os.chdir(thisDir)
+
+    def writeTikzOfEmbeddedGrams(self, fA):
+        for gr in self.grams:
+            if gr.gX or gr.gY:
+                fA.write('\\begin{scope}[xshift=%.3fcm,yshift=%.3fcm]\n' % (gr.gX, gr.gY))
+            tricks = gr.getTikz()
+            fA.write(tricks)
+            fA.write("\n")
+            gr.writeTikzOfEmbeddedGrams(fA)
+            if gr.gX or gr.gY:
+                fA.write('\\end{scope}\n')
+
 
     def _writeTexStuff(self, flavour, inputTikzLine=None, geometryLine=None):
 
