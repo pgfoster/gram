@@ -707,7 +707,7 @@ class Gram(object):
 
     ###############################################################
     def render(self):
-        
+        # print("doing a render() on %s" % self)
         if self.engine == 'tikz':
             if not self.haveStartedPyX:
                 self.startPyX()
@@ -722,7 +722,7 @@ class Gram(object):
             # pass
         self.setPositions()
         for gr in self.grams:
-            # print "doing a render() on %s" % gr
+            # print("going to do a render() on %s" % gr)
             gr.render()
         # TreeGram.render() and Plot.render() continue ...
 
