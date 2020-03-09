@@ -165,6 +165,7 @@ class PlotBarSet(GramGraphic):
         self.barSetsObject = barSetsObject
         assert isinstance(fillColor, str)
         self.fillColor = fillColor
+        self.drawColor = 'black'
         self.bars = []
 
         for binNum in range(self.plot.nBars):
@@ -178,6 +179,7 @@ class PlotBarSet(GramGraphic):
             b.setPositions()
             if self.fillColor:
                 b.rect.fill = self.fillColor
+            b.rect.draw = self.drawColor
         # sys.exit()
 ##        self.xPosn = self.contentPosnX
 ##        self.yPosn = self.contentPosnY
