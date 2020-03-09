@@ -912,12 +912,6 @@ class TreeGram(Gram):
         ss.append("%% The scale is %f, and the yScale is %f" %
                   (self.scale, self.yScale))
 
-        if self.graphics:
-            ss.append('')
-            ss.append("%% GramGraphics in the graphics list")
-            for gr in self.graphics:
-                ss.append(gr.getTikz())
-
         ss.append('')
         ss.append("%% Coordinates of nodes.")
         hasInternalNodeNames = False
@@ -937,6 +931,13 @@ class TreeGram(Gram):
                 hasInternalNodeNames = True
             if n.br and (n.br.label or n.br.uLabel):
                 hasBranchNames = True
+
+        # Put self.graphics after the coordinates, so graphics can use the coordinates.
+        if self.graphics:
+            ss.append('')
+            ss.append("%% GramGraphics in the graphics list")
+            for gr in self.graphics:
+                ss.append(gr.getTikz())
 
         if self.brackets:
             ss.append('')
@@ -1343,6 +1344,9 @@ class TreeGramBracket(TreeGramGraphic):
         self.rightOverRide = None  # for self.right
         self.rightExtra = None
 
+        # Whether to do the bracket line.  Default True
+        self.doLine = True
+
     def setRight(self):
         if self.rightOverRide:
             self.right = self.rightOverRide
@@ -1433,8 +1437,9 @@ class TreeGramBracket(TreeGramGraphic):
                 aRect.fill = theFill
                 ssB = aRect.getTikz()
                 ss.append(ssB)
-        ss.append(r"\draw [thin,line cap=round] (%.3f,%.3f) -- (%.3f,%.3f) -- (%.3f,%.3f) -- (%.3f,%.3f);" % (
-            theRight - 0.1, self.top, theRight, self.top, theRight, self.bottom, theRight - 0.1, self.bottom))
+        if self.doLine:
+            ss.append(r"\draw [thin,line cap=round] (%.3f,%.3f) -- (%.3f,%.3f) -- (%.3f,%.3f) -- (%.3f,%.3f);" % (
+                theRight - 0.1, self.top, theRight, self.top, theRight, self.bottom, theRight - 0.1, self.bottom))
         if self.label:
             ss.append(self.label.cA.getTikz())
             ss.append(self.label.getTikz())
@@ -1446,6 +1451,8 @@ class TreeGramBracket(TreeGramGraphic):
             theRight = self.alignedRight
         else:
             theRight = self.right
+        if self.rightExtra:
+            theRight += self.rightExtra
         # Hack alert.  Compensate for svg tight bounding box.
         # Add 0.1 to make it a bit less tight agains the text
         theRight += 0.2
@@ -1460,11 +1467,12 @@ class TreeGramBracket(TreeGramGraphic):
                 aRect.fill = theFill
                 ssB = aRect.getSvg()
                 ss.append(ssB)
-        ss.append('<path d="M%.2f,%.2f L%.2f,%.2f L%.2f,%.2f L%.2f,%.2f" stroke-width="1" fill="none" stroke="black"/>' % (
-            (theRight - 0.1) * self.svgPxForCm, -self.top * self.svgPxForCm,
-            theRight * self.svgPxForCm, -self.top * self.svgPxForCm,
-            theRight * self.svgPxForCm, -self.bottom * self.svgPxForCm,
-            (theRight - 0.1) * self.svgPxForCm, -self.bottom * self.svgPxForCm))
+        if self.doLine:
+            ss.append('<path d="M%.2f,%.2f L%.2f,%.2f L%.2f,%.2f L%.2f,%.2f" stroke-width="1" fill="none" stroke="black"/>' % (
+                (theRight - 0.1) * self.svgPxForCm, -self.top * self.svgPxForCm,
+                theRight * self.svgPxForCm, -self.top * self.svgPxForCm,
+                theRight * self.svgPxForCm, -self.bottom * self.svgPxForCm,
+                (theRight - 0.1) * self.svgPxForCm, -self.bottom * self.svgPxForCm))
         if self.label:
             ss.append(self.label.getSvg())
         return '\n'.join(ss)

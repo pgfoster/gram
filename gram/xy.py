@@ -464,7 +464,8 @@ class PlotScatter(PlotXYContent):
         if options:
             stuff += options
         if self.plotMark == '*':
-            stuff.append('mark size=2')
+            #stuff.append('mark size=2')
+            stuff.append('mark size=0.3')
         pList.append('[%s] ' % ','.join(stuff))
 
         pList.append("plot coordinates {")
