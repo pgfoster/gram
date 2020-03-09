@@ -569,6 +569,11 @@ class Plot(Gram):
         self.graphics.append(c)
         return c
 
+    def horizontalBracket(self, xA, xB, y, theText):
+        c = PlotHorizontalBracket(self, xA, xB, y, theText)
+        self.graphics.append(c)
+        return c
+
     def getTikz(self):
         ss = []
 

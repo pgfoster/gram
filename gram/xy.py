@@ -343,6 +343,51 @@ class PlotVerticalLine(GramLine):
         ss.append(GramLine.getTikz(self))
         return '\n'.join(ss)
 
+class PlotHorizontalBracket(GramLine):
+
+    def __init__(self, plot, xA, xB, y, theText):
+        cA = GramCoord()
+        cB = GramCoord()
+
+        GramLine.__init__(self, cA, cB)
+        self.plot = plot
+        assert xB > xA
+        self.xA = xA
+        self.xB = xB
+        self.y = y
+        self.text = GramText(theText)
+        self.text.cA = GramCoord()
+
+
+    def setPositions(self):
+        gm = ["PlotHorizontalBracket.setPositions()"]
+        assert self.plot.minXToShow is not None
+        assert self.plot.maxXToShow is not None
+        assert self.plot.minYToShow is not None
+        assert self.plot.maxYToShow is not None
+
+        self.cA.xPosn = self.plot.contentPosnX + \
+            ((self.xA - self.plot.minXToShow) * self.plot.xYScaleX)
+        self.cA.yPosn = self.plot.contentPosnY + \
+            ((self.y - self.plot.minYToShow) * self.plot.xYScaleY)
+        self.cB.xPosn = self.plot.contentPosnX + \
+            ((self.xB - self.plot.minXToShow) * self.plot.xYScaleX)
+        self.cB.yPosn = self.cA.yPosn
+
+        self.text.cA.xPosn = self.cA.xPosn + ((self.cB.xPosn - self.cA.xPosn) / 2.)
+        self.text.cA.yPosn = self.cA.yPosn
+        self.text.style = 'tickLabel'
+        self.text.anchor = 'south'
+        
+
+
+    def getTikz(self):
+        ss = []
+        ss.append("\n% horizontal bracket in plot")
+        ss.append(GramLine.getTikz(self))
+        ss.append(GramText.getTikz(self.text))
+        return '\n'.join(ss)
+
 
 class PlotScatter(PlotXYContent):
     _plotMarksA = ['+', 'x', '*']
