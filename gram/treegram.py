@@ -1236,25 +1236,26 @@ class TreeGramGraphic(TreeGram, GramGraphic):
         #    TreeGramGraphic.setBB == TreeGram.setBB)
 
 
-class TreeGramScaleBar(GramText, TreeGramGraphic):
+class TreeGramScaleBar(TreeGramGraphic):
 
     def __init__(self, treeGram, barLength, xOffset, yOffset):
-        GramText.__init__(self, '%s' % barLength)
         TreeGramGraphic.__init__(self)
         self.tg = treeGram
+        self.label = GramText("%s" % barLength)
         self.barLength = barLength
         self.xOrig = 0.0
         self.yOrig = 0.0
         self.xOffset = xOffset
         self.yOffset = yOffset
         self.cB = GramCoord(xOffset, yOffset, 'sb_B')
-        self.cC = GramCoord(
-            xOffset + (barLength * self.tg.scale), yOffset, 'sb_C')
+        self.cC = GramCoord(xOffset + (barLength * self.tg.scale), yOffset, 'sb_C')
         self.line = GramLine(self.cB, self.cC)
-        self.cA = GramCoord(
-            self.cB.xPosn + ((self.cC.xPosn - self.cB.xPosn) / 2.), yOffset, 'sb_A')
-        self.anchor = 'south'
-        self.textSize = 'small'
+        self.label.cA = GramCoord(self.cB.xPosn + ((self.cC.xPosn - self.cB.xPosn) / 2.), yOffset, 'sb_A')
+        self.label.anchor = 'south'
+        self.label.textSize = 'small'
+        if self.label.defaultTextFamily:
+            self.label.textFamily = self.label.defaultTextFamily
+
 
     def setPositions(self):
         # print "TreeGramScaleBar.setPositions() here."
@@ -1275,17 +1276,16 @@ class TreeGramScaleBar(GramText, TreeGramGraphic):
         #    self.scale, self.barLength, self.cC.xPosn)
         self.cC.yPosn = self.cB.yPosn
 
-        self.cA.xPosn = self.cB.xPosn - theXShift + \
-            ((self.cC.xPosn - self.cB.xPosn) / 2.)
-        self.cA.yPosn = self.cB.yPosn - theYShift
+        self.label.cA.xPosn = self.cB.xPosn - theXShift + ((self.cC.xPosn - self.cB.xPosn) / 2.)
+        self.label.cA.yPosn = self.cB.yPosn - theYShift
 
     def getTikz(self):
         ss = []
-        ss.append(self.cA.getTikz())
         ss.append(self.cB.getTikz())
         ss.append(self.cC.getTikz())
         ss.append(self.line.getTikz())
-        ss.append(GramText.getTikz(self))
+        ss.append(self.label.cA.getTikz())
+        ss.append(self.label.getTikz())
         return '\n'.join(ss)
 
     def getSvg(self):
@@ -1293,7 +1293,7 @@ class TreeGramScaleBar(GramText, TreeGramGraphic):
         ss.append(self.line.getSvg())
         # print "TreeGramScaleBar.getSvg() self.line is %s" % self.line
         # print "TreeGramScaleBar.getSvg() self.line.getSvg is %s" % ss[0]
-        ss.append(GramText.getSvg(self))
+        ss.append(self.label.getSvg())
         # print ss
         return '\n'.join(ss)
 
@@ -1301,16 +1301,16 @@ class TreeGramScaleBar(GramText, TreeGramGraphic):
         self.line.setBB()
         # print "self.line.bb is %s" % self.line.bb
 
-        GramText.setBB(self)
+        self.label.setBB()
         g = self.line
-        if g.bb[0] < self.bb[0]:
-            self.bb[0] = g.bb[0]
-        if g.bb[1] < self.bb[1]:
-            self.bb[1] = g.bb[1]
-        if g.bb[2] > self.bb[2]:
-            self.bb[2] = g.bb[2]
-        if g.bb[3] > self.bb[3]:
-            self.bb[3] = g.bb[3]
+        if g.bb[0] < self.label.bb[0]:
+            self.label.bb[0] = g.bb[0]
+        if g.bb[1] < self.label.bb[1]:
+            self.label.bb[1] = g.bb[1]
+        if g.bb[2] > self.label.bb[2]:
+            self.label.bb[2] = g.bb[2]
+        if g.bb[3] > self.label.bb[3]:
+            self.label.bb[3] = g.bb[3]
 
 class TreeGramBracket(TreeGramGraphic):
 
