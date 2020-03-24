@@ -1,4 +1,3 @@
-from __future__ import print_function
 from gram.treegram import *
 from p4 import func
 
