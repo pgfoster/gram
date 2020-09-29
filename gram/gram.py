@@ -722,7 +722,7 @@ class Gram(object):
             # pass
         self.setPositions()
         for gr in self.grams:
-            # print("going to do a render() on %s" % gr)
+            print("going to do a render() on %s" % gr)
             gr.render()
         # TreeGram.render() and Plot.render() continue ...
 
@@ -737,7 +737,7 @@ class Gram(object):
         pyx.text.set(
             #mode='latex', docclass="scrartcl", docopt='%ipt' % self.documentFontSize)
             #mode='latex', docclass="article", docopt='%ipt' % self.documentFontSize)
-            cls=pyx.text.LatexRunner, docclass="article", docopt='%ipt' % self.documentFontSize)
+            engine=pyx.text.LatexRunner, docclass="article", docopt='%ipt' % self.documentFontSize)
         # default 1, changed cuz of PyX upgrade to 0.11
         #pyx.text.defaulttexrunner.pyxgraphics = 0
 
@@ -781,6 +781,9 @@ class Gram(object):
             ss.append(r"\usepackage[osf]{mathpazo}")    # this uses osf, old style figures
         elif self.font == 'times':
             ss.append(r"\usepackage{mathptmx}")  # osf no workee
+        if self.defaultTextFamily == "sffamily":
+            ss.append("\\usepackage{sfmath}")
+
         return '\n'.join(ss)
 
     def _parseLatexUsePackages(self):
@@ -936,7 +939,7 @@ class Gram(object):
             f.write("%s\n" % texStuffFontLine)
         f.write(self._parseLatexUsePackages())
         f.write("\n")
-        f.write("\\usepackage[svgnames]{xcolor}\n")
+        #f.write("\\usepackage[svgnames]{xcolor}\n")
         f.write("\\usepackage{tikz}\n")
         if self.useTikzPlotMarkLib:
             f.write(r"\usetikzlibrary{plotmarks}")
@@ -1275,7 +1278,13 @@ class Gram(object):
         #print(thisRet)
         #print("thisRet type is %s" % type(thisRet))
         #flob.seek(0)
-        p = Popen(['inkscape', '-z', '-S', '-f', '/dev/stdin'],
+
+        # For old inkscape.  Works with version 0.91
+        #p = Popen(['inkscape', '-z', '-S', '-f', '/dev/stdin'],
+        #          stdout=PIPE, stdin=PIPE, stderr=PIPE)
+
+        # For version 1.0
+        p = Popen(['inkscape', '-S', '-p'],
                   stdout=PIPE, stdin=PIPE, stderr=PIPE)
 
         # In Py3 if I used a StringIO()  then read() gives a str, and 
@@ -1295,13 +1304,14 @@ class Gram(object):
             # f.close()
             gm.append("No string returned from inkscape.")
             raise GramError(gm)
-        if not ret[0].startswith(b"svg2"):
+        if not ret[0].startswith(b"svg"):
             gm.append("Bad string returned from inkscape.  Got %s %s" % ret)
             raise GramError(gm)
         #print ret[0]
         ll = [l for l in ret[0].split(b'\n') if l]
         splL = ll[0].split(b',')
-        assert splL[0] == b'svg2'
+        #print("got splL: ", splL)
+        assert splL[0].startswith(b'svg')
         # pxPerCm = 35.43307   # official
         self.bbb[0] = float(splL[1]) / self.svgPxForCm
         self.bbb[1] = float(splL[2]) / self.svgPxForCm
@@ -1394,7 +1404,7 @@ class Gram(object):
         GramCode(self, theCode)
         # The instantiation above puts it in ...?
 
-    def grid(self, llx, lly, urx, ury, color='Gray'):
+    def grid(self, llx, lly, urx, ury, color='gray'):
         g = GramGrid(llx, lly, urx, ury, color=color)
         self.graphics.append(g)
         return g
