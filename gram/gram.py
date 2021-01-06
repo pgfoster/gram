@@ -217,8 +217,8 @@ unsetTerminalColor = unsetTerminalColour
 
 class Gram(object):
 
-    _font = 'Helvetica'
-    _defaultTextFamily = None
+    _font = 'helvetica'
+    _defaultTextFamily = 'sffamily'
     _engine = 'tikz'  # or 'svg'
     _documentFontSize = 10   # 10, 11, or 12
     _pdfViewer = 'ls'
@@ -1847,7 +1847,11 @@ class GramTikzStyle(Gram):
 
     def _setTextFamily(self, newVal):
         gm = ['GramTikzStyle._setTextFamily()']
-        assert isinstance(newVal, str)
+        try:
+            assert isinstance(newVal, str)
+        except AssertionError:
+            gm.append(f"Got newVal {newVal}, type {type(newVal)}, should be a string")
+            raise GramError(gm)
         lowVal = newVal.lower()
         goodVals = self.goodTextFamilies
         if lowVal not in goodVals:
