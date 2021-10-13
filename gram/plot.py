@@ -691,7 +691,7 @@ class Plot(Gram):
 
     def calcBigBoundingBox(self):
         if self.engine == 'tikz':
-            print("TreeGram.tikzCalcBigBoundingBox() is turned off.")
+            print("Plot.tikzCalcBigBoundingBox() is turned off.")
             #self.tikzCalcBigBoundingBox()
         else:
             assert self.engine == 'svg'
