@@ -693,20 +693,29 @@ class TreeGram(Gram):
                         n.label.setBB()
                     #print "%s  textDepth %s" % (n.label.rawText, n.label.textDepth)
                     if ',' in n.label.rawText:
-                        print("wrap", n.label.rawText)
+                        #print("TreeGram.setPositions() wrap", n.label.rawText)
                         oldHeight = n.label.bb[3] - n.label.bb[1]
                         #n.label.rawText = n.label.rawText.replace(", ", ",\n")
                         n.label.rawText = ",\n".join([aLine.strip() for aLine in n.label.rawText.split(',')])
                         n.label.textWidth = n.label.getBiggestWidth()
-                        n.label.rawText = n.label.rawText.replace(
-                            ",\n", r",\\")
+                        #print(f"TreeGram.setPositions() set n.label.textWidth to {n.label.textWidth} from n.lable.getBiggestWidth().  rawText: {n.label.rawText}")
+                        # The newly-set n.label.textWidth becomes the
+                        # width of the minipage that is made below,
+                        # but it was too small in an example that I
+                        # looked into, and caused wrapping in the
+                        # minipage.  So add innerSep
+                        theInnerSep = n.label.getInnerSep()
+                        n.label.textWidth +=  theInnerSep
+
+                        n.label.rawText = n.label.rawText.replace(",\n", r",\\ ")
                         n.label.style = None
                         #n.label.draw = True
                         n.label.textJustification = 'badly ragged'
                         n.label.textSize = self.leafLabelSize
                         n.label.anchor = 'west'
-                        n.label.setCookedText()
+                        n.label.setCookedText()                   # this wraps it in a minipage
                         n.label.setTextLengthHeightAndMetrics()
+                        #print(f"TreeGram.setPositions(). \"{n.label.cookedText}\" is {n.label.length} cm")
                         if self.engine in ['tikz']:
                             n.label.setBB()
                         newHeight = n.label.bb[3] - n.label.bb[1]
