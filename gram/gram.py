@@ -1295,10 +1295,11 @@ class Gram(object):
         # TypeError: memoryview: a bytes-like object is required, not 'str'
         # So do theUnicodeStuff.encode('utf-8')
         ret = p.communicate(input=thisRet)
-        #print("========================")
-        #print(ret)
-        #print(type(ret[0]))
-        #print("-------------------------")
+        if 1:
+            print("========================")
+            print(ret)
+            print(type(ret[0]))
+            print("-------------------------")
 
         flob.close()
 
@@ -3272,8 +3273,8 @@ class GramText(GramGraphic):
         if not rawText:
             return ''
         theText = func.fixCharsForLatex(rawText)
-        #print("cookText() the raw text is %s" % rawText)
-        #print("cookText() theText (a) is %s" % theText)
+        # print("cookText() the raw text is %s" % rawText)
+        # print("cookText() theText (a) is %s" % theText)
         #theText = self.rawText
         cookedText = ''
         theTextFamily = self.getTextFamily()
@@ -3309,7 +3310,7 @@ class GramText(GramGraphic):
 
         # 1 PostScript point = 0.35277138 mm
         ptToCm = 0.035277138
-        #print("setTextLengthHeightAndMetrics() cookedText: %s" % self.cookedText)
+        # print("setTextLengthHeightAndMetrics() cookedText: %s" % self.cookedText)
 
         try:
             #print("cookedText is", self.cookedText)
@@ -3325,14 +3326,14 @@ class GramText(GramGraphic):
         theTextWidth = self.getTextWidth()
         if 1 and theTextWidth:
             theInnerSep = self.getInnerSep()
-            print("theInnerSep", theInnerSep)
+            # print("theTextWidth", theTextWidth, " theInnerSep", theInnerSep)
             if theInnerSep:
                 self.length += theInnerSep
 
         self.height = (tbb.ury_pt - tbb.lly_pt) * ptToCm
         # self.underhang = -tbb.lly_pt * ptToCm
         # self.rise = tbb.ury_pt * ptToCm
-        #print("setTextLengthHeightAndMetrics() The text '%s' is %.3f cm long, and %.3f cm  high" % (self.cookedText, self.length, self.height))
+        # print("setTextLengthHeightAndMetrics() The text '%s' is %.3f cm long, and %.3f cm  high" % (self.cookedText, self.length, self.height))
         # sys.exit()
 
         #self.length = 3.
@@ -3380,7 +3381,7 @@ class GramText(GramGraphic):
         for bit in bits:
             self.rawText = bit
             self.setCookedText()
-            # print "cookedText: %s" % self.cookedText
+
             try:
                 t = pyx.text.text(0.0, 0.0, self.cookedText)
             except IOError:
@@ -3389,6 +3390,7 @@ class GramText(GramGraphic):
 
             tbb = t.bbox()
             thisWidth = (tbb.urx_pt - tbb.llx_pt) * ptToCm
+            # print(f"getBiggestWidth() bit cookedText: {self.cookedText}, got width {thisWidth}")
             if thisWidth > biggestWidth:
                 biggestWidth = thisWidth
         self.rawText = savedRawText
@@ -3880,6 +3882,9 @@ class GramText(GramGraphic):
             #    theText = func.fixCharsForLatex(self.rawText)
             # else:
             #    theText = ''
+
+        # print(f"GramText.getTikz()  self.rawText= {self.rawText}")
+        # print(f"theText (after fixCharsForLatex(self.rawText))= {theText}")
 
         # Hack
         if 1:
