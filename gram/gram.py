@@ -281,6 +281,7 @@ class Gram(object):
         self.bbb = [0.0] * 4  # big bounding box, ie of the whole gram
         self.haveDone_calcBigBoundingBox = False
         # self.startPyX()     Too early to start this, because we do not know what packages to add yet.
+        self.useSfMathIfSffamily = True      # sometimes roman math is wanted
 
         self.graphics = []
         self.grams = []
@@ -775,14 +776,17 @@ class Gram(object):
             # texStuffFontLine = r"\usepackage[scaled=.90]{helvet}"
             ss.append("\\usepackage{helvet}")
             ss.append(r"\renewcommand{\familydefault}{\sfdefault}")
-            ss.append("\\usepackage[helvet]{sfmath}")
+            if self.useSfMathIfSffamily:
+                ss.append("\\usepackage[helvet]{sfmath}")
             #texStuffFontLine = "\\usepackage{helvet}"
         elif self.font == 'palatino':
             ss.append(r"\usepackage[osf]{mathpazo}")    # this uses osf, old style figures
         elif self.font == 'times':
             ss.append(r"\usepackage{mathptmx}")  # osf no workee
         if self.defaultTextFamily == "sffamily":
-            ss.append("\\usepackage{sfmath}")
+            if self.useSfMathIfSffamily:
+                ss.append("\\usepackage{sfmath}")
+            pass
 
         return '\n'.join(ss)
 
