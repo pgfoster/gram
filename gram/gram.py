@@ -943,7 +943,7 @@ class Gram(object):
             f.write("%s\n" % texStuffFontLine)
         f.write(self._parseLatexUsePackages())
         f.write("\n")
-        #f.write("\\usepackage[svgnames]{xcolor}\n")
+        f.write("\\usepackage[svgnames]{xcolor}\n")
         f.write("\\usepackage{tikz}\n")
         if self.useTikzPlotMarkLib:
             f.write(r"\usetikzlibrary{plotmarks}")
