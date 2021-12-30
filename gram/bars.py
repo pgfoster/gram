@@ -105,8 +105,7 @@ class PlotBarSets(GramGraphic):
 
         for i in range(len(self.barVals)):
             nL = self.barVals[i]
-            b = PlotBarSet(
-                nL, self, self.plot, i, self.plot.goodBarFills[self.fillColorIndex])
+            b = PlotBarSet(nL, self, self.plot, i, self.plot.goodBarFills[self.fillColorIndex])
             self.barSets.append(b)
 
         self.plot.barNameAxis = BarsAxis('b', self.plot)
@@ -169,8 +168,7 @@ class PlotBarSet(GramGraphic):
         self.bars = []
 
         for binNum in range(self.plot.nBars):
-            b = PlotBar(
-                self.plot, barVals[binNum], binNum, self.barSetNum, self)
+            b = PlotBar(self.plot, barVals[binNum], binNum, self.barSetNum, self)
             self.bars.append(b)
             # self.graphics.append(b)
 
@@ -231,8 +229,9 @@ class PlotBar(GramGraphic):
         self.cA.yPosn = self.plot.contentPosnY
         self.cB.xPosn = self.cA.xPosn + self.barSetsObject.oneBarWidth
         self.cB.yPosn = self.cA.yPosn + thisVal
-        # print "cA.xPosn %s, cA.yPosn %s, cB.xPosn %s, cB.yPosn %s" % (
-        #    self.cA.xPosn, self.cA.yPosn, self.cB.xPosn, self.cB.yPosn)
+        #print(f"PlotBar.setPositions() val={self.val}, cA.xPosn {self.cA.xPosn:.2f}, cA.yPosn {self.cA.yPosn:.2f}, ", end='')
+        #print(f"cB.xPosn {self.cB.xPosn:.2f}, cB.yPosn {self.cB.yPosn:.2f}")
+        # print(f"PlotBar.setPositions() barSetNum={self.barSetNum}")
 
     def getTikz(self):
         yDiff = self.cB.yPosn - self.cA.yPosn
