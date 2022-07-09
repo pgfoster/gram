@@ -2334,8 +2334,8 @@ class GramTikzStyle(Gram):
             else:
                 options.append('stroke="%s"' % self.color.color)
 
-        
-        if self.draw:
+        # color, above, implies draw, and we do not want both
+        elif self.draw:
             if self.draw == True:
                 options.append('stroke="black"')
             else:
