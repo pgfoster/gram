@@ -240,10 +240,10 @@ class Gram(object):
 
     _goodAnchors = ['west', 'north west', 'north', 'north east', 'east',
                     'base', 'base west', 'base east',
+                    'mid', 'mid west', 'mid east',
                     'south west', 'south', 'south east',
                     'center']  # center seems to be the default
-    #'mid', 'mid west', 'mid east',  removed
-
+   
     #_goodShapes = ['rounded rectangle']
     _goodLineStyles = [None, 'solid', 'dotted', 'densely dotted', 'loosely dotted',
                        'dashed', 'densely dashed', 'loosely dashed']
@@ -1935,9 +1935,6 @@ class GramTikzStyle(Gram):
             gm.append("You can only set property 'anchor' to one of")
             gm.append("%s" % self.goodAnchors)
             gm.append("Got attempt to set to '%s'" % theAnchor)
-            if theAnchor.startswith('mid'):
-                gm.append(
-                    "(Anchors 'mid', 'mid east', and 'mid west' are turned off).")
             raise GramError(gm)
         self._anchor = theAnchor
 
