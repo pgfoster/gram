@@ -1,5 +1,5 @@
 from p4 import func
-import pyx
+# import pyx
 import os
 import math
 import string
@@ -506,16 +506,16 @@ class Gram(object):
         raise GramError("Don't set htmlColorDict, just modify it.")
     htmlColorDict = property(_getHtmlColorDict, _setHtmlColorDict)
 
-    def _getHaveStartedPyX(self):
-        return Gram._haveStartedPyX
+    # def _getHaveStartedPyX(self):
+    #     return Gram._haveStartedPyX
 
-    def _setHaveStartedPyX(self, newVal):
-        if newVal in [True, False]:
-            Gram._haveStartedPyX = newVal
-        else:
-            raise GramError(
-                "Set haveStartedPyX to True or False, only (got %s)" % newVal)
-    haveStartedPyX = property(_getHaveStartedPyX, _setHaveStartedPyX)
+    # def _setHaveStartedPyX(self, newVal):
+    #     if newVal in [True, False]:
+    #         Gram._haveStartedPyX = newVal
+    #     else:
+    #         raise GramError(
+    #             "Set haveStartedPyX to True or False, only (got %s)" % newVal)
+    # haveStartedPyX = property(_getHaveStartedPyX, _setHaveStartedPyX)
 
     def _getDefaultInnerSep(self):
         return Gram._defaultInnerSep
@@ -653,8 +653,8 @@ class Gram(object):
         gm = ['Gram.getTikz()']
         ss = []
 
-        if not self.haveStartedPyX:
-            self.startPyX()
+        #if not self.haveStartedPyX:
+        #    self.startPyX()
 
         for gr in self.graphics:
             try:
@@ -710,8 +710,8 @@ class Gram(object):
     def render(self):
         # print("doing a render() on %s" % self)
         if self.engine == 'tikz':
-            if not self.haveStartedPyX:
-                self.startPyX()
+            # if not self.haveStartedPyX:
+            #     self.startPyX()
             if not self.haveSetBuiltInTikzStyles:
                 self.setBuiltInTikzStyles()
             self.haveSetBuiltInTikzStyles = True
@@ -1060,11 +1060,11 @@ class Gram(object):
     def pdf(self):
         assert self.documentFontSize in [10, 11, 12]
 
-        if not self.haveStartedPyX:
-            for k,v in self.htmlColorDict.items():
-                print(k,v)
-                myColorDef = r"\definecolor{%s}{HTML}{%s}" % (k, v)
-                self.latexOtherPreambleCommands.append(myColorDef)
+        # if not self.haveStartedPyX:
+        #     for k,v in self.htmlColorDict.items():
+        #         print(k,v)
+        #         myColorDef = r"\definecolor{%s}{HTML}{%s}" % (k, v)
+        #         self.latexOtherPreambleCommands.append(myColorDef)
 
         self.render()
         theKeys = self.styleDict.keys()
