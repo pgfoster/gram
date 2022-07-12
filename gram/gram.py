@@ -3218,6 +3218,492 @@ class GramText(GramGraphic):
         
         #print("GramText.__init__(%s)" % text)
         self.rawText = text
+        self.length = 0.1
+         
+        self.fontSizeMultiplierDict = {
+            'tiny': 0.5,
+            'scriptsize': 0.7,
+            'footnotesize': 0.8,
+            'small': 0.9,
+            'normalsize': 1.,
+            'large': 1.2,
+            'Large': 1.44,
+            'LARGE': 1.728,
+            'huge': 2.074,
+            'Huge': 2.488,
+        }
+
+        self.gX = 0.0
+        self.gY = 0.0
+
+    def dump(self):
+        print("GramText.dump() anch=%s, xPosn %.3f yPosn %.3f" % (
+            self.getAnch(), self.cA.xPosn, self.cA.yPosn)) 
+        print("rawText=%s" % self.rawText)
+
+    def setBB(self):
+        pass
+
+    def getTikz(self):
+        gm = ['GramText.getTikz() rawText=%s' % self.rawText]
+        #print(gm[0])
+
+        if not self.cA:
+            if 0:
+                gm.append('no cA GramCoord')
+                raise GramError(gm)
+            else:
+                self.cA = GramCoord()
+
+
+        ss = []
+        ss.append(r'\node')
+
+        options = self.getTikzOptions()
+        # print("%s, options %s" % (self.rawText, options))
+        # print "self.textHeight is %s" % self.textHeight
+
+        # If fill.value and fill.transparent, then fill-opacity is set to
+        # fill.value (good) but the text gets that same opacity (bad).
+        # Here is a fix.
+        if self.fill and self.fill.value and self.fill.transparent:
+            options.append("text opacity=1.0")
+
+        if options:
+            ss.append('[%s]' % ','.join(options))
+        if self.cA.name:
+            ss.append('at (%s)' % self.cA.name)
+        else:
+            ss.append('at (%.3f,%.3f)' % (self.cA.xPosn, self.cA.yPosn))
+
+        ss.append('{%s};' % self.rawText)
+
+        if self.showTextAnchor:
+            ss.append("\\draw [red] plot[only marks,mark=x] coordinates {(%.3f,%.3f)};" % (
+                self.cA.xPosn, self.cA.yPosn))
+        return ' '.join(ss)
+
+ 
+    def getSvg(self):   # GramText
+        # gm = ['GramText.getSvg() rawText=%s' % self.rawText]
+        # print gm[0]
+        if not self.cA:
+            self.cA = GramCoord()
+        if self.svgId:
+            assert self.svgGForIdDict.get(self.svgId)
+        else:
+            self.setSvgIdAndAddToDict('text')
+        # print gm[0], self.svgId, self.svgGForIdDict[self.svgId].rawText
+
+        myClass = None
+        myTextFamilyString = self.getTextFamily()
+        if myTextFamilyString == 'ttfamily':
+            myClass = 'ttfamily'
+
+        myTextSizeStr = self.getTextSize()
+        if myTextSizeStr is None or myTextSizeStr == 'normalsize':
+            myTextSizeCm = self.svgTextNormalsize
+        else:
+            myTextSizeCm = self.fontSizeMultiplierDict[
+                myTextSizeStr] * self.svgTextNormalsize
+        #print "GramText.getSvg() myTextSizeStr=%s, fontSizeMultiplier %.3f myTextSizeCm %.2f" % (
+        #    myTextSizeStr, self.fontSizeMultiplierDict[myTextSizeStr],
+        #    myTextSizeCm)
+        myTextSizeStr = "%.2f" % (myTextSizeCm * self.svgPxForCm)
+        #print "GramText.getSvg()  myTextSizeStr=%s" % myTextSizeStr
+
+        myAnch = self.getAnch()
+        # print "GramText.getSvg()  myAnch=%s" % myAnch
+        # _goodAnchors = ['west', 'north west', 'north', 'north east', 'east',
+        #                     'base', 'base west', 'base east',
+        #                     'south west', 'south', 'south east',
+        #                     'center'] # center seems to be the default
+        #                     #'mid', 'mid west', 'mid east',  removed
+        myTextAnchor = None  # or start, middle, end.  Default is start
+        
+        if self.font == 'helvetica':
+            xYuh = 0.20
+            #xEx = 0.33        # half ex, not used
+            xBigX = 0.73
+            xExWid = 0.48
+        elif self.font == 'palatino':
+            xYuh = 0.27
+            #xEx = 0.28
+            xBigX = 0.70
+            xExWid = 0.49
+        elif self.font == 'times':
+            xYuh = 0.22
+            #xEx = 0.3
+            xBigX = 0.67
+            xExWid = 0.49
+        elif self.font == 'cm':
+            raise GramError("GramText.getSvg() svg does not work with cm")
+        self.yuh = xYuh * myTextSizeCm
+        if self.getTextShape() == 'scshape':
+            self.yuh = 0.0
+        #halfex = xEx * myTextSizeCm   # Not used
+        #self.ex = 2.0 * halfex        # Not used
+        self.bigX = xBigX * myTextSizeCm
+        self.exWid = xExWid * myTextSizeCm
+
+        ret = None
+        if self.myStyle:
+            st = self.styleDict[self.myStyle]
+            if st.textHeight is not None:
+                ret = st.textHeight
+        if ret is None and self.style:
+            st = self.styleDict[self.style]
+            if st.textHeight is not None:
+                ret = st.textHeight
+        if ret is None:
+            self.textHeight = self.bigX
+            ret = self.textHeight
+        theTextHeight = ret
+
+        ret = None
+        if self.myStyle:
+            st = self.styleDict[self.myStyle]
+            if st.textDepth is not None:
+                ret = st.textDepth
+        if ret is None and self.style:
+            st = self.styleDict[self.style]
+            if st.textDepth is not None:
+                ret = st.textDepth
+        if ret is None:
+            self.textDepth = self.yuh
+            ret = self.textDepth
+        theTextDepth = ret
+        myTextShape = self.getTextShape()
+        if myTextShape == 'scshape':
+            theTextDepth = 0.0
+
+        self.height = theTextHeight + theTextDepth
+        halfHeight = self.height / 2.
+        #self.length = (self.bb[2] - self.bb[0])  no workee for rotated!
+        halfLength = self.length/2.
+        #print "GramText. %s length %s cm" % (self.rawText, self.length)
+
+        oneInnerSep = self.getInnerSep()
+        #print "GramText.getSvg() Got oneInnerSep %.2f" % oneInnerSep
+        twoInnerSep = 2 * oneInnerSep
+
+        # Get outer sep
+        theLineThickness = self.getLineThickness()
+        #print "a Got myLineThickness %s" % myLineThickness
+        twoOuterSep = cmForLineThickness(theLineThickness)
+        oneOuterSep = 0.5 * twoOuterSep
+
+        myDx = 0.0
+        myDy = 0.0
+        myDrDx = 0.0   # for the box, ie the "draw"
+        myDrDy = 0.0
+       
+        if myAnch == 'west':
+            myDx += oneInnerSep
+            myDx += oneOuterSep
+            myDy -= self.yuh
+            myDy += halfHeight
+            myDrDy += oneInnerSep
+            myDrDy += oneOuterSep
+            myDrDy += halfHeight
+        elif myAnch == 'north west':
+            myDx += oneInnerSep
+            myDx += oneOuterSep
+            myDy += oneInnerSep
+            myDy += oneOuterSep
+            myDy += self.bigX
+            myDrDy += self.height
+            myDrDy += twoInnerSep
+            myDrDy += twoOuterSep
+        elif myAnch == 'north':
+            #myTextAnchor = "middle"
+            myDx += -halfLength
+            myDy += self.bigX
+            myDy += oneInnerSep
+            myDy += oneOuterSep
+            myDrDx += -halfLength
+            myDrDx += -oneInnerSep
+            myDrDx += -oneOuterSep
+            myDrDy += self.height
+            myDrDy += twoInnerSep
+            myDrDy += twoOuterSep
+        elif myAnch == 'north east':
+            #myTextAnchor = "end"
+            myDx += -self.length
+            myDx += -oneInnerSep
+            myDx += -oneOuterSep
+            myDy += oneInnerSep
+            myDy += oneOuterSep
+            myDy += self.bigX
+            myDrDx += -self.length
+            myDrDx += -twoInnerSep
+            myDrDx += -twoOuterSep
+            myDrDy += self.height
+            myDrDy += twoInnerSep
+            myDrDy += twoOuterSep
+        elif myAnch == 'east':
+            #myTextAnchor = "end"
+            myDx += -self.length
+            myDx += -oneInnerSep
+            myDx += -oneOuterSep
+            myDy -= self.yuh
+            myDy += halfHeight
+            myDrDx += -self.length
+            myDrDx += -twoInnerSep
+            myDrDx += -twoOuterSep
+            myDrDy += oneInnerSep
+            myDrDy += oneOuterSep
+            myDrDy += halfHeight
+        elif myAnch == 'base':
+            #myTextAnchor = "middle"
+            myDx += -halfLength
+            myDrDx += -halfLength
+            myDrDx += -oneInnerSep
+            myDrDx += -oneOuterSep
+            myDrDy += oneInnerSep
+            myDrDy += oneOuterSep
+            myDrDy += self.yuh
+        elif myAnch == 'base west':
+            myDx += oneInnerSep
+            myDx += oneOuterSep
+            myDrDy += oneInnerSep
+            myDrDy += oneOuterSep
+            myDrDy += self.yuh
+        elif myAnch == 'base east':
+            #myTextAnchor = "end"
+            myDx += -self.length
+            myDx += -oneInnerSep
+            myDx += -oneOuterSep
+            myDrDx += -self.length
+            myDrDx += -twoInnerSep
+            myDrDx += -twoOuterSep
+            myDrDy += oneInnerSep
+            myDrDy += oneOuterSep
+            myDrDy += self.yuh
+        elif myAnch == 'south west':
+            myDx += oneInnerSep
+            myDx += oneOuterSep
+            myDy += -oneInnerSep
+            myDy += -oneOuterSep
+            myDy += -self.yuh
+        elif myAnch == 'south':
+            myDx += -halfLength
+            myDy += -oneInnerSep
+            myDy += -oneOuterSep
+            myDy += -self.yuh
+            myDrDx += -halfLength
+            myDrDx += -oneInnerSep
+            myDrDx += -oneOuterSep
+        elif myAnch == 'south east':
+            myDx += -self.length
+            myDx += -oneInnerSep
+            myDx += -oneOuterSep
+            myDy += -oneInnerSep
+            myDy += -oneOuterSep
+            myDy += -self.yuh
+            myDrDx += -self.length
+            myDrDx += -twoInnerSep
+            myDrDx += -twoOuterSep
+        elif myAnch == 'center' or myAnch is None:
+            myDx += -halfLength
+            myDy -= self.yuh
+            myDy += halfHeight
+            myDrDx += -halfLength
+            myDrDx += -oneInnerSep
+            myDrDx += -oneOuterSep
+            myDrDy += oneInnerSep
+            myDrDy += oneOuterSep
+            myDrDy += halfHeight
+
+        myDx *= self.svgPxForCm
+        myDy *= self.svgPxForCm
+
+        myXShift = self.getXShift()
+        if myXShift:
+            myDx += myXShift * self.svgPxForCm
+        myYShift = self.getYShift()
+        if myYShift:
+            myDy -= myYShift * self.svgPxForCm
+
+        # print "%20s  %+.2f  %+6.2f" % (myAnch, myDx, myDy)
+
+        #print("b GramText.getSvg() self.length is %s; svgHackDoRotate is %s" % (self.length, Gram._svgHackDoRotate))
+
+        if Gram._svgHackDoRotate is True:
+            if True:
+                # Helvetica hack.  Helvetica bounding box is too short.
+                # Increase length by a little bit (about 1 px) * font size (ie the font-size multiplier)
+                myLenIncrease = 1.3
+                if self.font == 'helvetica':
+                    thisTextSize = self.getTextSize()
+                    if thisTextSize is None:
+                        thisTextSize = 'normalsize'
+                    thisLen_cm = (myLenIncrease/self.svgPxForCm) * self.fontSizeMultiplierDict[thisTextSize]
+                    self.length += thisLen_cm
+
+                #print self.rawText, self.bb, self.length
+
+            self.setBB()
+            
+        if 1:
+            #print("wx GramText.getSvg() for '%s'" % self.rawText, "; Gram._svgHackDoRotate is %s" % Gram._svgHackDoRotate)
+            thisTextSize = self.getTextSize()
+            if thisTextSize is None:
+                thisTextSize = 'normalsize'
+            if 0:
+                print("textSize %s px, svgPxForCm %s svgTextNormalsize %s cm fontSizeMultiplier %s" % (
+                    myTextSizeStr, self.svgPxForCm, self.svgTextNormalsize, 
+                    self.fontSizeMultiplierDict[thisTextSize]))
+            #print("bb is ", self.bb)
+            bbdx = self.bb[2] - self.bb[0]
+            bbdy = self.bb[3] - self.bb[1]
+            if 0:
+                print("widthFrom bb %.3f cm (%.2f px), height from bb %.3f cm (%.2f px) " % (
+                    bbdx, bbdx * self.svgPxForCm, bbdy, bbdy * self.svgPxForCm))
+
+        ss = []
+        myDraw = self.getDraw()
+        myFill = self.getFill()
+        #print("GramText.getSvg() for %s --- myDraw is %s, myFill is %s" % (self.rawText, myDraw, myFill))
+        if myDraw or myFill:
+            myDrDx *= self.svgPxForCm
+            myDrDy *= self.svgPxForCm
+
+            #myXShift = self.getXShift()
+            if myXShift:
+                myDrDx += myXShift * self.svgPxForCm
+            #myYShift = self.getYShift()
+            if myYShift:
+                myDrDy -= myYShift * self.svgPxForCm
+
+            if myDraw is True:
+                myColor = self.getColor()    # rectangle outline is made to be the same color as the text color
+            elif isinstance(myDraw, GramColor):
+                myColor = myDraw
+            else:
+                myColor = None
+
+            myDrHeight = ((self.height + twoInnerSep) * self.svgPxForCm)
+            myDrX = ((self.cA.xPosn + oneOuterSep) * self.svgPxForCm)  + myDrDx
+            myDrY = ((-self.cA.yPosn - oneOuterSep) * self.svgPxForCm) - myDrHeight + myDrDy
+            myDrWid = ((self.length + twoInnerSep) * self.svgPxForCm)
+            ss.append('<rect x="%.2f" y="%.2f"  width="%.2f" height="%.2f"' % (
+                myDrX, myDrY, myDrWid, myDrHeight))
+            # ss.append('stroke="black" fill="none" stroke-width="1" />\n')
+            if myColor:
+                ss.append('stroke="%s"' % myColor.color)
+                if myColor.transparent:
+                    ss.append('stroke-opacity="%s"' % myColor.value)
+            else:
+                if myDraw is True:
+                    ss.append('stroke="black"')
+                else:
+                    ss.append('stroke="none"')
+            if myFill:
+                ss.append('fill="%s"' % myFill.color)
+                if myFill.transparent:
+                    ss.append('fill-opacity="%s"' % myFill.value)
+            else:
+                ss.append('fill="none"')
+            if theLineThickness:
+                myLineThickness = cmForLineThickness(theLineThickness)
+                #print "b Got myLineThickness %s cm" % myLineThickness
+                myLineThickness = self.svgPxForCmF(myLineThickness)
+                #print "c Got myLineThickness %s px" % myLineThickness
+                ss.append('stroke-width="%s"' % myLineThickness)
+
+            myRotate = self.getRotate()
+            if myRotate:
+                ss.append('transform="rotate(%.2f, %.2f, %.2f)"' % (
+                    -myRotate, self.svgPxForCmF(self.cA.xPosn), -self.svgPxForCmF(self.cA.yPosn)))
+
+            ss.append('/>\n')
+            
+        ss.append('<text id="%s" ' % self.svgId)
+        if myClass:
+            ss.append('class="%s"' % myClass)
+
+        myX = (self.svgPxForCmF(self.cA.xPosn))
+
+        # The negative dx does not work properly in Inkscape v 0.91.  Negative
+        # dy is ok.  Seems to have been fixed -- hurrah!
+        #if myDx < 0.0:
+        #    myX += myDx
+        #    myDx = 0.0
+
+        ss.append('x="%.2f" y="%.2f"' %
+                  (myX, -self.svgPxForCmF(self.cA.yPosn)))
+        #ss.append('dy="0.35em" dx="1ex"')
+        ss.append('font-size="%s"' % myTextSizeStr)
+        if myDx:
+            ss.append('dx="%.2f"' % myDx)
+        if myDy:
+            ss.append('dy="%.2f"' % myDy)
+        if myTextAnchor:
+            ss.append('text-anchor="%s"' % myTextAnchor)
+
+        myTextShape = self.getTextShape()  #  ['itshape', 'scshape']
+        if myTextShape == 'scshape':
+            ss.append('font-variant="small-caps"')
+        if myTextShape == 'itshape':
+            if self.font == 'helvetica':
+                ss.append('font-style="oblique"')
+            elif self.font in ['palatino', 'times']:
+                ss.append('font-style="italic"')
+
+        myColor = self.getColor()
+        if myColor:
+            ss.append('fill="%s"' % myColor.color)
+            if myColor.transparent:
+                ss.append('fill-opacity="%s"' % myColor.value)
+
+        if Gram._svgHackDoRotate:
+            myRotate = self.getRotate()
+            if myRotate:
+                ss.append('transform="rotate(%.2f, %.2f, %.2f)"' % (
+                    -myRotate, self.svgPxForCmF(self.cA.xPosn), -self.svgPxForCmF(self.cA.yPosn)))
+
+        ss.append('>%s</text>' % self.rawText)
+
+        if self.showTextBB:
+            ss.append('\n<rect x="%.2f" y="%.2f"  width="%.2f" height="%.2f"' % (
+                self.bb[0] * self.svgPxForCm, -self.bb[3] * self.svgPxForCm,
+                (self.bb[2] - self.bb[0]) * self.svgPxForCm, (self.bb[3] - self.bb[1]) * self.svgPxForCm))
+            ss.append('stroke="red" fill="none" stroke-width="0.5" />')
+        if self.showTextAnchor:
+            ss.append('\n<circle cx="%.2f" cy="%.2f" r="2" stroke="none" fill="red"/>' % (
+                self.svgPxForCmF(self.cA.xPosn), -self.svgPxForCmF(self.cA.yPosn)))
+        ret = ' '.join(ss)
+        # print ret
+        return ret
+
+
+
+###############################################################
+###############################################################
+#
+# TEXT - OLD
+#
+###############################################################
+###############################################################
+
+
+class GramTextOld(GramGraphic):
+
+    def __init__(self, text):
+        GramGraphic.__init__(self)
+
+        # GramGraphic provides ---
+        # self.cA = None
+        # self.comment = None
+        # self.style = None
+        # self.myStyle = None
+        # self.bb = [0.0] * 4
+        # self.svgId = None
+        # Plus all the stuff inherited from GramTikzStyle
+        
+        #print("GramText.__init__(%s)" % text)
+        self.rawText = text
         self.cookedText = None
         self.corners = None
         self.height = None         # note we also have self.textHeight, inherited
