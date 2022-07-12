@@ -251,7 +251,7 @@ class Gram(object):
     _tikzPictureDefaults = None
     _htmlColorDict = {}
     _haveStartedPyX = False
-    _defaultInnerSep = 0.1
+    _defaultInnerSep = 0.1       # used by svg
     
     _useTikzPlotMarkLib = False
     _xRecenter = 1.
@@ -641,7 +641,7 @@ class Gram(object):
     def setPositions(self):
         # print(self, "setPositions()")
         # if hasattr(self, 'tikzPictureDefaults') and self.tikzPictureDefaults:
-        self.tikzPictureDefaults.innerSep = self.defaultInnerSep
+        # self.tikzPictureDefaults.innerSep = self.defaultInnerSep
         self.tikzPictureDefaults.textFamily = self.defaultTextFamily
 
         # print "\nGram.setPositions() engine=%s  There are %i graphics." %
@@ -822,8 +822,8 @@ class Gram(object):
         fA = open(outFileNameA, 'w')
         fA.write('%% This is a tikz file\n')
         fA.write('\n')
-        fA.write('%% This file is set up to use %ipt %s font.\n' %
-                 (self.documentFontSize, self.font))
+        # fA.write('%% This file is set up to use %ipt %s font.\n' %
+        #          (self.documentFontSize, self.font))
 
         # tikzset styles
         theKeys = list(self.styleDict.keys())

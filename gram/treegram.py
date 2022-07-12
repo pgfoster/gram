@@ -568,28 +568,28 @@ class TreeGram(Gram):
         g.innerSep = 0.03
         if self.engine in ['tikz']:
             g.setBB()
-        if self.doLiningNumeralsHack:
-            if self.engine in ['svg']:
-                # svg text does not know at this point what yuh is.
-                # So we have to figure it out now.
-                myTextSizeStr = g.getTextSize()
-                if myTextSizeStr is None or myTextSizeStr == 'normalsize':
-                    myTextSizeCm = g.svgTextNormalsize
-                else:
-                    myTextSizeCm = g.fontSizeMultiplierDict[
-                        myTextSizeStr] * g.svgTextNormalsize
-                if self.font == 'helvetica':
-                    xYuh = 0.20
-                elif self.font == 'palatino':
-                    xYuh = 0.27
-                elif self.font == 'times':
-                    xYuh = 0.22
-                elif self.font == 'cm':
-                    raise GramError("TreeGram.setBuiltInTikzStyles() svg does not work with cm")
-                g.yuh = xYuh * myTextSizeCm
-            # Now both tikz and svg have yuh set, and we can do the hack
-            print("TreeGram.setBuiltInTikzStyles doLiningNumeralsHack; yuh is %f" % g.yuh)
-            g.yShift = -0.4 * g.yuh
+        # if self.doLiningNumeralsHack:
+        #     if self.engine in ['svg']:
+        #         # svg text does not know at this point what yuh is.
+        #         # So we have to figure it out now.
+        #         myTextSizeStr = g.getTextSize()
+        #         if myTextSizeStr is None or myTextSizeStr == 'normalsize':
+        #             myTextSizeCm = g.svgTextNormalsize
+        #         else:
+        #             myTextSizeCm = g.fontSizeMultiplierDict[
+        #                 myTextSizeStr] * g.svgTextNormalsize
+        #         if self.font == 'helvetica':
+        #             xYuh = 0.20
+        #         elif self.font == 'palatino':
+        #             xYuh = 0.27
+        #         elif self.font == 'times':
+        #             xYuh = 0.22
+        #         elif self.font == 'cm':
+        #             raise GramError("TreeGram.setBuiltInTikzStyles() svg does not work with cm")
+        #         g.yuh = xYuh * myTextSizeCm
+        #     # Now both tikz and svg have yuh set, and we can do the hack
+        #     print("TreeGram.setBuiltInTikzStyles doLiningNumeralsHack; yuh is %f" % g.yuh)
+        #     g.yShift = -0.4 * g.yuh
         Gram._styleDict[g.name] = g
 
         g = GramText('Xxy')
@@ -602,26 +602,26 @@ class TreeGram(Gram):
         g.innerSep = 0.03
         if self.engine in ['tikz']:
             g.setBB()
-        if self.doLiningNumeralsHack:
-            if self.engine in ['svg']:
-                # svg text does not know at this point what yuh is.
-                # So we have to figure it out now.
-                myTextSizeStr = g.getTextSize()
-                if myTextSizeStr is None or myTextSizeStr == 'normalsize':
-                    myTextSizeCm = g.svgTextNormalsize
-                else:
-                    myTextSizeCm = g.fontSizeMultiplierDict[
-                        myTextSizeStr] * g.svgTextNormalsize
-                if self.font == 'helvetica':
-                    xYuh = 0.20
-                elif self.font == 'palatino':
-                    xYuh = 0.27
-                elif self.font == 'times':
-                    xYuh = 0.22
-                g.yuh = xYuh * myTextSizeCm
-            # Now both tikz and svg have yuh set, and we can do the hack
-            print("TreeGram.setBuiltInTikzStyles doLiningNumeralsHack; yuh is %f" % g.yuh)
-            g.yShift = -0.4 * g.yuh
+        # if self.doLiningNumeralsHack:
+        #     if self.engine in ['svg']:
+        #         # svg text does not know at this point what yuh is.
+        #         # So we have to figure it out now.
+        #         myTextSizeStr = g.getTextSize()
+        #         if myTextSizeStr is None or myTextSizeStr == 'normalsize':
+        #             myTextSizeCm = g.svgTextNormalsize
+        #         else:
+        #             myTextSizeCm = g.fontSizeMultiplierDict[
+        #                 myTextSizeStr] * g.svgTextNormalsize
+        #         if self.font == 'helvetica':
+        #             xYuh = 0.20
+        #         elif self.font == 'palatino':
+        #             xYuh = 0.27
+        #         elif self.font == 'times':
+        #             xYuh = 0.22
+        #         g.yuh = xYuh * myTextSizeCm
+        #     # Now both tikz and svg have yuh set, and we can do the hack
+        #     print("TreeGram.setBuiltInTikzStyles doLiningNumeralsHack; yuh is %f" % g.yuh)
+        #     g.yShift = -0.4 * g.yuh
         Gram._styleDict[g.name] = g
 
         g = GramText('Xxy')
