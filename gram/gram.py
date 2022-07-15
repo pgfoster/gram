@@ -269,6 +269,9 @@ class Gram(object):
     _svgGForIdDict = {}
     _svgHackDoRotate = True
     _svgTextNormalWeight = 400     # Slightly bold
+
+    _labelIdCounter = 1
+    _labelGForIdDict = {}
     
     def __init__(self):
         self._dirName = 'Gram'
@@ -627,7 +630,7 @@ class Gram(object):
         return Gram._svgGForIdDict
 
     def _set_svgGForIdDict(self, newVal):
-        raise GramError("Don't set svgForIdDict, just modify it.")
+        raise GramError("Don't set svgGForIdDict, just read it.")
     svgGForIdDict = property(_get_svgGForIdDict, _set_svgGForIdDict)
 
     def _get_svgTextNormalWeight(self):
@@ -636,6 +639,20 @@ class Gram(object):
     def _set_svgTextNormalWeight(self, newVal):
         Gram._svgTextNormalWeight = int(newVal)
     svgTextNormalWeight = property(_get_svgTextNormalWeight, _set_svgTextNormalWeight)
+
+    def _get_labelIdCounter(self):
+        return Gram._labelIdCounter
+
+    def _set_labelIdCounter(self, newVal):
+        Gram._labelIdCounter = int(newVal)
+    labelIdCounter = property(_get_labelIdCounter, _set_labelIdCounter)
+
+    def _get_labelGForIdDict(self):
+        return Gram._labelGForIdDict
+
+    def _set_labelGForIdDict(self, newVal):
+        raise GramError("Don't set labelGForIdDict, just read it.")
+    labelGForIdDict = property(_get_labelGForIdDict, _set_labelGForIdDict)
 
     ##################################
     def setPositions(self):
@@ -3227,6 +3244,9 @@ class GramText(GramGraphic):
         
         #print("GramText.__init__(%s)" % text)
         self.rawText = text
+        self.name = f"l{self.labelIdCounter}"
+        self.labelIdCounter += 1
+        self.labelGForIdDict[self.name] = self
         self.length = 0.1
         self.fullHeight = 0.1
          
@@ -3281,6 +3301,8 @@ class GramText(GramGraphic):
 
         if options:
             ss.append('[%s]' % ','.join(options))
+        if self.name:
+            ss.append(f"({self.name})")
         if self.cA.name:
             ss.append('at (%s)' % self.cA.name)
         else:

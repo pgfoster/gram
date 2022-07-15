@@ -25,7 +25,7 @@ class TreeGram(Gram):
         self._leafLabelSize = 'normalsize'
         self._internalNodeLabelSize = 'scriptsize'
         self._branchLabelSize = 'tiny'
-        self.doLiningNumeralsHack = True
+        # self.doLiningNumeralsHack = True
 
         if theTree:
             # print "theTree is %s" % theTree
@@ -145,10 +145,10 @@ class TreeGram(Gram):
             # Make coordinates for the nodes.
             for n in self.tree.iterNodes():
                 n.cA = GramCoord(
-                    (n.xPosn0 * self.scale), (n.yPosn0 * self.yScale), 'n%i' % n.nodeNum)
+                    (n.xPosn0 * self.scale), (n.yPosn0 * self.yScale), 'c%i' % n.nodeNum)
                 if n.parent:
                     n.cB = GramCoord(
-                        (n.parent.xPosn0 * self.scale), (n.yPosn0 * self.yScale), 'n%ip' % n.nodeNum)
+                        (n.parent.xPosn0 * self.scale), (n.yPosn0 * self.yScale), 'c%ip' % n.nodeNum)
                 else:
                     n.cB = None
 
