@@ -1,5 +1,5 @@
 from p4 import func
-# import pyx
+import pyx
 import os
 import math
 import string
@@ -509,16 +509,16 @@ class Gram(object):
         raise GramError("Don't set htmlColorDict, just modify it.")
     htmlColorDict = property(_getHtmlColorDict, _setHtmlColorDict)
 
-    # def _getHaveStartedPyX(self):
-    #     return Gram._haveStartedPyX
+    def _getHaveStartedPyX(self):
+        return Gram._haveStartedPyX
 
-    # def _setHaveStartedPyX(self, newVal):
-    #     if newVal in [True, False]:
-    #         Gram._haveStartedPyX = newVal
-    #     else:
-    #         raise GramError(
-    #             "Set haveStartedPyX to True or False, only (got %s)" % newVal)
-    # haveStartedPyX = property(_getHaveStartedPyX, _setHaveStartedPyX)
+    def _setHaveStartedPyX(self, newVal):
+        if newVal in [True, False]:
+            Gram._haveStartedPyX = newVal
+        else:
+            raise GramError(
+                "Set haveStartedPyX to True or False, only (got %s)" % newVal)
+    haveStartedPyX = property(_getHaveStartedPyX, _setHaveStartedPyX)
 
     def _getDefaultInnerSep(self):
         return Gram._defaultInnerSep
@@ -670,8 +670,8 @@ class Gram(object):
         gm = ['Gram.getTikz()']
         ss = []
 
-        #if not self.haveStartedPyX:
-        #    self.startPyX()
+        if not self.haveStartedPyX:
+            self.startPyX()
 
         for gr in self.graphics:
             try:
@@ -727,8 +727,8 @@ class Gram(object):
     def render(self):
         # print("doing a render() on %s" % self)
         if self.engine == 'tikz':
-            # if not self.haveStartedPyX:
-            #     self.startPyX()
+            if not self.haveStartedPyX:
+                self.startPyX()
             if not self.haveSetBuiltInTikzStyles:
                 self.setBuiltInTikzStyles()
             self.haveSetBuiltInTikzStyles = True
@@ -1077,11 +1077,11 @@ class Gram(object):
     def pdf(self):
         assert self.documentFontSize in [10, 11, 12]
 
-        # if not self.haveStartedPyX:
-        #     for k,v in self.htmlColorDict.items():
-        #         print(k,v)
-        #         myColorDef = r"\definecolor{%s}{HTML}{%s}" % (k, v)
-        #         self.latexOtherPreambleCommands.append(myColorDef)
+        if not self.haveStartedPyX:
+            for k,v in self.htmlColorDict.items():
+                print(k,v)
+                myColorDef = r"\definecolor{%s}{HTML}{%s}" % (k, v)
+                self.latexOtherPreambleCommands.append(myColorDef)
 
         self.render()
         theKeys = self.styleDict.keys()
@@ -1258,18 +1258,13 @@ class Gram(object):
 
     def cat(self):
         assert self.dirName
-        if 1:
+        if 0:
             print("=========== %s/%s.tex =============" % (self.dirName, self.baseName))
             os.system('cat %s/%s.tex' % (self.dirName, self.baseName))
         if 1:
             if os.path.isfile("%s/%s.tikz.tex" % (self.dirName, self.baseName)):
                 print("=========== %s.tikz.tex =============" % self.baseName)
                 os.system('cat %s/%s.tikz.tex' % (self.dirName, self.baseName))
-        if 0:
-            if os.path.isfile("%s/%s.B.tikz.tex" % (self.dirName, self.baseName)):
-                print("=========== %s.B.tikz.tex =============" % self.baseName)
-                os.system('cat %s/%s.B.tikz.tex' %
-                          (self.dirName, self.baseName))
 
     def adjustBBBFromGraphicBB(self, g):
         if g.bb[0] < self.bbb[0]:
@@ -2266,7 +2261,8 @@ class GramTikzStyle(Gram):
                 if self.draw.value:
                     if self.draw.transparent:
                         options.append("draw=%s" % self.draw.color)
-                        options.append("opacity=%s" % self.draw.value)
+                        # If we do not say "draw" in this next line, the node text gets that opacity as well.
+                        options.append("draw opacity=%s" % self.draw.value)
                     else:
                         options.append("draw=%s!%s" % (self.draw.color, self.draw.value[2:]))
                 else:
@@ -2495,8 +2491,13 @@ class GramGraphic(GramTikzStyle):
         raise GramError("setBB() called.  self is %s" % self)
 
     def getTikzOptions(self):
-        #print("------- GramGraphic.getTikzOptions()  self=%s" % self)
-        #print("self.draw is %s" % self.draw)
+        dbug = True
+        if dbug:
+            if hasattr(self, "rawText"):
+                print("------- GramGraphic.getTikzOptions()  rawText=%s" % self.rawText)
+            else:
+                print(f"------- GramGraphic.getTikzOptions() {self}")
+            print("    self.draw is %s" % self.draw)
         options = []
 
         # First get the style string.
@@ -2523,11 +2524,13 @@ class GramGraphic(GramTikzStyle):
             # print " *** theStyleObject.textFamily is %s" % theStyleObject.textFamily
             # print("getTikzOptions()  A  theStyleObject.anchor is %s" % theStyleObject.anchor)
             options.append(theStyleString)
-        # print("getTikzOptions()  B  options = %s" % options)
+        if dbug:
+            print("    getTikzOptions()  B  options from style = %s" % options)
 
         # Then get options not associated with the style from the style string.
         nonStyleOptions = GramTikzStyle.getTikzOptions(self)
-        # print("getTikzOptions()  C  nonStyleOptions = %s" % nonStyleOptions)
+        if dbug:
+            print("    getTikzOptions()  C  nonStyleOptions = %s" % nonStyleOptions)
 
         # Avoid repetition of font=\sffamily and anchor
         booger = 'font=\\sffamily'
@@ -2550,7 +2553,8 @@ class GramGraphic(GramTikzStyle):
         #        nonStyleOptions.remove(booger)
 
         options += nonStyleOptions
-        # print("getTikzOptions()  D  (final) options = %s" % options)
+        if dbug:
+            print("    getTikzOptions()  D  (final) options = %s" % options)
         return options
 
     def getSvgOptions(self):
@@ -3241,14 +3245,31 @@ class GramText(GramGraphic):
         # self.bb = [0.0] * 4
         # self.svgId = None
         # Plus all the stuff inherited from GramTikzStyle
+        # That includes _textHeight and _textDepth, and GramTikzStyle properties textHeight and TextDepth
+
         
         #print("GramText.__init__(%s)" % text)
         self.rawText = text
-        self.name = f"l{self.labelIdCounter}"
+        self.cookedText = None                 # with added modifiers like sffamily, bfseries, itshape, Large, etc
+        self.name = f"l{self.labelIdCounter}"  
         self.labelIdCounter += 1
-        self.labelGForIdDict[self.name] = self
+        self.labelGForIdDict[self.name] = self  # Gram-wide dictionary
         self.length = 0.1
-        self.fullHeight = 0.1
+
+        self.corners = None
+        self.fullHeight = None         # Note we also have self.textHeight, inherited
+
+        # more text measurements for tikz/pyx 
+        # inner sep is initially 0.3333em
+        # em is the point size; it is not the width of an M (although maybe in history it was ...)
+        # default inner sep is 0.3333em for normalsize text, regardless of text size
+        # So for 10pt documents, inner sep is 3.333pt
+        self.ex = 0.0         # vertical size of an x
+        self.exWid = 0.0      # width of an x
+        self.bigX = 0.0       # vertical size of a big X
+        self.yuh = 0.0        # vertical underhang of a y
+        self.half_normal_x = 0.0   # half vertical size of a normalsize x
+
          
         self.fontSizeMultiplierDict = {
             'tiny': 0.5,
@@ -3267,23 +3288,657 @@ class GramText(GramGraphic):
         self.gY = 0.0
 
     def dump(self):
-        print("GramText.dump() anch=%s, xPosn %.3f yPosn %.3f" % (
-            self.getAnch(), self.cA.xPosn, self.cA.yPosn)) 
-        print("rawText=%s" % self.rawText)
+        print("GramText.dump()")
+        spacer = " " * 8
+        print(f"{spacer} rawText: {self.rawText}")
+        print(f"{spacer} cookedText: {self.cookedText}")
+        print(f"{spacer} name: {self.name}")
+        print(f"{spacer} cA: {self.cA.xPosn:.3f},{self.cA.yPosn:.3f}")
+        print(f"{spacer} anchor: {self.getAnch()}")
+        print(f"{spacer} bb: {self.bb}")
+        print(f"{spacer} length: {self.length:.5f}")
+        print(f"{spacer} fullHeight: {self.fullHeight:.5f}")
+        # print(f"{spacer} ")
+        # print(f"{spacer} ")
+
+    def setCookedText(self):
+        self.cookedText = self.cookText(self.rawText)
+
+    def cookText(self, rawText):
+        """Add adjectives like sffamily, bfseries, itshape, Large, etc to rawText.
+        """
+        #_goodTextFamilies = ['rmfamily', 'sffamily', 'ttfamily']
+        #_goodTextSeries = ['bfseries']
+        #_goodTextShapes = ['itshape', 'scshape']
+
+        if not rawText:
+            return ''
+        theText = func.fixCharsForLatex(rawText)
+        # print("cookText() the raw text is %s" % rawText)
+        # print("cookText() theText (a) is %s" % theText)
+        #theText = self.rawText
+        cookedText = ''
+        theTextFamily = self.getTextFamily()
+        theTextSeries = self.getTextSeries()
+        theTextShape = self.getTextShape()
+        theSize = self.getTextSize()
+
+        if theTextShape:
+            theText = r"\%s %s" % (theTextShape, theText)
+        if theTextSeries:
+            theText = r"\%s %s" % (theTextSeries, theText)
+        if theTextFamily:
+            theText = r"\%s %s" % (theTextFamily, theText)
+        if theSize and theSize != 'normalsize':
+            theText = r"\%s %s" % (theSize, theText)
+        
+        # textWidth is another adjective, instructing TeX where to wrap a long
+        # line of text.  It would be either None or xx cm.  If it is not None,
+        # then we stick the text in a minipage.
+        theTextWidth = self.getTextWidth()
+        if theTextWidth:
+            # Not sure why these next three lines were here.
+            #theInnerSep = self.getInnerSep()
+            #if theInnerSep:
+            #    theTextWidth = theTextWidth - theInnerSep
+            theText = r"\begin{minipage}{%.3fcm}%s\end{minipage}" % (
+                theTextWidth, theText)
+
+        # print("cookText() theText (b) is %s" % theText)
+        return theText
+
+    def setTextLengthHeightAndMetrics(self):
+        """This runs pyx on the cookedText, gets length and height
+        
+        and X, x, yuh measurements
+        """
+
+        # 1 PostScript point = 0.35277138 mm
+        ptToCm = 0.035277138
+        # print("setTextLengthHeightAndMetrics() cookedText: %s" % self.cookedText)
+
+        try:
+            #print("cookedText is", self.cookedText)
+            t = pyx.text.text(0.0, 0.0, self.cookedText)
+        except:
+            raise GramError("pyx gagged on '%s', which was cooked to '%s'" % (
+                self.rawText, self.cookedText))
+
+        tbb = t.bbox()
+        self.length = (tbb.urx_pt - tbb.llx_pt) * ptToCm
+
+        # Width for wrapping, or None
+        theTextWidth = self.getTextWidth()
+        if 1 and theTextWidth:
+            theInnerSep = self.getInnerSep()
+            # print("theTextWidth", theTextWidth, " theInnerSep", theInnerSep)
+            if theInnerSep:
+                self.length += theInnerSep
+
+        self.fullHeight = (tbb.ury_pt - tbb.lly_pt) * ptToCm
+        # self.underhang = -tbb.lly_pt * ptToCm
+        # self.rise = tbb.ury_pt * ptToCm
+        # print("setTextLengthHeightAndMetrics() The text '%s' is %.3f cm long, and %.3f cm  high" % (self.cookedText, self.length, self.fullHeight))
+        # sys.exit()
+
+        #self.length = 3.
+        #self.fullHeight = 2.
+        #self.underhang = 0.1
+        #self.rise = 0.2
+
+        cooked = self.cookText('X')
+        t = pyx.text.text(0.0, 0.0, cooked)
+        tbb = t.bbox()
+        self.bigX = tbb.ury_pt * ptToCm
+
+        cooked = self.cookText('x')
+        t = pyx.text.text(0.0, 0.0, cooked)
+        tbb = t.bbox()
+        self.ex = tbb.ury_pt * ptToCm
+        self.exWid = tbb.urx_pt * ptToCm
+
+        cooked = self.cookText('y')
+        t = pyx.text.text(0.0, 0.0, cooked)
+        tbb = t.bbox()
+        self.yuh = -tbb.lly_pt * ptToCm
+
+        #cooked = 'M'
+        #t = pyx.text.text(0.0, 0.0, cooked)
+        #tbb = t.bbox()
+        #self.normal_em = tbb.urx_pt * ptToCm
+
+        cooked = 'x'
+        t = pyx.text.text(0.0, 0.0, cooked)
+        tbb = t.bbox()
+        self.half_normal_x = 0.5 * tbb.ury_pt * ptToCm
+
+    def getBiggestWidth(self):
+        """This assumes a multi-line rawText, with newlines r'\n' 
+
+        This is used by TreeGram.
+        """
+        savedRawText = self.rawText
+        #    1 PostScript point = 0.35277138 mm
+        ptToCm = 0.035277138
+        bits = self.rawText.split('\n')
+        # print bits
+        biggestWidth = 0.0
+        for bit in bits:
+            self.rawText = bit
+            self.setCookedText()
+
+            try:
+                t = pyx.text.text(0.0, 0.0, self.cookedText)
+            except IOError:
+                raise GramError("pyx gagged on '%s', which was cooked to '%s'" % (
+                    self.rawText, self.cookedText))
+
+            tbb = t.bbox()
+            thisWidth = (tbb.urx_pt - tbb.llx_pt) * ptToCm
+            # print(f"getBiggestWidth() bit cookedText: {self.cookedText}, got width {thisWidth}")
+            if thisWidth > biggestWidth:
+                biggestWidth = thisWidth
+        self.rawText = savedRawText
+        #print("getBiggestWidth: %.3fcm" % biggestWidth)
+        return biggestWidth
+
 
     def setBB(self):
-        pass
+        # print "GramText '%s'  setBB_tikz()" % self.rawText
+        
+        if not self.cA:
+            self.cA = GramCoord()
+
+        if 1 and self.engine == 'tikz':
+
+            boogers = [r'\includegraphics', r'\parbox', r'\begin{minipage}']
+            for booger in boogers:
+                # print "self.rawText is %s, type %s" % (self.rawText,
+                # type(self.rawText))
+                if booger in self.rawText:
+                    if self.style:
+                        print("====== Turning off style for textbox '%s'" % self.rawText)
+                        self.style = None
+                    theAnch = self.getAnch()
+                    if theAnch == 'south west':
+                        self.bb[0] = self.cA.xPosn
+                        self.bb[1] = self.cA.yPosn
+                        self.bb[2] = self.cA.xPosn + 1.
+                        self.bb[3] = self.cA.yPosn + 1.
+
+                    elif theAnch == 'south':
+                        self.bb[0] = self.cA.xPosn - 0.5
+                        self.bb[1] = self.cA.yPosn
+                        self.bb[2] = self.cA.xPosn + 0.5
+                        self.bb[3] = self.cA.yPosn + 1.0
+
+                    elif theAnch == 'south east':
+                        self.bb[0] = self.cA.xPosn - 1.0
+                        self.bb[1] = self.cA.yPosn
+                        self.bb[2] = self.cA.xPosn
+                        self.bb[3] = self.cA.yPosn + 1.0
+
+                    elif theAnch == 'base east':
+                        self.bb[0] = self.cA.xPosn - 1.
+                        self.bb[1] = self.cA.yPosn - 0.35
+                        self.bb[2] = self.cA.xPosn
+                        self.bb[3] = self.cA.yPosn + 0.65
+
+                    elif theAnch == 'east':
+                        self.bb[0] = self.cA.xPosn - 1.0
+                        self.bb[1] = self.cA.yPosn - 0.5
+                        self.bb[2] = self.cA.xPosn
+                        self.bb[3] = self.cA.yPosn + 0.5
+
+                    elif theAnch == 'north east':
+                        self.bb[0] = self.cA.xPosn - 1.0
+                        self.bb[1] = self.cA.yPosn - 1.0
+                        self.bb[2] = self.cA.xPosn
+                        self.bb[3] = self.cA.yPosn
+
+                    elif theAnch == 'north':
+                        self.bb[0] = self.cA.xPosn - 0.5
+                        self.bb[1] = self.cA.yPosn - 1.0
+                        self.bb[2] = self.cA.xPosn + 0.5
+                        self.bb[3] = self.cA.yPosn
+
+                    elif theAnch == 'north west':
+                        self.bb[0] = self.cA.xPosn
+                        self.bb[1] = self.cA.yPosn - 1.0
+                        self.bb[2] = self.cA.xPosn + 1.0
+                        self.bb[3] = self.cA.yPosn
+
+                    elif theAnch == 'west':
+                        self.bb[0] = self.cA.xPosn
+                        self.bb[1] = self.cA.yPosn - 0.5
+                        self.bb[2] = self.cA.xPosn + 1.0
+                        self.bb[3] = self.cA.yPosn + 0.5
+
+                    elif theAnch == 'base west':
+                        self.bb[0] = self.cA.xPosn
+                        self.bb[1] = self.cA.yPosn - 0.35
+                        self.bb[2] = self.cA.xPosn + 1.0
+                        self.bb[3] = self.cA.yPosn + 0.65
+
+                    elif theAnch == 'base':
+                        self.bb[0] = self.cA.xPosn - 0.5
+                        self.bb[1] = self.cA.yPosn - 0.35
+                        self.bb[2] = self.cA.xPosn + 0.5
+                        self.bb[3] = self.cA.yPosn + 0.65
+
+                    elif theAnch == 'center' or theAnch is None:
+                        self.bb[0] = self.cA.xPosn - 0.5
+                        self.bb[1] = self.cA.yPosn - 0.5
+                        self.bb[2] = self.cA.xPosn + 0.5
+                        self.bb[3] = self.cA.yPosn + 0.5
+
+                    # ====================================
+
+                    else:
+                        raise GramError("anch '%s' not implemented." % theAnch)
+
+                    return
+
+        #if self.font == 'helvetica':
+        #    # This should not be needed, but it is!  Is it still?
+        #    # self.textFamily = 'sffamily'
+        #    pass
+
+        if self.engine == 'tikz':
+            self.setCookedText()
+            self.setTextLengthHeightAndMetrics()
+
+        theTextHeight = None
+        theTextDepth = None
+
+        # Width for wrapping, or None
+        theTextWidth = self.getTextWidth()
+
+        if 0:
+            # Turn off tikzOptions textHeight and textDepth, which
+            # were on to make draw boxes all the same height
+            if not theTextWidth:     # usually this
+                # if 1:
+                #self.textHeight = self.bigX
+                #self.textDepth = self.yuh
+
+                ret = None
+                if self.myStyle:
+                    st = self.styleDict[self.myStyle]
+                    if st.textHeight is not None:
+                        ret = st.textHeight
+                if ret is None and self.style:
+                    st = self.styleDict[self.style]
+                    if st.textHeight is not None:
+                        ret = st.textHeight
+                if ret is None or ret is not self.bigX:  # if the style has been over-ridden
+                    self.textHeight = self.bigX
+                    ret = self.textHeight
+                theTextHeight = ret
+
+                ret = None
+                if self.myStyle:
+                    st = self.styleDict[self.myStyle]
+                    if st.textDepth is not None:
+                        ret = st.textDepth
+                if ret is None and self.style:
+                    st = self.styleDict[self.style]
+                    if st.textDepth is not None:
+                        ret = st.textDepth
+                if ret is None or ret is not self.yuh:  # if the style has been over-ridden
+                    self.textDepth = self.yuh
+                    ret = self.textDepth
+                theTextDepth = ret
+
+                self.fullHeight = theTextHeight + theTextDepth
+
+        else:
+            # self.fullHeight remains from the pyx measurement
+            self.textHeight = 0.0
+            self.textDepth = 0.0
+            theTextHeight = 0.0
+            theTextDepth = 0.0
+
+        #print("a GramText.setBB() for '%s';  self.length is %s, self.fullHeight is %s, bb is %s" % (self.rawText, self.length, self.fullHeight, self.bb))
+
+        halfHeight = self.fullHeight / 2.0
+        halfLength = self.length / 2.0
+        # oneSep = (self.normal_em * 0.3333) + 0.009 # The 0.009 is a total
+        # fudge, but it appears to be right.
+
+        theAnch = self.getAnch()
+        #print("xxy GramText.setBB() theAnch is %s" % theAnch)
+        oneInnerSep = self.getInnerSep()
+        if oneInnerSep is None:
+            raise GramError("GramText.setBB(). %s getInnerSep() returned None." % self.rawText)
+
+        theLineThickness = self.getLineThickness()
+        # if oneInnerSep is None:
+        #    oneInnerSep = self.defaultInnerSep
+        twoInnerSep = 2 * oneInnerSep
+        twoOuterSep = cmForLineThickness(theLineThickness)
+        oneOuterSep = 0.5 * twoOuterSep
+        # print "    oneInnerSep is %.3f" % oneInnerSep
+        # print "    oneOuterSep is %.3f" % oneOuterSep
+        # print "  %s theAnch is %s, length=%.5f, height=%s, halfHeight=%s" % (
+        #    self.rawText, theAnch, self.length, self.fullHeight, halfHeight)
+        # sys.exit()
+
+        if theTextWidth and theAnch and theAnch.startswith('base'):
+            raise GramError(
+                "GramText.setBB(). Don't use 'base', 'base east', or 'base west' if textWidth is set.")
+
+        if theAnch == 'south west':
+            self.bb[0] = self.cA.xPosn
+            self.bb[1] = self.cA.yPosn
+            self.bb[2] = self.cA.xPosn + \
+                self.length + twoInnerSep + twoOuterSep
+            self.bb[3] = self.cA.yPosn + \
+                self.fullHeight + twoInnerSep + twoOuterSep
+
+        elif theAnch == 'south':
+            self.bb[0] = self.cA.xPosn - \
+                (halfLength + oneInnerSep + oneOuterSep)
+            self.bb[1] = self.cA.yPosn
+            self.bb[2] = self.cA.xPosn + \
+                (halfLength + oneInnerSep + oneOuterSep)
+            self.bb[3] = self.cA.yPosn + \
+                self.fullHeight + twoInnerSep + twoOuterSep
+
+        elif theAnch == 'south east':
+            self.bb[0] = self.cA.xPosn - \
+                (self.length + twoInnerSep + twoOuterSep)
+            self.bb[1] = self.cA.yPosn
+            self.bb[2] = self.cA.xPosn
+            self.bb[3] = self.cA.yPosn + \
+                (self.fullHeight + twoInnerSep + twoOuterSep)
+
+        elif theAnch == 'base east':
+            # if self.textWidth:
+            if 0:
+                self.bb[0] = self.cA.xPosn - \
+                    (self.length + twoInnerSep + twoOuterSep)
+                self.bb[1] = self.cA.yPosn - \
+                    (self.fullHeight + oneInnerSep + oneOuterSep)
+                self.bb[2] = self.cA.xPosn
+                self.bb[3] = self.cA.yPosn + (oneInnerSep + oneOuterSep)
+            else:
+                self.bb[0] = self.cA.xPosn - \
+                    (self.length + twoInnerSep + twoOuterSep)
+                self.bb[1] = self.cA.yPosn - \
+                    (theTextDepth + oneInnerSep + oneOuterSep)
+                self.bb[2] = self.cA.xPosn
+                self.bb[3] = self.cA.yPosn + \
+                    (theTextHeight + oneInnerSep + oneOuterSep)
+
+        elif theAnch == 'east':
+            self.bb[0] = self.cA.xPosn - \
+                (self.length + twoInnerSep + twoOuterSep)
+            self.bb[1] = self.cA.yPosn - \
+                (halfHeight + oneInnerSep + oneOuterSep)
+            self.bb[2] = self.cA.xPosn
+            self.bb[3] = self.cA.yPosn + \
+                (halfHeight + oneInnerSep + oneOuterSep)
+
+        elif theAnch == 'north east':
+            self.bb[0] = self.cA.xPosn - \
+                (self.length + twoInnerSep + twoOuterSep)
+            self.bb[1] = self.cA.yPosn - \
+                (self.fullHeight + twoInnerSep + twoOuterSep)
+            self.bb[2] = self.cA.xPosn
+            self.bb[3] = self.cA.yPosn
+
+        elif theAnch == 'north':
+            self.bb[0] = self.cA.xPosn - \
+                (halfLength + oneInnerSep + oneOuterSep)
+            self.bb[1] = self.cA.yPosn - \
+                (self.fullHeight + twoInnerSep + twoOuterSep)
+            self.bb[2] = self.cA.xPosn + \
+                (halfLength + oneInnerSep + oneOuterSep)
+            self.bb[3] = self.cA.yPosn
+
+        elif theAnch == 'north west':
+            self.bb[0] = self.cA.xPosn
+            self.bb[1] = self.cA.yPosn - \
+                (self.fullHeight + twoInnerSep + twoOuterSep)
+            self.bb[2] = self.cA.xPosn + \
+                (self.length + twoInnerSep + twoOuterSep)
+            self.bb[3] = self.cA.yPosn
+
+        elif theAnch == 'west':
+            self.bb[0] = self.cA.xPosn
+            self.bb[1] = self.cA.yPosn - \
+                (halfHeight + oneInnerSep + oneOuterSep)
+            self.bb[2] = self.cA.xPosn + \
+                (self.length + twoInnerSep + twoOuterSep)
+            self.bb[3] = self.cA.yPosn + \
+                (halfHeight + oneInnerSep + oneOuterSep)
+
+        elif theAnch == 'base west':
+            # if self.textWidth:
+            if 0:
+                self.bb[0] = self.cA.xPosn
+                self.bb[1] = self.cA.yPosn - \
+                    (self.fullHeight + oneInnerSep + oneOuterSep)
+                self.bb[2] = self.cA.xPosn + \
+                    (self.length + twoInnerSep + twoOuterSep)
+                self.bb[3] = self.cA.yPosn + (oneInnerSep + oneOuterSep)
+            else:
+                self.bb[0] = self.cA.xPosn
+                self.bb[1] = self.cA.yPosn - \
+                    (theTextDepth + oneInnerSep + oneOuterSep)
+                self.bb[2] = self.cA.xPosn + \
+                    (self.length + twoInnerSep + twoOuterSep)
+                self.bb[3] = self.cA.yPosn + \
+                    (theTextHeight + oneInnerSep + oneOuterSep)
+
+        elif theAnch == 'base':
+            # if self.textWidth:
+            if 0:
+                self.bb[0] = self.cA.xPosn - \
+                    (halfLength + oneInnerSep + oneOuterSep)
+                self.bb[1] = self.cA.yPosn - \
+                    (self.fullHeight + oneInnerSep + oneOuterSep)
+                self.bb[2] = self.cA.xPosn + \
+                    (halfLength + oneInnerSep + oneOuterSep)
+                self.bb[3] = self.cA.yPosn + (oneInnerSep + oneOuterSep)
+            else:
+                self.bb[0] = self.cA.xPosn - \
+                    (halfLength + oneInnerSep + oneOuterSep)
+                self.bb[1] = self.cA.yPosn - \
+                    (theTextDepth + oneInnerSep + oneOuterSep)
+                self.bb[2] = self.cA.xPosn + \
+                    (halfLength + oneInnerSep + oneOuterSep)
+                self.bb[3] = self.cA.yPosn + \
+                    (theTextHeight + oneInnerSep + oneOuterSep)
+
+        elif theAnch == 'center' or theAnch is None:
+            self.bb[0] = self.cA.xPosn - (halfLength + oneInnerSep + oneOuterSep)
+            self.bb[1] = self.cA.yPosn - (halfHeight + oneInnerSep + oneOuterSep)
+            self.bb[2] = self.cA.xPosn + (halfLength + oneInnerSep + oneOuterSep)
+            self.bb[3] = self.cA.yPosn + (halfHeight + oneInnerSep + oneOuterSep)
+
+        # ====================================
+        elif theAnch == 'mid west':
+            if self.textWidth:
+                self.bb[0] = self.cA.xPosn
+                self.bb[1] = self.cA.yPosn - \
+                    (self.fullHeight + twoInnerSep + oneOuterSep)
+                self.bb[2] = self.cA.xPosn + \
+                    (self.length + twoInnerSep + twoOuterSep)
+                # + (self.fullHeight + oneInnerSep + oneOuterSep)
+                self.bb[3] = self.cA.yPosn
+            else:
+                self.bb[0] = self.cA.xPosn
+                self.bb[1] = self.cA.yPosn - (theTextDepth + self.half_normal_x + 
+                                              oneInnerSep + oneOuterSep)
+                self.bb[2] = self.cA.xPosn + (self.length + twoInnerSep + twoOuterSep)
+                self.bb[3] = self.cA.yPosn + (theTextHeight + oneInnerSep + 
+                                              oneOuterSep) - self.half_normal_x
+
+        elif theAnch == 'mid east':
+            if self.textWidth:
+                self.bb[0] = self.cA.xPosn - \
+                    (self.length + twoInnerSep + twoOuterSep)
+                self.bb[1] = self.cA.yPosn - \
+                    (self.fullHeight + twoInnerSep + oneOuterSep)
+                self.bb[2] = self.cA.xPosn
+                # + (self.fullHeight + oneInnerSep + oneOuterSep)
+                self.bb[3] = self.cA.yPosn
+            else:
+                self.bb[0] = self.cA.xPosn - \
+                    (self.length + twoInnerSep + twoOuterSep)
+                self.bb[1] = self.cA.yPosn - (theTextDepth + self.half_normal_x + oneInnerSep + oneOuterSep)
+                self.bb[2] = self.cA.xPosn
+                self.bb[3] = self.cA.yPosn + (theTextHeight + oneInnerSep + oneOuterSep) - self.half_normal_x
+            #self.bb[0] = self.cA.xPosn - (self.length + twoInnerSep + twoOuterSep)
+            #self.bb[1] = self.cA.yPosn - (self.underhang + oneInnerSep + oneOuterSep)
+            #self.bb[2] = self.cA.xPosn
+            #self.bb[3] = self.cA.yPosn + (self.rise + oneInnerSep + oneOuterSep)
+
+        elif theAnch == 'mid':
+            if self.textWidth:
+                self.bb[0] = self.cA.xPosn - \
+                    (halfLength + oneInnerSep + oneOuterSep)
+                self.bb[1] = self.cA.yPosn - \
+                    (self.fullHeight + twoInnerSep + oneOuterSep)
+                self.bb[2] = self.cA.xPosn + \
+                    (halfLength + oneInnerSep + oneOuterSep)
+                self.bb[3] = self.cA.yPosn  # + (oneInnerSep + oneOuterSep)
+            else:
+                self.bb[0] = self.cA.xPosn - \
+                    (halfLength + oneInnerSep + oneOuterSep)
+                self.bb[1] = self.cA.yPosn - (theTextDepth + self.half_normal_x + oneInnerSep + oneOuterSep)
+                self.bb[2] = self.cA.xPosn + \
+                    (halfLength + oneInnerSep + oneOuterSep)
+                self.bb[3] = self.cA.yPosn + (theTextHeight + oneInnerSep + oneOuterSep) - self.half_normal_x
+
+        else:
+            raise GramError("anch '%s' not implemented." % theAnch)
+
+        #print("b GramText.setBB() for '%s';  self.length is %s, bb is %s" % (self.rawText, self.length, self.bb))
+
+        theRotate = self.getRotate()
+        if theRotate:
+            # The textbox rotates around its anchor.
+            # print "   *tb.bb %25s  %.2f %.2f %.2f %.2f " % (
+            # self.rawText, self.bb[0], self.bb[1], self.bb[2], self.bb[3])
+            corners = []
+            corners.append([self.bb[0], self.bb[1]])
+            corners.append([self.bb[2], self.bb[1]])
+            corners.append([self.bb[2], self.bb[3]])
+            corners.append([self.bb[0], self.bb[3]])
+            # print "xPosn=%.1f, yPosn=%.1f" % (self.cA.xPosn,
+            # self.cA.yPosn)
+            for cNum in range(4):
+                corner = corners[cNum]
+                corner[0] -= self.cA.xPosn
+                corner[1] -= self.cA.yPosn
+            polarCorners = []
+            for cNum in range(4):
+                polarCorners.append(func.square2polar(corners[cNum]))
+            # print "a polarCorners = ", polarCorners
+            rads = (theRotate * math.pi) / 180.
+            # print "theRotate %f is %f radians" % (theRotate, rads)
+            for cNum in range(4):
+                pCorner = polarCorners[cNum]
+                pCorner[0] += rads
+            # print "b polarCorners = ", polarCorners
+
+            corners = []
+            for cNum in range(4):
+                corners.append(func.polar2square(polarCorners[cNum]))
+            # print 'corners', corners
+            for cNum in range(4):
+                corner = corners[cNum]
+                corner[0] += self.cA.xPosn
+                corner[1] += self.cA.yPosn
+            # print corners
+
+            llx = 1000000.
+            lly = 1000000.
+            urx = -1000000.
+            ury = -1000000.
+
+            for cNum in range(4):
+                corner = corners[cNum]
+                if corner[0] < llx:
+                    llx = corner[0]
+                if corner[1] < lly:
+                    lly = corner[1]
+                if corner[0] > urx:
+                    urx = corner[0]
+                if corner[1] > ury:
+                    ury = corner[1]
+            self.bb = [llx, lly, urx, ury]
+            # print "   @tb.bb %25s  %.2f %.2f %.2f %.2f " % (
+            # self.rawText, self.bb[0], self.bb[1], self.bb[2], self.bb[3])
+            self.corners = corners
+
+        theXShift = self.getXShift()
+        if theXShift:
+            self.bb[0] += theXShift
+            self.bb[2] += theXShift
+            if self.corners:
+                for cNum in range(4):
+                    self.corners[cNum][0] += theXShift
+        theYShift = self.getYShift()
+        if theYShift:
+            self.bb[1] += theYShift
+            self.bb[3] += theYShift
+            if self.corners:
+                for cNum in range(4):
+                    self.corners[cNum][1] += theYShift
+
+        #theTextWidth = self.getTextWidth()
+        # if theTextWidth:
+        # print "text %s, self.fullHeight %.1f, self.length %.1f, self.bb %s" %
+        # (self.rawText, self.fullHeight, self.length, self.bb)
+
 
     def getTikz(self):
         gm = ['GramText.getTikz() rawText=%s' % self.rawText]
         #print(gm[0])
 
-        if not self.cA:
-            if 0:
-                gm.append('no cA GramCoord')
-                raise GramError(gm)
-            else:
-                self.cA = GramCoord()
+        if not self.haveStartedPyX:
+            self.startPyX()
+
+        # if not self.cA:
+        #     self.cA = GramCoord()
+
+        boogers = [r'\includegraphics', r'\parbox', r'\begin{minipage}']
+        hasBooger = False
+        for booger in boogers:
+            if booger in self.rawText:
+                hasBooger = True
+                break
+        if hasBooger:
+            theText = self.rawText
+        else:
+            print("acc", gm[0], f"fullHeight {self.fullHeight}, textHeight {self.textHeight}, textDepth {self.textDepth}")
+            self.setBB()
+            print("acd", gm[0], f"fullHeight {self.fullHeight}, textHeight {self.textHeight}, textDepth {self.textDepth}")
+
+            theText = func.fixCharsForLatex(self.rawText)
+            #theText = self.rawText
+            # if self.rawText:
+            #    theText = func.fixCharsForLatex(self.rawText)
+            # else:
+            #    theText = ''
+
+        # print(f"GramText.getTikz()  self.rawText= {self.rawText}")
+        # print(f"theText (after fixCharsForLatex(self.rawText))= {theText}")
+
+        # Hack
+        if 1:
+            if 'fcolorbox' in theText:
+                print("------fixing ------", theText)
+                splText = theText.split()
+                for tNum in range(len(splText)):
+                    if splText[tNum].startswith("\\fcolorbox"):
+                        splText[tNum] = "\\raisebox{1.5bp}{\\scalebox{0.5}{%s}}" % splText[
+                            tNum]
+                theText = ' '.join(splText)
 
 
         ss = []
@@ -3310,7 +3965,13 @@ class GramText(GramGraphic):
 
         ss.append('{%s};' % self.rawText)
 
-        # if self.showTextBB:  # self.bb is not calculated for tikz
+        if self.showTextBB:
+            bbLine = '\n'
+            bbLine += r"\draw [red,ultra thin] (%.3f,%.3f) rectangle (%.3f,%.3f);" % (
+                self.bb[0], self.bb[1],
+                self.bb[2], self.bb[3])
+            # print bbLine
+            ss.append(bbLine)
 
         if self.showTextAnchor:
             ss.append("\\draw [red] plot[only marks,mark=x] coordinates {(%.3f,%.3f)};" % (
@@ -3411,11 +4072,11 @@ class GramText(GramGraphic):
         if myTextShape == 'scshape':
             theTextDepth = 0.0
 
-        self.height = theTextHeight + theTextDepth
-        halfHeight = self.height / 2.
+        self.fullHeight = theTextHeight + theTextDepth
+        halfHeight = self.fullHeight / 2.
         #self.length = (self.bb[2] - self.bb[0])  no workee for rotated!
         halfLength = self.length/2.
-        # print(f"GramText.getSvg() '{self.rawText}' length {self.length:.2} cm, height is {self.height:.2} cm")
+        # print(f"GramText.getSvg() '{self.rawText}' length {self.length:.2} cm, height is {self.fullHeight:.2} cm")
 
         oneInnerSep = self.getInnerSep()
         #print "GramText.getSvg() Got oneInnerSep %.2f" % oneInnerSep
@@ -3452,7 +4113,7 @@ class GramText(GramGraphic):
             myDy += oneInnerSep
             myDy += oneOuterSep
             myDy += self.bigX
-            myDrDy += self.height
+            myDrDy += self.fullHeight
             myDrDy += twoInnerSep
             myDrDy += twoOuterSep
         elif myAnch == 'north':
@@ -3464,7 +4125,7 @@ class GramText(GramGraphic):
             myDrDx += -halfLength
             myDrDx += -oneInnerSep
             myDrDx += -oneOuterSep
-            myDrDy += self.height
+            myDrDy += self.fullHeight
             myDrDy += twoInnerSep
             myDrDy += twoOuterSep
         elif myAnch == 'north east':
@@ -3478,7 +4139,7 @@ class GramText(GramGraphic):
             myDrDx += -self.length
             myDrDx += -twoInnerSep
             myDrDx += -twoOuterSep
-            myDrDy += self.height
+            myDrDy += self.fullHeight
             myDrDy += twoInnerSep
             myDrDy += twoOuterSep
         elif myAnch == 'east':
@@ -3654,7 +4315,7 @@ class GramText(GramGraphic):
             else:
                 myColor = None
 
-            myDrHeight = ((self.height + twoInnerSep) * self.svgPxForCm)
+            myDrHeight = ((self.fullHeight + twoInnerSep) * self.svgPxForCm)
             myDrX = ((self.cA.xPosn + oneOuterSep) * self.svgPxForCm)  + myDrDx
             myDrY = ((-self.cA.yPosn - oneOuterSep) * self.svgPxForCm) - myDrHeight + myDrDy
             myDrWid = ((self.length + twoInnerSep) * self.svgPxForCm)
@@ -3843,8 +4504,8 @@ class GramText(GramGraphic):
         if myTextShape == 'scshape':
             theTextDepth = 0.0
 
-        self.height = theTextHeight + theTextDepth
-        halfHeight = self.height / 2.
+        self.fullHeight = theTextHeight + theTextDepth
+        halfHeight = self.fullHeight / 2.
         #self.length = (self.bb[2] - self.bb[0])  no workee for rotated!
         halfLength = self.length/2.
         #print "GramText. %s length %s cm" % (self.rawText, self.length)
@@ -3878,7 +4539,7 @@ class GramText(GramGraphic):
             myDy += oneInnerSep
             myDy += oneOuterSep
             myDy += self.bigX
-            myDrDy += self.height
+            myDrDy += self.fullHeight
             myDrDy += twoInnerSep
             myDrDy += twoOuterSep
         elif myAnch == 'north':
@@ -3890,7 +4551,7 @@ class GramText(GramGraphic):
             myDrDx += -halfLength
             myDrDx += -oneInnerSep
             myDrDx += -oneOuterSep
-            myDrDy += self.height
+            myDrDy += self.fullHeight
             myDrDy += twoInnerSep
             myDrDy += twoOuterSep
         elif myAnch == 'north east':
@@ -3904,7 +4565,7 @@ class GramText(GramGraphic):
             myDrDx += -self.length
             myDrDx += -twoInnerSep
             myDrDx += -twoOuterSep
-            myDrDy += self.height
+            myDrDy += self.fullHeight
             myDrDy += twoInnerSep
             myDrDy += twoOuterSep
         elif myAnch == 'east':
@@ -4049,7 +4710,7 @@ class GramText(GramGraphic):
             else:
                 myColor = None
 
-            myDrHeight = ((self.height + twoInnerSep) * self.svgPxForCm)
+            myDrHeight = ((self.fullHeight + twoInnerSep) * self.svgPxForCm)
             myDrX = ((self.cA.xPosn + oneOuterSep) * self.svgPxForCm)  + myDrDx
             myDrY = ((-self.cA.yPosn - oneOuterSep) * self.svgPxForCm) - myDrHeight + myDrDy
             myDrWid = ((self.length + twoInnerSep) * self.svgPxForCm)
