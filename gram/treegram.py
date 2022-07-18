@@ -697,15 +697,15 @@ class TreeGram(Gram):
                         oldHeight = n.label.bb[3] - n.label.bb[1]
                         #n.label.rawText = n.label.rawText.replace(", ", ",\n")
                         n.label.rawText = ",\n".join([aLine.strip() for aLine in n.label.rawText.split(',')])
-                        n.label.textWidth = n.label.getBiggestWidth()
-                        #print(f"TreeGram.setPositions() set n.label.textWidth to {n.label.textWidth} from n.lable.getBiggestWidth().  rawText: {n.label.rawText}")
-                        # The newly-set n.label.textWidth becomes the
+                        n.label.textWrapWidth = n.label.getBiggestWidth()
+                        #print(f"TreeGram.setPositions() set n.label.textWrapWidth to {n.label.textWrapWidth} from n.lable.getBiggestWidth().  rawText: {n.label.rawText}")
+                        # The newly-set n.label.textWrapWidth becomes the
                         # width of the minipage that is made below,
                         # but it was too small in an example that I
                         # looked into, and caused wrapping in the
                         # minipage.  So add innerSep
                         theInnerSep = n.label.getInnerSep()
-                        n.label.textWidth +=  theInnerSep
+                        n.label.textWrapWidth +=  theInnerSep
 
                         n.label.rawText = n.label.rawText.replace(",\n", r",\\ ")
                         n.label.style = None
@@ -739,7 +739,7 @@ class TreeGram(Gram):
                         #    savedSize = n.label.style.textSize
 
                         n.label.style = None
-                        n.label.textWidth = self.wrapLeafLabelsAt
+                        n.label.textWrapWidth = self.wrapLeafLabelsAt
                         n.label.textJustification = 'badly ragged'
                         n.label.textSize = self.leafLabelSize
                         #n.label.textSize = savedSize

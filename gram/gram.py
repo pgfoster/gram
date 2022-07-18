@@ -1772,7 +1772,7 @@ class GramTikzStyle(Gram):
         self._lineStyle = None  # Dotted, dashed
         self._textHeight = None
         self._textDepth = None
-        self._textWidth = None
+        self._textWrapWidth = None
         self._textJustification = None
         self._innerSep = None
         self._roundedCorners = None
@@ -2161,10 +2161,10 @@ class GramTikzStyle(Gram):
         self._textDepth = None
     textDepth = property(_getTextDepth, _setTextDepth, _delTextDepth)
 
-    def _getTextWidth(self):
-        return self._textWidth
+    def _getTextWrapWidth(self):
+        return self._textWrapWidth
 
-    def _setTextWidth(self, newVal):
+    def _setTextWrapWidth(self, newVal):
         try:
             nV = float(newVal)
         except:
@@ -2172,12 +2172,12 @@ class GramTikzStyle(Gram):
                 nV = newVal
             else:
                 raise GramError(
-                    "_setTextWidth, should set to a float or None.")
-        self._textWidth = nV
+                    "_setTextWrapWidth, should set to a float or None.")
+        self._textWrapWidth = nV
 
-    def _delTextWidth(self):
-        self._textWidth = None
-    textWidth = property(_getTextWidth, _setTextWidth, _delTextWidth)
+    def _delTextWrapWidth(self):
+        self._textWrapWidth = None
+    textWrapWidth = property(_getTextWrapWidth, _setTextWrapWidth, _delTextWrapWidth)
 
     def _getTextJustification(self):
         return self._textJustification
@@ -2310,8 +2310,8 @@ class GramTikzStyle(Gram):
         if self.textDepth or (self.textDepth == 0.0 and self.textShape == 'scshape'):  
             # scshape has a textDepth of zero
             options.append("text depth=%.3fcm" % self.textDepth)
-        if self.textWidth:
-            options.append("text width=%.3fcm" % self.textWidth)
+        if self.textWrapWidth:
+            options.append("text width=%.3fcm" % self.textWrapWidth)
         if self.textJustification:
             options.append("text %s" % self.textJustification)
         if self.innerSep is not None:
@@ -2433,8 +2433,8 @@ class GramTikzStyle(Gram):
         #     options.append('text height=%.3fcm' % self.textHeight)
         # if self.textDepth:
         #     options.append('text depth=%.3fcm' % self.textDepth)
-        # if self.textWidth:
-        #     options.append('text width=%.3fcm' % self.textWidth)
+        # if self.textWrapWidth:
+        #     options.append('text width=%.3fcm' % self.textWrapWidth)
         # if self.textJustification:
         #     options.append('text %s' % self.textJustification)
         # if self.innerSep is not None:
@@ -2491,7 +2491,7 @@ class GramGraphic(GramTikzStyle):
         raise GramError("setBB() called.  self is %s" % self)
 
     def getTikzOptions(self):
-        dbug = True
+        dbug = False
         if dbug:
             if hasattr(self, "rawText"):
                 print("------- GramGraphic.getTikzOptions()  rawText=%s" % self.rawText)
@@ -2848,16 +2848,16 @@ class GramGraphic(GramTikzStyle):
 
     def getTextWidth(self):
         ret = None
-        if self.textWidth is not None:
-            ret = self.textWidth
+        if self.textWrapWidth is not None:
+            ret = self.textWrapWidth
         elif ret is None and self.myStyle:
             st = self.styleDict[self.myStyle]
-            if st.textWidth is not None:
-                ret = st.textWidth
+            if st.textWrapWidth is not None:
+                ret = st.textWrapWidth
         elif ret is None and self.style:
             st = self.styleDict[self.style]
-            if st.textWidth is not None:
-                ret = st.textWidth
+            if st.textWrapWidth is not None:
+                ret = st.textWrapWidth
         return ret
 
     # def getTextJustification(self):
@@ -3257,7 +3257,8 @@ class GramText(GramGraphic):
         self.length = 0.1
 
         self.corners = None
-        self.fullHeight = None         # Note we also have self.textHeight, inherited
+        self.fullHeight = None         # Note we also have self.textHeight, inherited, which is different
+        self.tightBB = None
 
         # more text measurements for tikz/pyx 
         # inner sep is initially 0.3333em
@@ -3332,11 +3333,11 @@ class GramText(GramGraphic):
         if theSize and theSize != 'normalsize':
             theText = r"\%s %s" % (theSize, theText)
         
-        # textWidth is another adjective, instructing TeX where to wrap a long
+        # textWrapWidth is another adjective, instructing TeX where to wrap a long
         # line of text.  It would be either None or xx cm.  If it is not None,
         # then we stick the text in a minipage.
-        theTextWidth = self.getTextWidth()
-        if theTextWidth:
+        theTextWrapWidth = self.getTextWidth()
+        if theTextWrapWidth:
             # Not sure why these next three lines were here.
             #theInnerSep = self.getInnerSep()
             #if theInnerSep:
@@ -3626,7 +3627,7 @@ class GramText(GramGraphic):
 
         if theTextWidth and theAnch and theAnch.startswith('base'):
             raise GramError(
-                "GramText.setBB(). Don't use 'base', 'base east', or 'base west' if textWidth is set.")
+                "GramText.setBB(). Don't use 'base', 'base east', or 'base west' if textWrapWidth is set.")
 
         if theAnch == 'south west':
             self.bb[0] = self.cA.xPosn
@@ -3654,7 +3655,7 @@ class GramText(GramGraphic):
                 (self.fullHeight + twoInnerSep + twoOuterSep)
 
         elif theAnch == 'base east':
-            # if self.textWidth:
+            # if self.textWrapWidth:
             if 0:
                 self.bb[0] = self.cA.xPosn - \
                     (self.length + twoInnerSep + twoOuterSep)
@@ -3715,7 +3716,7 @@ class GramText(GramGraphic):
                 (halfHeight + oneInnerSep + oneOuterSep)
 
         elif theAnch == 'base west':
-            # if self.textWidth:
+            # if self.textWrapWidth:
             if 0:
                 self.bb[0] = self.cA.xPosn
                 self.bb[1] = self.cA.yPosn - \
@@ -3733,7 +3734,7 @@ class GramText(GramGraphic):
                     (theTextHeight + oneInnerSep + oneOuterSep)
 
         elif theAnch == 'base':
-            # if self.textWidth:
+            # if self.textWrapWidth:
             if 0:
                 self.bb[0] = self.cA.xPosn - \
                     (halfLength + oneInnerSep + oneOuterSep)
@@ -3760,7 +3761,7 @@ class GramText(GramGraphic):
 
         # ====================================
         elif theAnch == 'mid west':
-            if self.textWidth:
+            if self.textWrapWidth:
                 self.bb[0] = self.cA.xPosn
                 self.bb[1] = self.cA.yPosn - \
                     (self.fullHeight + twoInnerSep + oneOuterSep)
@@ -3777,7 +3778,7 @@ class GramText(GramGraphic):
                                               oneOuterSep) - self.half_normal_x
 
         elif theAnch == 'mid east':
-            if self.textWidth:
+            if self.textWrapWidth:
                 self.bb[0] = self.cA.xPosn - \
                     (self.length + twoInnerSep + twoOuterSep)
                 self.bb[1] = self.cA.yPosn - \
@@ -3797,7 +3798,7 @@ class GramText(GramGraphic):
             #self.bb[3] = self.cA.yPosn + (self.rise + oneInnerSep + oneOuterSep)
 
         elif theAnch == 'mid':
-            if self.textWidth:
+            if self.textWrapWidth:
                 self.bb[0] = self.cA.xPosn - \
                     (halfLength + oneInnerSep + oneOuterSep)
                 self.bb[1] = self.cA.yPosn - \
@@ -4901,7 +4902,7 @@ class GramTextOld(GramGraphic):
         if theSize and theSize != 'normalsize':
             theText = r"\%s %s" % (theSize, theText)
         
-        # textWidth is another adjective, instructing TeX where to wrap a long
+        # textWrapWidth is another adjective, instructing TeX where to wrap a long
         # line of text.  It would be either None or xx cm.  If it is not None,
         # then we stick the text in a minipage.
         theTextWidth = self.getTextWidth()
@@ -5193,7 +5194,7 @@ class GramTextOld(GramGraphic):
 
         if theTextWidth and theAnch and theAnch.startswith('base'):
             raise GramError(
-                "GramText.setBB(). Don't use 'base', 'base east', or 'base west' if textWidth is set.")
+                "GramText.setBB(). Don't use 'base', 'base east', or 'base west' if textWrapWidth is set.")
 
         if theAnch == 'south west':
             self.bb[0] = self.cA.xPosn
@@ -5221,7 +5222,7 @@ class GramTextOld(GramGraphic):
                 (self.height + twoInnerSep + twoOuterSep)
 
         elif theAnch == 'base east':
-            # if self.textWidth:
+            # if self.textWrapWidth:
             if 0:
                 self.bb[0] = self.cA.xPosn - \
                     (self.length + twoInnerSep + twoOuterSep)
@@ -5282,7 +5283,7 @@ class GramTextOld(GramGraphic):
                 (halfHeight + oneInnerSep + oneOuterSep)
 
         elif theAnch == 'base west':
-            # if self.textWidth:
+            # if self.textWrapWidth:
             if 0:
                 self.bb[0] = self.cA.xPosn
                 self.bb[1] = self.cA.yPosn - \
@@ -5300,7 +5301,7 @@ class GramTextOld(GramGraphic):
                     (theTextHeight + oneInnerSep + oneOuterSep)
 
         elif theAnch == 'base':
-            # if self.textWidth:
+            # if self.textWrapWidth:
             if 0:
                 self.bb[0] = self.cA.xPosn - \
                     (halfLength + oneInnerSep + oneOuterSep)
@@ -5327,7 +5328,7 @@ class GramTextOld(GramGraphic):
 
         # ====================================
         elif theAnch == 'mid west':
-            if self.textWidth:
+            if self.textWrapWidth:
                 self.bb[0] = self.cA.xPosn
                 self.bb[1] = self.cA.yPosn - \
                     (self.height + twoInnerSep + oneOuterSep)
@@ -5344,7 +5345,7 @@ class GramTextOld(GramGraphic):
                                               oneOuterSep) - self.half_normal_x
 
         elif theAnch == 'mid east':
-            if self.textWidth:
+            if self.textWrapWidth:
                 self.bb[0] = self.cA.xPosn - \
                     (self.length + twoInnerSep + twoOuterSep)
                 self.bb[1] = self.cA.yPosn - \
@@ -5364,7 +5365,7 @@ class GramTextOld(GramGraphic):
             #self.bb[3] = self.cA.yPosn + (self.rise + oneInnerSep + oneOuterSep)
 
         elif theAnch == 'mid':
-            if self.textWidth:
+            if self.textWrapWidth:
                 self.bb[0] = self.cA.xPosn - \
                     (halfLength + oneInnerSep + oneOuterSep)
                 self.bb[1] = self.cA.yPosn - \
