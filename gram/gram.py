@@ -1773,7 +1773,7 @@ class GramTikzStyle(Gram):
         self._textHeight = None
         self._textDepth = None
         self._textWrapWidth = None
-        self._textJustification = None
+        self._textAlign = "flush center"
         self._innerSep = None
         self._roundedCorners = None
 
@@ -2179,18 +2179,18 @@ class GramTikzStyle(Gram):
         self._textWrapWidth = None
     textWrapWidth = property(_getTextWrapWidth, _setTextWrapWidth, _delTextWrapWidth)
 
-    def _getTextJustification(self):
-        return self._textJustification
+    def _getTextAlign(self):
+        return self._textAlign
 
-    def _setTextJustification(self, newVal):
+    def _setTextAlign(self, newVal):
         assert newVal in [
-            'justified', 'ragged', 'badly ragged', 'centered', 'badly centered']
-        self._textJustification = newVal
+            'left', 'flush left', 'right', 'flush right', 'center', 'flush center', 'justify', 'none']
+        self._textAlign = newVal
 
-    def _delTextJustification(self):
-        self._textJustification = None
-    textJustification = property(
-        _getTextJustification, _setTextJustification, _delTextJustification)
+    def _delTextAlign(self):
+        self._textAlign = None
+    textAlign = property(
+        _getTextAlign, _setTextAlign, _delTextAlign)
 
     def _getInnerSep(self):
         return self._innerSep
@@ -2312,8 +2312,8 @@ class GramTikzStyle(Gram):
             options.append("text depth=%.3fcm" % self.textDepth)
         if self.textWrapWidth:
             options.append("text width=%.3fcm" % self.textWrapWidth)
-        if self.textJustification:
-            options.append("text %s" % self.textJustification)
+        if self.textAlign:
+            options.append("aligh=%s" % self.textAlign)
         if self.innerSep is not None:
             options.append("inner sep=%scm" % self.innerSep)
         if self.roundedCorners is not None:
@@ -2435,8 +2435,6 @@ class GramTikzStyle(Gram):
         #     options.append('text depth=%.3fcm' % self.textDepth)
         # if self.textWrapWidth:
         #     options.append('text width=%.3fcm' % self.textWrapWidth)
-        # if self.textJustification:
-        #     options.append('text %s' % self.textJustification)
         # if self.innerSep is not None:
         #     options.append('inner sep=%scm' % self.innerSep)
         # if self.roundedCorners is not None:
@@ -2860,8 +2858,6 @@ class GramGraphic(GramTikzStyle):
                 ret = st.textWrapWidth
         return ret
 
-    # def getTextJustification(self):
-    #    pass
 
     def getInnerSep(self):
         ret = None
@@ -3258,7 +3254,6 @@ class GramText(GramGraphic):
 
         self.corners = None
         self.fullHeight = None         # Note we also have self.textHeight, inherited, which is different
-        self.tightBB = None
 
         # more text measurements for tikz/pyx 
         # inner sep is initially 0.3333em
@@ -3343,7 +3338,7 @@ class GramText(GramGraphic):
             #if theInnerSep:
             #    theTextWidth = theTextWidth - theInnerSep
             theText = r"\begin{minipage}{%.3fcm}%s\end{minipage}" % (
-                theTextWidth, theText)
+                theTextWrapWidth, theText)
 
         # print("cookText() theText (b) is %s" % theText)
         return theText

@@ -710,7 +710,7 @@ class TreeGram(Gram):
                         n.label.rawText = n.label.rawText.replace(",\n", r",\\ ")
                         n.label.style = None
                         #n.label.draw = True
-                        n.label.textJustification = 'badly ragged'
+                        n.label.textAlign = 'flush center'
                         n.label.textSize = self.leafLabelSize
                         n.label.anchor = 'west'
                         n.label.setCookedText()                   # this wraps it in a minipage
@@ -740,7 +740,7 @@ class TreeGram(Gram):
 
                         n.label.style = None
                         n.label.textWrapWidth = self.wrapLeafLabelsAt
-                        n.label.textJustification = 'badly ragged'
+                        n.label.textAlign = 'flush center'
                         n.label.textSize = self.leafLabelSize
                         #n.label.textSize = savedSize
                         n.label.anchor = 'west'
