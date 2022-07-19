@@ -1,5 +1,5 @@
 from gram.plot import Plot
-from gram.gram import GramGraphic, GramText, GramCoord, GramRect, GramError, GramColor
+from gram.gram import GramGraphic, GramText, GramCoord, GramRect, GramError, GramColor, GramLine
 from gram.axis import XYAxis, BarsAxis
 import math
 import sys
@@ -274,3 +274,43 @@ class PlotBarsText(GramText):
         ss.append("\n<!-- bars text in plot -->")
         ss.append(GramText.getSvg(self))
         return '\n'.join(ss)
+
+
+class PlotHorizontalBracketBars(GramLine):
+
+    def __init__(self, plot, binNumA, binNumB, val, theText):
+        cA = GramCoord()
+        cB = GramCoord()
+
+        GramLine.__init__(self, cA, cB)
+        self.plot = plot
+        assert binNumB > binNumA
+        self.binNumA = binNumA
+        self.binNumB = binNumB
+        self.val = val
+        self.text = GramText(theText)
+        self.text.cA = GramCoord()
+
+
+    def setPositions(self):
+        gm = ["PlotHorizontalBracketBars.setPositions()"]
+
+        self.cA.xPosn = self.plot.contentPosnX + ((float(self.binNumA + 0.1) / float(self.plot.nBars)) * self.plot.contentSizeX)
+        self.cA.yPosn = self.plot.contentPosnY + ((self.val - self.plot.minBarValToShow) * self.plot.barValScale)
+        self.cB.xPosn = self.plot.contentPosnX + ((float(self.binNumB + 0.9) / float(self.plot.nBars)) * self.plot.contentSizeX)
+        self.cB.yPosn = self.cA.yPosn
+
+        self.text.cA.xPosn = self.cA.xPosn + ((self.cB.xPosn - self.cA.xPosn) / 2.)
+        self.text.cA.yPosn = self.cA.yPosn
+        self.text.style = 'tickLabel'
+        self.text.anchor = 'south'
+        
+
+
+    def getTikz(self):
+        ss = []
+        ss.append("\n% horizontal bracket in bar plot")
+        ss.append(GramLine.getTikz(self))
+        ss.append(GramText.getTikz(self.text))
+        return '\n'.join(ss)
+

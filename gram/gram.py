@@ -3522,11 +3522,30 @@ class GramText(GramGraphic):
                         self.bb[2] = self.cA.xPosn + 0.5
                         self.bb[3] = self.cA.yPosn + 0.65
 
+                    elif theAnch == 'mid west':
+                        self.bb[0] = self.cA.xPosn
+                        self.bb[1] = self.cA.yPosn - 0.5
+                        self.bb[2] = self.cA.xPosn + 1.0
+                        self.bb[3] = self.cA.yPosn + 0.5
+
+                    elif theAnch == 'mid':
+                        self.bb[0] = self.cA.xPosn - 0.5
+                        self.bb[1] = self.cA.yPosn - 0.5
+                        self.bb[2] = self.cA.xPosn + 0.5
+                        self.bb[3] = self.cA.yPosn + 0.5
+
+                    elif theAnch == 'mid east':
+                        self.bb[0] = self.cA.xPosn - 1.0
+                        self.bb[1] = self.cA.yPosn - 0.5
+                        self.bb[2] = self.cA.xPosn
+                        self.bb[3] = self.cA.yPosn + 0.5
+
                     elif theAnch == 'center' or theAnch is None:
                         self.bb[0] = self.cA.xPosn - 0.5
                         self.bb[1] = self.cA.yPosn - 0.5
                         self.bb[2] = self.cA.xPosn + 0.5
                         self.bb[3] = self.cA.yPosn + 0.5
+
 
                     # ====================================
 
@@ -3911,9 +3930,7 @@ class GramText(GramGraphic):
         if hasBooger:
             theText = self.rawText
         else:
-            print("acc", gm[0], f"fullHeight {self.fullHeight}, textHeight {self.textHeight}, textDepth {self.textDepth}")
             self.setBB()
-            print("acd", gm[0], f"fullHeight {self.fullHeight}, textHeight {self.textHeight}, textDepth {self.textDepth}")
 
             theText = func.fixCharsForLatex(self.rawText)
             #theText = self.rawText
