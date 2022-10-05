@@ -178,12 +178,6 @@ class PlotBarSet(GramGraphic):
             if self.fillColor:
                 b.rect.fill = self.fillColor
             b.rect.draw = self.drawColor
-        # sys.exit()
-##        self.xPosn = self.contentPosnX
-##        self.yPosn = self.contentPosnY
-
-# GramGraphic.setPositions(self)
-# self.setBB()
 
     def getTikz(self):
         ss = ["\n%% BarSet %i, fillColor %s" %
@@ -201,7 +195,6 @@ class PlotBarSet(GramGraphic):
 
 
 class PlotBar(GramGraphic):
-
     def __init__(self, plot, val, barNum, barSetNum, barSetObject):
         GramGraphic.__init__(self)
         self.plot = plot
@@ -234,10 +227,11 @@ class PlotBar(GramGraphic):
         # print(f"PlotBar.setPositions() barSetNum={self.barSetNum}")
 
     def getTikz(self):
+        thisBarName = self.barSetsObject.barNames[self.barNum]
         yDiff = self.cB.yPosn - self.cA.yPosn
         if yDiff == 0.0:   # maybe should be math.fabs() < epsilon?
             return "%% val=%s" % self.val
-        return self.rect.getTikz() + " %% val=%s" % self.val
+        return self.rect.getTikz() + " %% bar %s, val=%s" % (thisBarName, self.val)
 
     def getSvg(self):
         if self.rect.fill:
@@ -314,3 +308,9 @@ class PlotHorizontalBracketBars(GramLine):
         ss.append(GramText.getTikz(self.text))
         return '\n'.join(ss)
 
+    def getSvg(self):
+        ss = []
+        ss.append("\n<!-- horizontal bracket in bar plot -->")
+        ss.append(GramLine.getSvg(self))
+        ss.append(GramText.getSvg(self.text))
+        return '\n'.join(ss)

@@ -30,8 +30,8 @@ class Plot(Gram):
 
         self.framePosnX = 2
         self.framePosnY = 2
-        self.contentSizeX = 3.5
-        self.contentSizeY = 2.65
+        self.contentSizeX = 4.5 # 3.5
+        self.contentSizeY = 3.4 # 2.65
 
         self.frameToContent_llx = 0.175
         self.frameToContent_lly = 0.175
@@ -88,8 +88,8 @@ class Plot(Gram):
         self.titleDefaultAddSpaceFromAxisL = 0.1
         self.titleDefaultAddSpaceFromAxisR = 0.1
 
-        self._tickLabelSize = 'tiny'
-        self._axisLabelSize = 'footnotesize'
+        self._tickLabelSize = 'scriptsize' 
+        self._axisLabelSize = 'small' 
 
         self._goodBarFills = ['white', 
                               'black', 
@@ -436,7 +436,7 @@ class Plot(Gram):
 #==================================================================
 #==================================================================
 
-    def setBuiltInTikzStyles(self):
+    def setBuiltInStyles(self):
 
         g = GramText('Xxy')
         g.cA = GramCoord(0, 0)
@@ -446,6 +446,8 @@ class Plot(Gram):
             g.textFamily = g.defaultTextFamily
         if self.engine == 'tikz':
             g.setBB()
+        else:
+            g.getSvg()
         Gram._styleDict[g.name] = g
 
         g = GramText('Xxy')
@@ -456,9 +458,14 @@ class Plot(Gram):
             g.textFamily = g.defaultTextFamily
         if self.engine == 'tikz':
             g.setBB()
+        else:
+            g.getSvg()
         Gram._styleDict[g.name] = g
 
     def render(self):
+        gm = ["Plot.render()"]
+        
+        # print(gm[0])
         self.tikzPictureDefaults.lineThickness = self.plotDefaultLineThickness
         self.tikzPictureDefaults.innerSep = self.defaultInnerSep
 
@@ -473,9 +480,22 @@ class Plot(Gram):
             self.barValScale = self.contentSizeY / \
                 (self.maxBarValToShow - self.minBarValToShow)
 
+        # print("Plot.render() calling Gram.render()")
         Gram.render(self)
+        if 0:
+            print(f"Plot.render()  Gram._svgNormalsize_x is {Gram._svgNormalsize_x}")
+            print(f"Plot.render()  Gram._svgHackDoRotate is {Gram._svgHackDoRotate}")
+            print(f"Plot.render()  Gram._svgHack_x_Only is {Gram._svgHack_x_Only}")
 
-        if 1:
+        doThisPrint = True
+        if Gram._svgNormalsize_x == None:
+            doThisPrint = False
+        elif Gram._svgHackDoRotate == False:
+            doThisPrint = False
+        elif Gram._svgHack_x_Only == True:
+            doThisPrint = False
+
+        if doThisPrint:
             spacer1 = ' ' * 10
             spacer2 = '    --    '
             print("%s %20s  %s" % (spacer1, 'minXInData', self.minXInData))
@@ -495,6 +515,7 @@ class Plot(Gram):
             print("%s %20s  %s" % (spacer1, 'maxBarValInData', self.maxBarValInData))
             print("%s %20s  %s" % (spacer1, 'maxBarValToShow', self.maxBarValToShow))
             print("%s %20s  %s" % (spacer2, 'barValScale', self.barValScale))
+            print()
 
         if self.xAxis:
             self.xAxis.setPositions()
@@ -535,8 +556,8 @@ class Plot(Gram):
         self.lines.append(c)
         return c
 
-    def scatter(self, xx, yy, plotMark='next'):
-        c = PlotScatter(self, xx, yy, plotMark)
+    def scatter(self, xx, yy, plotMark='next', plotMarkSize=None):
+        c = PlotScatter(self, xx, yy, plotMark, plotMarkSize)
         self.scatters.append(c)
         return c
 
@@ -573,8 +594,8 @@ class Plot(Gram):
         self.graphics.append(c)
         return c
 
-    def horizontalBracketBars(self, xA, xB, y, theText):
-        c = PlotHorizontalBracketBars(self, xA, xB, y, theText)
+    def horizontalBracketBars(self, binNumA, binNumB, y, theText):
+        c = PlotHorizontalBracketBars(self, binNumA, binNumB, y, theText)
         self.graphics.append(c)
         return c
 
@@ -702,27 +723,15 @@ class Plot(Gram):
             assert self.engine == 'svg'
             self.svgCalcBigBoundingBox()
 
-
-#--------------------------------------------------------
-#--------------------------------------------------------
-#--------------------------------------------------------
-#--------------------------------------------------------
-#--------------------------------------------------------
+    # def svg(self):       
+    #     Gram.svg(self)
 
 
-# class PlotGraphic(GramGraphic):
-#     def __init__(self):
-#         #Plot.__init__(self)
-#         GramGraphic.__init__(self)
-
-#         #print "===== PlotGraphic.setPositions == GramGraphic.setPositions %s" % (
-#         #    PlotGraphic.setPositions == GramGraphic.setPositions)
-#         #print "===== PlotGraphic.setPositions == Plot.setPositions %s" % (
-#         #    PlotGraphic.setPositions == Plot.setPositions)
-#         #print "===== PlotGraphic.setBB == GramGraphic.setBB %s" % (
-#         #    PlotGraphic.setBB == GramGraphic.setBB)
-#         #print "===== PlotGraphic.setBB == Plot.setBB %s" % (
-#         #    PlotGraphic.setBB == Plot.setBB)
+#--------------------------------------------------------
+#--------------------------------------------------------
+#--------------------------------------------------------
+#--------------------------------------------------------
+#--------------------------------------------------------
 
 
 from gram.xy import *

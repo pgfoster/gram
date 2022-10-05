@@ -22,7 +22,15 @@ if 1:
 
 class TreeGramRadial(TreeGram):
 
-    """Use phylip drawtree to make an equal daylight tree.
+    """Make a radial-style tree
+
+    By default this makes a simple radial tree where the 
+    leaf branch angles increase monotonically.
+
+    By turning on the arg equalDaylight, it will alternatively 
+    use the phylip drawtree program to make an equal daylight 
+    tree.  Equal daylight trees often look better for small trees, 
+    but might give poor results for bigger trees. 
 
     maxLinesDim is the size that you want to end up with, in cm,
                 of the biggest x or y dimension of the lines
@@ -35,7 +43,7 @@ class TreeGramRadial(TreeGram):
     # def __init__(self, theTree, scale=None, yScale=0.45, showNodeNums=False,
     # widthToHeight=0.67):
 
-    def __init__(self, theTree, scale=None, maxLinesDim=5, rotate=0, slopedBrLabels=True, showNodeNums=False, equalDaylight=True):
+    def __init__(self, theTree, scale=None, maxLinesDim=5, rotate=0, slopedBrLabels=True, showNodeNums=False, equalDaylight=False):
 
         gm = ['TreeGramRadial.__init__()']
 
@@ -584,7 +592,7 @@ class TreeGramRadial(TreeGram):
             # print "-" * 25
             # sys.exit()
 
-    def setBuiltInTikzStyles(self):
+    def setBuiltInStyles(self):
 
 
         g = GramText('Xxy')
@@ -598,6 +606,8 @@ class TreeGramRadial(TreeGram):
         #g.textShape = 'itshape'
         if self.engine == 'tikz':
             g.setBB()
+        else:
+            g.getSvg()
         Gram._styleDict[g.name] = g
 
         g = GramText('Xxy')
@@ -611,6 +621,8 @@ class TreeGramRadial(TreeGram):
             g.textFamily = g.defaultTextFamily
         if self.engine == 'tikz':
             g.setBB()
+        else:
+            g.getSvg()
         Gram._styleDict[g.name] = g
 
         g = GramText('Xxy')
@@ -624,6 +636,8 @@ class TreeGramRadial(TreeGram):
             g.textFamily = g.defaultTextFamily
         if self.engine == 'tikz':
             g.setBB()
+        else:
+            g.getSvg()
         Gram._styleDict[g.name] = g
 
         g = GramText('Xxy')
@@ -635,10 +649,12 @@ class TreeGramRadial(TreeGram):
         g.innerSep = 0.05
         if self.engine == 'tikz':
             g.setBB()
+        else:
+            g.getSvg()
         Gram._styleDict[g.name] = g
 
     def setPositions(self):
-
+        # return
         Gram.setPositions(self)
         self.tikzPictureDefaults.lineThickness = self.tgDefaultLineThickness
 
@@ -659,35 +675,74 @@ class TreeGramRadial(TreeGram):
                 if self.engine == 'tikz':
                     n.label.setBB()
                     
-
-                #print "TreeGramRadial.setNodesPositions()  angle=%s, anchor=%s  rawText=%s" % (
-                #    n.angle, n.label.getAnch(), n.label.rawText)
+                if 0:
+                    
+                    print("TreeGramRadial.setPositions()  angle=%s, anchor=%s  rawText=%s, fullHeight=%s exWid=%s" % (
+                        n.angle, n.label.getAnch(), n.label.rawText, n.label.fullHeight, n.label.exWid))
                 n.label.cA.xPosn = n.cA.xPosn
                 n.label.cA.yPosn = n.cA.yPosn
 
                 if n.isLeaf:
 
-                    sqCoords = func.polar2square([n.angle, (n.label.bigX * 0.8)])
-                    n.label.cA.xPosn += sqCoords[0]
-                    n.label.cA.yPosn += sqCoords[1]
+                    if 1:
+                        # Move the label coordinate label.cA a small amount outwards, 
+                        # along the line of the leaf branch
 
-                    if n.angle > (piOver2 + slop) or n.angle < -(piOver2 + slop):
-                        n.label.cA.xPosn -= n.label.length / 2.
-                        n.label.cA.xPosn += n.label.exWid * 0.5
-                    elif n.angle < (piOver2 - slop) and n.angle > -(piOver2 - slop):
-                        n.label.cA.xPosn += n.label.length / 2.
-                        n.label.cA.xPosn -= n.label.exWid * 0.5
+                        sqCoords = func.polar2square([n.angle, (n.label.fullHeight)])
+                        n.label.cA.xPosn += sqCoords[0]
+                        n.label.cA.yPosn += sqCoords[1]
 
-                    # Lower the Labels on downward-pointing branches
-                    if n.angle < -(0.25 * math.pi) and n.angle > -(0.75 * math.pi):
-                        n.label.cA.yPosn -= n.label.ex * 0.25
+                    if 1:
+                        # We do not want the n.label to be at the same yPosn as the n.cA.yPosn; 
+                        # if it does the label could over-write the line 
+                        diff = n.label.cA.yPosn - n.cA.yPosn
+                        halfHeight = n.label.fullHeight / 2.
+                        if diff > 0.0:
+                            # label.cA is above n.cA
+                            if diff < halfHeight:
+                                diff2 = halfHeight - diff
+                                n.label.cA.yPosn 
 
-                    # theXShift = n.label.getXShift()
-                    # if theXShift is not None:
-                    #     n.label.cA.xPosn += theXShift
-                    # theYShift = n.label.getYShift()
-                    # if theYShift is not None:
-                    #     n.label.cA.yPosn += theYShift
+                    if 1:
+
+                        # If the branch points to the left, move the label left
+                        if n.angle > (piOver2 + slop) or n.angle < -(piOver2 + slop):
+                            # if the label is short, don't do anything
+                            if n.label.length < 0.4:
+                                pass
+                            else:
+                                # We do not want the n.label to be at the same yPosn as the n.cA.yPosn; 
+                                # if it does the label could over-write the line.
+                                diff = math.fabs(n.label.cA.yPosn - n.cA.yPosn)
+                                halfHeight = n.label.fullHeight / 2.
+                                if diff < halfHeight:  # potential collision
+                                    n.label.cA.xPosn -= (n.label.length * 0.5) 
+                                else:
+                                    n.label.cA.xPosn -= n.label.length * 0.4
+
+                        # If the branch points to the right
+                        elif n.angle < (piOver2 - slop) and n.angle > -(piOver2 - slop):
+                            if n.label.length < 0.4:
+                                pass
+                            else:
+                                diff = math.fabs(n.label.cA.yPosn - n.cA.yPosn)
+                                halfHeight = n.label.fullHeight / 2.
+                                if diff < halfHeight:    # potential collision
+                                    n.label.cA.xPosn += (n.label.length * 0.5) 
+                                else:
+                                    n.label.cA.xPosn += n.label.length * 0.4
+
+                    if 0:
+                        # Lower the Labels on downward-pointing branches
+                        if n.angle < -(0.25 * math.pi) and n.angle > -(0.75 * math.pi):
+                            n.label.cA.yPosn -= n.label.fullHeight * 0.15
+
+                    # # theXShift = n.label.getXShift()
+                    # # if theXShift is not None:
+                    # #     n.label.cA.xPosn += theXShift
+                    # # theYShift = n.label.getYShift()
+                    # # if theYShift is not None:
+                    # #     n.label.cA.yPosn += theYShift
 
             if n.br and n.br.label:
                 n.br.label.cA.xPosn = n.cB.xPosn + \
@@ -700,16 +755,6 @@ class TreeGramRadial(TreeGram):
                 n.br.uLabel.cA.yPosn = n.cB.yPosn + \
                     (n.cA.yPosn - n.cB.yPosn) / 2.
 
-        print("Finished TreeGramRadial.setPositions()")
-            
-
-    # def setTitlePosition(self):
-    #     # print "setTitlePosition() scale=%.1f, smallestXPosn0 %.1f, scaled %.1f" % (
-    #     #    self.scale, self.smallestXPosn0, (self.smallestXPosn0 * self.scale))
-    #     # print "setTitlePosition() scale=%.1f, biggestYPosn0 %.1f, scaled %.1f" % (
-    #     #    self.scale, self.biggestYPosn0, (self.biggestYPosn0 * self.scale))
-    #     self.title.cA.xPosn = (self.smallestXPosn0 * self.scale) - 0.5
-    #     self.title.cA.yPosn = (self.biggestYPosn0 * self.scale) + 0.8
 
     def setScaleBarPosition(self):
         self.scaleBar.xOrig = (self.smallestXPosn0 * self.scale) - 0.5

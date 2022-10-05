@@ -307,6 +307,13 @@ class PlotLineFromSlopeAndIntercept(GramLine):
         ss.append(GramLine.getTikz(self))
         return '\n'.join(ss)
 
+    def getSvg(self):
+        ss = []
+        ss.append("\n<!-- line from slope and intercept in plot -->")
+        ss.append(GramLine.getSvg(self))
+        return '\n'.join(ss)
+
+
 
 class PlotVerticalLine(GramLine):
 
@@ -342,6 +349,13 @@ class PlotVerticalLine(GramLine):
         ss.append("\n% vertical line in plot")
         ss.append(GramLine.getTikz(self))
         return '\n'.join(ss)
+
+    def getSvg(self):
+        ss = []
+        ss.append("\n<!-- vertical line in plot -->")
+        ss.append(GramLine.getSvg(self))
+        return '\n'.join(ss)
+
 
 class PlotHorizontalBracket(GramLine):
 
@@ -388,6 +402,13 @@ class PlotHorizontalBracket(GramLine):
         ss.append(GramText.getTikz(self.text))
         return '\n'.join(ss)
 
+    def getSvg(self):
+        ss = []
+        ss.append("\n<!-- horizontal bracket in plot -->")
+        ss.append(GramLine.getSvg(self))
+        ss.append(GramText.getSvg(self.text))
+        return '\n'.join(ss)
+
 
 class PlotScatter(PlotXYContent):
     _plotMarksA = ['+', 'x', '*']
@@ -397,7 +418,7 @@ class PlotScatter(PlotXYContent):
                    'triangle*', 'diamond', 'diamond*'] #, 'pentagon', 'pentagon*']
     _plotMarkIndex = 0
 
-    def __init__(self, plot, xx, yy, plotMark='next'):
+    def __init__(self, plot, xx, yy, plotMark='next', plotMarkSize=None):
         PlotXYContent.__init__(self, plot, xx, yy)
         gm = ['PlotScatter.__init__()']
 
@@ -420,9 +441,10 @@ class PlotScatter(PlotXYContent):
             #gm.append("or None")
             raise GramError(gm)
         assert self.plotMark
+        self.plotMarkSize = plotMarkSize
         
         # GramMarker
-        self.marker = GramSvgMarker(self.plotMark)
+        self.marker = GramSvgMarker(self.plotMark, self.plotMarkSize)
 
     def _getPlotMarksA(self):
         return PlotScatter._plotMarksA
@@ -463,9 +485,11 @@ class PlotScatter(PlotXYContent):
             options = self.marker.getTikzOptions()
         if options:
             stuff += options
-        if self.plotMark == '*':
+        #if self.plotMark == '*':
             #stuff.append('mark size=2')
-            stuff.append('mark size=0.3')
+            # stuff.append('mark size=0.3')
+        if self.plotMarkSize:
+            stuff.append("mark size=%.2f" % (self.plotMarkSize * 2.0)) 
         pList.append('[%s] ' % ','.join(stuff))
 
         pList.append("plot coordinates {")
@@ -531,3 +555,9 @@ class PlotXYText(GramText):
         ss.append("\n% xy text in plot")
         ss.append(GramText.getTikz(self))
         return '\n'.join(ss)
+
+    def getSvg(self):
+        ss = []
+        ss.append("\n<!-- PlotXYText.getSvg() -->")
+        ss.append(GramText.getSvg(self))
+        return ' '.join(ss)

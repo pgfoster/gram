@@ -21,18 +21,6 @@ class PlotFrame(GramGraphic):
         if self.orientation == 'v':
             self.line.cap = 'rect'
 
-        #self.whiteDot = None
-
-        if 0 and self.position == 't':
-            self.whiteDot = GramText('.')
-            self.whiteDot.cA = GramCoord(0, 0)
-            self.whiteDot.color = 'red'
-            self.whiteDot.textSize = 'tiny'
-            self.whiteDot.anchor = 'center'
-            self.whiteDot.draw = 'red'
-            self.whiteDot.innerSep = 0.0
-            self.whiteDot.textHeight = 0.0
-            self.whiteDot.textDepth = 0.0
 
     def setPositions(self):
 
@@ -161,7 +149,7 @@ class Axis(GramGraphic):
         self.labelTextSize = 'footnotesize'
         self.textRotate = 0.0
         self.sig = None
-        #self.title = None
+        #self.title = None  # now a property
         self.titleText = None
         self.bb = [0.0] * 4
         self.barLabelsSkipFirst = 0
@@ -195,6 +183,9 @@ class Axis(GramGraphic):
 
     def setTitlePosition(self):
 
+        gm = ["Axis.setTitlePosition()"]
+        # print(gm[0])
+
         # The user can set titleExtraSpaceFromAxisB etc, which will be used
         # if they exist.  Otherwise a good distance will be
         # calculated.
@@ -205,21 +196,19 @@ class Axis(GramGraphic):
             if self.position == 'b':
                 self.titleText.anchor = 'north'
                 tPos = self.plot.framePosnY
-                # print "wwx hb tickLen=%s, tPos = %s, self.styles=%s" %
-                # (self.tickLen, tPos, self.styles)
+                # print("wwx Axis.setTitlePosition() hb tPos = %s, self.styles=%s" % (tPos, self.styles))
                 if 'labels' in self.styles:
                     for tick in self.ticks:
                         if tick.text:
-                            # print "tick %s, bb=%s" % (tick.text.rawText,
-                            # tick.text.bb)
+                            # print("   --- tick %s, bb=%s" % (tick.text.rawText, tick.text.bb))
                             if tick.text.bb[1] < tPos:
                                 tPos = tick.text.bb[1]
                             if tick.text.bb[3] < tPos:
                                 tPos = tick.text.bb[3]
                 elif 'ticks' in self.styles:
                     tPos -= self.tickLen
-                # print "www hb tickLen=%s, tPos = %s" % (self.tickLen, tPos)
-                self.titleText.cA.yPosn = tPos  # - (3. * self.labelSep)
+                self.titleText.cA.yPosn = tPos
+
                 self.titleText.cA.yPosn -= self.plot.titleDefaultAddSpaceFromAxisB
 
                 if self.plot.titleExtraSpaceFromAxisB:
@@ -248,6 +237,7 @@ class Axis(GramGraphic):
                 if 'labels' in self.styles:
                     for tick in self.ticks:
                         if tick.text:
+                            #print(f"aaac tickText.bb = {tick.text.bb}")
                             if tick.text.bb[0] < tPos:
                                 tPos = tick.text.bb[0]
                 elif 'ticks' in self.styles:
@@ -257,6 +247,7 @@ class Axis(GramGraphic):
                 self.titleText.cA.xPosn -= self.plot.titleDefaultAddSpaceFromAxisL
                 if self.plot.titleExtraSpaceFromAxisL:
                     self.titleText.cA.xPosn -= self.plot.titleExtraSpaceFromAxisL
+
 
             elif self.position == 'r':
                 self.titleText.anchor = 'north'
@@ -311,8 +302,8 @@ class XYAxis(Axis):
         rng = maxPos - minPos
         orderOfMag = int(math.floor(math.log(rng, 10)))
         rng *= math.pow(10, -orderOfMag)
-        # print "minPos=%f, maxPos=%f, rng=%f, orderOfMag = %i" % (minPos,
-        # maxPos, rng, orderOfMag)
+        #print("minPos=%f, maxPos=%f, rng=%f, orderOfMag = %i" % (minPos,
+        #                                                         maxPos, rng, orderOfMag))
 
         if not self.tickInterval:
 
@@ -416,7 +407,8 @@ class XYAxis(Axis):
             sys.exit()
 
     def setPositions(self):
-
+        
+        gm = ["XYAxis.setPositions()"]
         if self.useBarVals:
             assert self.orientation == 'v', "orientation must be 'v' if useBarVals is turned on."
             theMinYToShow = self.plot.minBarValToShow
@@ -509,12 +501,6 @@ class XYAxis(Axis):
                             elif self.position == 't':
                                 tick.text.anchor = 'south'
 
-                            # the coord is the end of the tick.  Shift the text up or down
-                            # if self.position == 'b':
-                            #    tick.text.yShift = - (tick.text.bigX + tick.text.defaultInnerSep)
-                            # elif self.position == 't':
-                            #    tick.text.yShift = tick.text.yuh + tick.text.defaultInnerSep
-
                             if tick.textRotate:
                                 tick.text.rotate = tick.textRotate
                                 if tick.textRotate >= 45:
@@ -579,14 +565,20 @@ class XYAxis(Axis):
                             # tick.text.setPositions()
             for tick in self.ticks:
                 tick.setPositions()
-                if tick.text and self.engine == 'tikz':
-                    tick.text.setBB()  # needed to place the title
+                if tick.text:
+                    if self.engine == 'tikz':
+                        tick.text.setBB()  # needed to place the title
+                    elif self.engine == 'svg':
+                        tick.text.getSvg()
 
         if self.titleText:
+            # print(f"XYAxis.setPositions() self.title.cA.yPosn is {self.title.cA.yPosn}")
             self.setTitlePosition()
-            self.titleText.setPositions()
-
-        # self.setBB()
+            if self.engine == "tikz":
+                self.titleText.setBB()
+            elif self.engine == "svg":
+                self.titleText.getSvg()
+                
 
 
 class BarsAxis(Axis):
@@ -602,12 +594,11 @@ class BarsAxis(Axis):
         if newVal == 'b':
             pass
         else:
-            raise GramError(
-                "BarsAxis must be position 'b', got attempt to set it to '%s'" % newVal)
+            raise GramError("BarsAxis must be position 'b', got attempt to set it to '%s'" % newVal)
     position = property(_getPosition, _setPosition)
 
     def setPositions(self):
-        if 1:
+        if 0:
             print("BarsAxis.setPositions()")
             print("    position = %s, orientation = %s" % (self.position, self.orientation))
             if self.orientation == 'h':
@@ -716,8 +707,15 @@ class BarsAxis(Axis):
         for tick in self.ticks:
             tick.setPositions()
             if tick.text:
-                tick.text.setBB()
+                if self.engine == 'tikz':
+                    tick.text.setPositions()
+                elif self.engine == 'svg':
+                    tick.text.getSvg()
 
         if self.titleText:
             self.setTitlePosition()
-            self.titleText.setPositions()
+            if self.engine == "tikz":
+                self.titleText.setPositions()
+            elif self.engine == "svg":
+                self.titleText.getSvg()
+
