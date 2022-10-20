@@ -679,12 +679,12 @@ class TreeGram(Gram):
 
         # Node.br.label and Node.br.uLabel
         for n in self.tree.iterNodes():
-            if n.br and n.br.label:
+            if n.br and hasattr(n.br, "label") and n.br.label:
                 n.br.label.cA.xPosn = n.cB.xPosn + \
                     (n.cA.xPosn - n.cB.xPosn) / 2.
                 n.br.label.cA.yPosn = n.cB.yPosn + \
                     (n.cA.yPosn - n.cB.yPosn) / 2.
-            if n.br and n.br.uLabel:
+            if n.br and hasattr(n.br, "uLabel") and n.br.uLabel:
                 n.br.uLabel.cA.xPosn = n.cB.xPosn + \
                     (n.cA.xPosn - n.cB.xPosn) / 2.
                 n.br.uLabel.cA.yPosn = n.cB.yPosn + \
