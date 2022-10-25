@@ -1152,7 +1152,7 @@ class Gram(object):
             resolution, pngFileName, pdfFileName))
         os.system("%s %s" % (self.pngViewer, pngFileName))
         
-    def svg(self, extraMarginHack=1.0):
+    def svg(self, extraMarginHack=1.0, writeWidthHeight=True):
 
         # This is a complex and ugly hack.
         # Together with calcBigBoundingBox() it should be re-written
@@ -1210,13 +1210,13 @@ class Gram(object):
         writeInColour("Writing SVG file %s : svgPxForCm %.2f, extraMarginHack %.1f\n" % (
             svgFName, self.svgPxForCm, extraMarginHack), 'blue')
         sys.stdout.flush()
-        self.svgWriteToOpenFile(f, self.bbb, doHackExtra=extraMarginHack)
+        self.svgWriteToOpenFile(f, self.bbb, doHackExtra=extraMarginHack, writeWidthHeight=writeWidthHeight)
         f.close()
 
         if self.svgViewer:
             os.system("%s %s" % (self.svgViewer, svgFName)) 
                   
-    def svgWriteToOpenFile(self, flob, theBBB, doHackExtra=0.0):
+    def svgWriteToOpenFile(self, flob, theBBB, doHackExtra=0.0, writeWidthHeight=True):
         gm = ['Gram.svgWriteToOpenFile()']
         myWid = (theBBB[2] - theBBB[0])
         myHt = (theBBB[3] - theBBB[1])
@@ -1234,7 +1234,9 @@ class Gram(object):
             wd = myWid * self.svgPxForCm
             ht = myHt * self.svgPxForCm
 
-        flob.write('  width="%.2f" height="%.2f"\n' % (wd, ht))
+        if writeWidthHeight:
+            flob.write('  width="%.2f" height="%.2f"\n' % (wd, ht))
+
         if doHackExtra:
             vb1 = (theBBB[0] * self.svgPxForCm) - hackExtraX
             vb2 = (theBBB[1] * self.svgPxForCm) - hackExtraY
