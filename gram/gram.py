@@ -1787,6 +1787,10 @@ class GramColor(Gram):
         self.value = None
         self.type = None       # svg, base (ie latex), html
         self.transparent = True
+
+    def dump(self):
+        print("GramColor.dump()")
+        print(f"    color={self.color}, value={self.value}, type={self.type}, transparent={self.transparent}")
         
     def setColorFromString(self, theColor):
         assert isinstance(theColor, str)
