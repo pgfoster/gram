@@ -51,6 +51,7 @@ class TreeGram(Gram):
         self.thickBranches = []
         self.cBoxes = []            # node confidence boxes
         self.brokenBranches = []
+        self.nodeTooltipBoxes = []
 
         Gram.__init__(self)
         self.dirName = 'Gram'
@@ -405,6 +406,10 @@ class TreeGram(Gram):
     def setBrokenBranch(self, nodeSpecifier):
         theNode = self.tree.node(nodeSpecifier)
         self.brokenBranches.append(TreeGramBrokenBranch(self, theNode))
+
+    def nodeTooltipBox(self, nodeSpecifier, size=0.05, color="red", title="title"):
+        theNode = self.tree.node(nodeSpecifier)
+        self.nodeTooltipBoxes.append(TreeGramNodeTooltipBox(self, theNode, size, color, title))
 
     def extraYSpaceAtNode(self, nodeSpecifier, extra):
         theNode = self.tree.node(nodeSpecifier)
@@ -788,14 +793,14 @@ class TreeGram(Gram):
                 b.setPositions()
 
         # node confidence boxes
-        if self.cBoxes:
-            for b in self.cBoxes:
-                b.setPositions()
+        for b in self.cBoxes:
+            b.setPositions()
 
-        if self.brokenBranches:
-            for bb in self.brokenBranches:
-                bb.setPositions()
+        for bb in self.brokenBranches:
+            bb.setPositions()
 
+        for b in self.nodeTooltipBoxes:
+            b.setPositions()
 
         if self.scaleBar:
             # This next line is here for TreeGramRadial, where it actually does
@@ -901,6 +906,9 @@ class TreeGram(Gram):
             for bb in self.brokenBranches:
                 ss.append(bb.getTikz())
 
+        if self.nodeTooltipBoxes:
+            print("nodeTooltipBoxes are not implemented in TikZ")
+
         if self.thickBranches:
             ss.append('')
             ss.append("%% thickBranches, in front, so after")
@@ -968,6 +976,12 @@ class TreeGram(Gram):
         hasBranchNames = False
 
         #print "TreeGram.getSvg() here"
+
+        if self.nodeTooltipBoxes:
+            ss.append('')
+            ss.append("<!--  node tooltip boxes -->")
+            for bb in self.nodeTooltipBoxes:
+                ss.append(bb.getSvg())
 
         for gr in self.graphics:
             ss.append(gr.getSvg())
@@ -1565,4 +1579,40 @@ class TreeGramBrokenBranch(TreeGramGraphic):
         self.bb[2] = self.cA.xPosn  # + halfLineThick
         self.bb[3] = self.cA.xPosn  # + halfLineThick
         # print("TreeGramBrokenBranch ")
+
+class TreeGramNodeTooltipBox(TreeGramGraphic):
+
+    def __init__(self, treeGram, theNode, size, color, title):
+        TreeGramGraphic.__init__(self)
+        self.tg = treeGram
+        self.node = theNode
+        self.size = size
+        self.color = color
+        self.title = title
+        cA = GramCoord(0, 0)
+        cB = GramCoord(1, 1)
+        self.box = GramRect(cA, cB)
+        self.box.fill = color        # although the user can change their mind before setPositions()
+        self.box.draw = False        # no border line
+
+    def setPositions(self):
+        halfSize = self.size / 2.0
+        self.box.cA.xPosn = self.node.cA.xPosn - halfSize
+        self.box.cA.yPosn = self.node.cA.yPosn - halfSize
+        self.box.cB.xPosn = self.node.cA.xPosn + halfSize
+        self.box.cB.yPosn = self.node.cA.yPosn + halfSize
+
+        self.box.color = self.color
+
+    def getTikz(self):
+        pass
+
+    def getSvg(self):
+        ss = []
+        ss.append("<g>")
+        ss.append(self.box.getSvg())
+        ss.append("<title>%s</title>" % self.title)
+        ss.append("</g>")
+        return '\n'.join(ss)
+
 
