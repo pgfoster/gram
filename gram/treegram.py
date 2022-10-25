@@ -1091,66 +1091,66 @@ class TreeGram(Gram):
             assert self.engine == 'svg'
             self.svgCalcBigBoundingBox()
 
-    def tikzCalcBigBoundingBox(self):
-        # print "TreeGram.calcBigBoundingBox().  self is %s" % self
-        n = self.tree.root
-        self.bbb[0] = n.cA.xPosn - 0.1
-        self.bbb[1] = n.cA.yPosn - 0.1
-        self.bbb[2] = n.cA.xPosn + 0.1
-        self.bbb[3] = n.cA.yPosn + 0.1
+    # def tikzCalcBigBoundingBox(self):
+    #     # print "TreeGram.calcBigBoundingBox().  self is %s" % self
+    #     n = self.tree.root
+    #     self.bbb[0] = n.cA.xPosn - 0.1
+    #     self.bbb[1] = n.cA.yPosn - 0.1
+    #     self.bbb[2] = n.cA.xPosn + 0.1
+    #     self.bbb[3] = n.cA.yPosn + 0.1
 
-        for n in self.tree.iterNodes():
-            if n.name:
-                g = n.label
-                g.setBB()
-                self.adjustBBBFromGraphicBB(g)
+    #     for n in self.tree.iterNodes():
+    #         if n.name:
+    #             g = n.label
+    #             g.setBB()
+    #             self.adjustBBBFromGraphicBB(g)
 
-            if n.br and hasattr(n.br, 'textBox') and n.br.textBox:
-                g = n.br.textBox
-                g.setBB()
-                self.adjustBBBFromGraphicBB(g)
+    #         if n.br and hasattr(n.br, 'textBox') and n.br.textBox:
+    #             g = n.br.textBox
+    #             g.setBB()
+    #             self.adjustBBBFromGraphicBB(g)
 
-        if self.brackets:
-            for b in self.brackets:
-                g = b.label
-                g.setBB()
-                self.adjustBBBFromGraphicBB(g)
+    #     if self.brackets:
+    #         for b in self.brackets:
+    #             g = b.label
+    #             g.setBB()
+    #             self.adjustBBBFromGraphicBB(g)
 
-        if self.cBoxes:
-            for g in self.cBoxes:
-                g.setBB()
-                self.adjustBBBFromGraphicBB(g)
+    #     if self.cBoxes:
+    #         for g in self.cBoxes:
+    #             g.setBB()
+    #             self.adjustBBBFromGraphicBB(g)
 
-        if self.scaleBar:
-            g = self.scaleBar
-            g.setBB()
-            self.adjustBBBFromGraphicBB(g)
+    #     if self.scaleBar:
+    #         g = self.scaleBar
+    #         g.setBB()
+    #         self.adjustBBBFromGraphicBB(g)
 
-        if self.showNodeNums:
-            for n in self.tree.iterNodes():
-                g = n.nodeNumLabel
-                self.adjustBBBFromGraphicBB(g)
+    #     if self.showNodeNums:
+    #         for n in self.tree.iterNodes():
+    #             g = n.nodeNumLabel
+    #             self.adjustBBBFromGraphicBB(g)
 
-        for g in self.graphics:
-            if isinstance(g, GramCoord):
-                pass
-            elif isinstance(g, GramCode):
-                pass
-            else:
-                g.setBB()
-                self.adjustBBBFromGraphicBB(g)
+    #     for g in self.graphics:
+    #         if isinstance(g, GramCoord):
+    #             pass
+    #         elif isinstance(g, GramCode):
+    #             pass
+    #         else:
+    #             g.setBB()
+    #             self.adjustBBBFromGraphicBB(g)
 
-        for g in self.grams:
-            # print  g
-            g.calcBigBoundingBox()
-            if (g.bbb[0] + g.gX) < self.bbb[0]:
-                self.bbb[0] = (g.bbb[0] + g.gX)
-            if (g.bbb[1] + g.gY) < self.bbb[1]:
-                self.bbb[1] = (g.bbb[1] + g.gY)
-            if (g.bbb[2] + g.gX) > self.bbb[2]:
-                self.bbb[2] = (g.bbb[2] + g.gX)
-            if (g.bbb[3] + g.gY) > self.bbb[3]:
-                self.bbb[3] = (g.bbb[3] + g.gY)
+    #     for g in self.grams:
+    #         # print  g
+    #         g.calcBigBoundingBox()
+    #         if (g.bbb[0] + g.gX) < self.bbb[0]:
+    #             self.bbb[0] = (g.bbb[0] + g.gX)
+    #         if (g.bbb[1] + g.gY) < self.bbb[1]:
+    #             self.bbb[1] = (g.bbb[1] + g.gY)
+    #         if (g.bbb[2] + g.gX) > self.bbb[2]:
+    #             self.bbb[2] = (g.bbb[2] + g.gX)
+    #         if (g.bbb[3] + g.gY) > self.bbb[3]:
+    #             self.bbb[3] = (g.bbb[3] + g.gY)
 
 
 
