@@ -48,7 +48,7 @@ class TreeGram(Gram):
         # if self.widthToHeight < 0.05:
         #    raise GramError("TreeGram()  widthToHeight is %s.  Too small?!" % self.widthToHeight)
         self.brackets = []
-        self.thickBranches = []
+        # self.thickBranches = []
         self.cBoxes = []            # node confidence boxes
         self.brokenBranches = []
         self.nodeTooltipBoxes = []
@@ -462,10 +462,21 @@ class TreeGram(Gram):
         self.brackets.append(uN.bracket)
         return uN.bracket
 
-    def setThickBranch(self, nodeSpecifier, thickness, colour):
+    # def setThickBranch(self, nodeSpecifier, thickness, colour):
+    #     theNode = self.tree.node(nodeSpecifier)
+    #     theNode.thickBranch = TreeGramThickBranch(self, theNode, thickness, colour)
+    #     self.thickBranches.append(theNode.thickBranch)
+
+    def emphasizeBranch(self, nodeSpecifier, thickness=None, color=None, colour=None):
         theNode = self.tree.node(nodeSpecifier)
-        theNode.thickBranch = TreeGramThickBranch(self, theNode, thickness, colour)
-        self.thickBranches.append(theNode.thickBranch)
+        theColor = None
+        if color:
+            if colour:
+                assert color == colour
+            theColor = color
+        elif colour:
+            theColor = colour
+        theNode.emphasizedBranch = TreeGramEmphasizedBranch(thickness, theColor)
 
     def setNodeConfidenceBox(self, theNode):
         # print "%3i  %.1f  %.1f %.1f" % (theNode.nodeNum, theNode.height,
@@ -786,11 +797,11 @@ class TreeGram(Gram):
             for b in self.brackets:
                 b.setPositions()
 
-        # thickBranches
-        if self.thickBranches:
-            print("There are %i thickBranches!" % len(self.thickBranches))
-            for b in self.thickBranches:
-                b.setPositions()
+        # # thickBranches
+        # if self.thickBranches:
+        #     print("There are %i thickBranches!" % len(self.thickBranches))
+        #     for b in self.thickBranches:
+        #         b.setPositions()
 
         # node confidence boxes
         for b in self.cBoxes:
@@ -892,6 +903,15 @@ class TreeGram(Gram):
             ss.append("%% horizontal lines")
             for n in self.tree.iterNodes():
                 if n.line:
+                    if hasattr(n, "emphasizedBranch"):
+                        # n.emphasizedBranch.dump()
+                        if n.emphasizedBranch.thickness:
+                            n.line.lineThickness = n.emphasizedBranch.thickness
+                        if n.emphasizedBranch.color:
+                            n.line.color = n.emphasizedBranch.color
+                            #print("set n.line.color.")
+                            #n.line.color.dump()
+                        
                     ss.append(n.line.getTikz())
 
             ss.append('')
@@ -915,11 +935,11 @@ class TreeGram(Gram):
         if self.nodeTooltipBoxes:
             print("nodeTooltipBoxes are not implemented in TikZ")
 
-        if self.thickBranches:
-            ss.append('')
-            ss.append("%% thickBranches, in front, so after")
-            for b in self.thickBranches:
-                ss.append(b.getTikz())
+        # if self.thickBranches:
+        #     ss.append('')
+        #     ss.append("%% thickBranches, in front, so after")
+        #     for b in self.thickBranches:
+        #         ss.append(b.getTikz())
 
 
         ss.append('')
@@ -1021,6 +1041,14 @@ class TreeGram(Gram):
             ss.append("<!--  horizontal lines  -->")
             for n in self.tree.iterNodes():
                 if n.line:
+                    if hasattr(n, "emphasizedBranch"):
+                        # n.emphasizedBranch.dump()
+                        if n.emphasizedBranch.thickness:
+                            n.line.lineThickness = n.emphasizedBranch.thickness
+                        if n.emphasizedBranch.color:
+                            n.line.color = n.emphasizedBranch.color
+                            #print("set n.line.color.")
+                            #n.line.color.dump()
                     ss.append(n.line.getSvg())
 
             ss.append('')
@@ -1041,11 +1069,11 @@ class TreeGram(Gram):
             for bb in self.brokenBranches:
                 ss.append(bb.getSvg())
 
-        if self.thickBranches:
-            ss.append('')
-            ss.append("<!--  thickBranches, in front, so after -->")
-            for b in self.thickBranches:
-                ss.append(b.getSvg())
+        # if self.thickBranches:
+        #     ss.append('')
+        #     ss.append("<!--  thickBranches, in front, so after -->")
+        #     for b in self.thickBranches:
+        #         ss.append(b.getSvg())
 
 
         ss.append('')
@@ -1443,37 +1471,56 @@ class TreeGramBracket(TreeGramGraphic):
 
 
 
-class TreeGramThickBranch(TreeGramGraphic):
+# class TreeGramThickBranch(TreeGramGraphic):
 
-    def __init__(self, treeGram, theNode, thickness, colour):
-        TreeGramGraphic.__init__(self)
-        assert theNode.parent
-        # self.tg = treeGram
-        self.node = theNode
-        #self.thickness = thickness
-        self.cA = GramCoord(0, 0)
-        self.cB = GramCoord(1, 1)
+#     def __init__(self, treeGram, theNode, thickness, colour):
+#         TreeGramGraphic.__init__(self)
+#         assert theNode.parent
+#         # self.tg = treeGram
+#         self.node = theNode
+#         #self.thickness = thickness
+#         self.cA = GramCoord(0, 0)
+#         self.cB = GramCoord(1, 1)
 
-        self.gl = GramLine(self.cA, self.cB)
-        self.gl.color = colour
-        self.gl.lineThickness = thickness
+#         self.gl = GramLine(self.cA, self.cB)
+#         self.gl.color = colour
+#         self.gl.lineThickness = thickness
             
 
-    def setPositions(self):
-        self.cA.xPosn = self.node.cA.xPosn
-        self.cA.yPosn = self.node.cA.yPosn
-        self.cB.xPosn = self.node.parent.cA.xPosn
-        self.cB.yPosn = self.node.cA.yPosn
+#     def setPositions(self):
+#         self.cA.xPosn = self.node.cA.xPosn
+#         self.cA.yPosn = self.node.cA.yPosn
+#         self.cB.xPosn = self.node.parent.cA.xPosn
+#         self.cB.yPosn = self.node.cA.yPosn
         
 
-    def getTikz(self):
-        return self.gl.getTikz()
+#     def getTikz(self):
+#         return self.gl.getTikz()
 
-    def getSvg(self):
-        return self.gl.getSvg()
+#     def getSvg(self):
+#         return self.gl.getSvg()
 
-    def setBB(self):
-        pass
+#     def setBB(self):
+#         pass
+
+class TreeGramEmphasizedBranch(TreeGramGraphic):
+
+    def __init__(self, thickness, colour):
+        TreeGramGraphic.__init__(self)
+        
+        self.thickness = thickness
+        self.color = colour
+
+    def dump(self):
+        print("TreeGramEmphasizedBranch.dump()")
+        print(f"    thickness={self.thickness},", end=" ")
+        if isinstance(self.color, GramColor):
+            self.color.dump()
+        else:
+            print(f"color={self.color} is not a GramColor object")
+
+            
+
 
 
 class TreeGramNodeConfidenceBox(TreeGramGraphic):
