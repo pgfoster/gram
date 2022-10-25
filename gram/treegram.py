@@ -819,10 +819,13 @@ class TreeGram(Gram):
         for n in self.tree.iterNodes():
             if n.label:
                 tbb.append(n.label)
-            if n.br and n.br.label:
-                tbb.append(n.br.label)
-            if n.br and n.br.uLabel:
-                tbb.append(n.br.uLabel)
+            if n.br:
+                if hasattr(n.br, "label"):
+                    if n.br.label:
+                        tbb.append(n.br.label)
+                if hasattr(n.br, "uLabel"):
+                    if n.br.uLabel:
+                        tbb.append(n.br.uLabel)
 
         print("TreeGram.getAllGramTexts() Got %i texts" % len(tbb))
         return tbb
@@ -859,8 +862,11 @@ class TreeGram(Gram):
                 ss.append(n.cB.getTikz())
             if not n.isLeaf and n.name:
                 hasInternalNodeNames = True
-            if n.br and (n.br.label or n.br.uLabel):
-                hasBranchNames = True
+            if n.br:
+                if hasattr(n.br, "label") and n.br.label:
+                    hasBranchNames = True
+                if hasattr(n.br, "uLabel") and n.br.uLabel:
+                    hasBranchNames = True
 
         # Put self.graphics after the coordinates, so graphics can use the coordinates.
         if self.graphics:
@@ -940,9 +946,9 @@ class TreeGram(Gram):
             ss.append("%% branch labels")
             for n in self.tree.iterNodesNoRoot():
                 if n.br:
-                    if n.br.label:
+                    if hasattr(n.br, "label") and n.br.label:
                         ss.append(n.br.label.getTikz())
-                    if n.br.uLabel:
+                    if hasattr(n.br, "uLabel") and n.br.uLabel:
                         ss.append(n.br.uLabel.getTikz())
 
         if self.scaleBar:
@@ -992,8 +998,11 @@ class TreeGram(Gram):
             #     ss.append(n.cB.getSvg())
             if not n.isLeaf and n.name:
                 hasInternalNodeNames = True
-            if n.br and (n.br.label or n.br.uLabel):
-                hasBranchNames = True
+            if n.br:
+                if hasattr(n.br, "label") and n.br.label:
+                    hasBranchNames = True
+                if hasattr(n.br, "uLabel") and n.br.uLabel:
+                    hasBranchNames = True
 
         if self.brackets:
             ss.append('')
