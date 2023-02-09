@@ -2495,9 +2495,9 @@ class GramTikzStyle(Gram):
                 fStr += '\\%s' % self.textShape
             options.append(fStr)
 
-
+        # print("    GramTikzStyle.getSvgOptions() self is %s,  self.color is %s, self.draw is %s" % (self, self.color, self.draw))
         if self.color:
-            #print("    SVG.getSvgOptions() self is %s,  self.color is %s" % (self, self.color))
+            # print("    GramTikzStyle.getSvgOptions() self is %s,  self.color is %s" % (self, self.color))
             assert isinstance(self.color, GramColor)
             if self.color.value:
                 if self.color.transparent:
@@ -2560,6 +2560,7 @@ class GramTikzStyle(Gram):
         #     options.append('rotate=%.1f' % self.rotate)
         # if self.shape:
         #     options.append('shape=%s' % self.shape)
+
         if self.lineThickness is not None:
             #if isinstance(self.lineThickness, str):
             myLineThickness = cmForLineThickness(self.lineThickness)
@@ -2745,7 +2746,7 @@ class GramGraphic(GramTikzStyle):
 
         # Then get options not associated with the style from the style string.
         nonStyleOptions = GramTikzStyle.getSvgOptions(self)
-        #print("getSvgOptions()  C  nonStyleOptions = %s" % nonStyleOptions)
+        # print("getSvgOptions()  C  nonStyleOptions = %s" % nonStyleOptions)
 
         # Avoid repetition of font=\sffamily and anchor
         booger = 'font=\\sffamily'
@@ -5503,7 +5504,7 @@ text {
     font-weight: %i;
 }
 text.sffamily {
-    font-family: "Latin Modern Sans", sans-serif;
+    font-family: "Latin Modern Sans", Helvetica, sans-serif;
 }
 text.ttfamily {
     font-family: "Latin Modern Mono", "Courier New", Courier, monospace;
