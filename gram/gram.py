@@ -1224,7 +1224,7 @@ class Gram(object):
         assert myHt > 0.0
 
         #flob.write('<?xml-stylesheet type="text/css" href="/Users/peter/Write/Html/psvn1.css" ?>\n')
-        flob.write('<svg version="1.1"\n  baseProfile="full"\n')
+        flob.write('<svg ')
         hackExtraX = doHackExtra
         hackExtraY = doHackExtra
         if doHackExtra:
