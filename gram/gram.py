@@ -1749,6 +1749,12 @@ class GramCoord(Gram):
         self.comment = comment
         # self.topLevelGraphics.append(self)
 
+    def dump(self):
+        if self.name:
+            print(f"GramCoord.dump() name {self.name} xPosn {self.xPosn} yPosn {self.yPosn}")
+        else:
+            print(f"GramCoord.dump() xPosn {self.xPosn} yPosn {self.yPosn}")
+
     def getTikz(self):
         if self.name:
             ss = []
