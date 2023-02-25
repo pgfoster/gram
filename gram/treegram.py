@@ -51,6 +51,8 @@ class TreeGram(Gram):
         # self.thickBranches = []
         self.cBoxes = []            # node confidence boxes
         self.brokenBranches = []
+        self.branchPins = []
+        # self.branchBars = []
 
         Gram.__init__(self)
         self.dirName = 'Gram'
@@ -406,7 +408,13 @@ class TreeGram(Gram):
         theNode = self.tree.node(nodeSpecifier)
         self.brokenBranches.append(TreeGramBrokenBranch(self, theNode))
 
+    def setBranchPin(self, nodeSpecifier, lenFromNode, title, color, size, pinLen, pinLenScale):
         theNode = self.tree.node(nodeSpecifier)
+        self.branchPins.append(TreeGramBranchPin(self, theNode, lenFromNode, title, color, size, pinLen, pinLenScale))
+
+    # def setBranchBar(self, nodeSpecifier, height, fill="red", title=""):
+    #     theNode = self.tree.node(nodeSpecifier)
+    #     self.branchBars.append(TreeGramBranchBar(self, theNode, height, fill, title))
 
     def extraYSpaceAtNode(self, nodeSpecifier, extra):
         theNode = self.tree.node(nodeSpecifier)
@@ -807,7 +815,11 @@ class TreeGram(Gram):
         for bb in self.brokenBranches:
             bb.setPositions()
 
+        for b in self.branchPins:
             b.setPositions()
+
+        # for b in self.branchBars:
+        #     b.setPositions()
 
         if self.scaleBar:
             # This next line is here for TreeGramRadial, where it actually does
@@ -928,6 +940,10 @@ class TreeGram(Gram):
             for bb in self.brokenBranches:
                 ss.append(bb.getTikz())
 
+        if self.branchPins:
+            print("branchPins are not implemented in TikZ")
+        # if self.branchBars:
+        #     print("branchBarss are not implemented in TikZ")
 
         # if self.thickBranches:
         #     ss.append('')
@@ -1063,6 +1079,12 @@ class TreeGram(Gram):
         #     for b in self.thickBranches:
         #         ss.append(b.getSvg())
 
+        # if self.branchBars:
+        #     ss.append('')
+        #     ss.append("<!--  branch bars -->")
+        #     for bb in self.branchBars:
+        #         ss.append(bb.getSvg())
+
 
         ss.append('')
         ss.append("<!--  leaf labels -->")
@@ -1103,6 +1125,12 @@ class TreeGram(Gram):
             ss.append("<!-- node numbers -->")
             for n in self.tree.iterNodes():
                 ss.append(n.nodeNumLabel.getSvg())
+
+        if self.branchPins:
+            ss.append('')
+            ss.append("<!--  branch pins -->")
+            for bb in self.branchPins:
+                ss.append(bb.getSvg())
 
         ss.append('')
         return '\n'.join(ss)
@@ -1625,36 +1653,123 @@ class TreeGramBrokenBranch(TreeGramGraphic):
         # print("TreeGramBrokenBranch ")
 
 
+
+class TreeGramBranchPin(TreeGramGraphic):
+    # here we need treeGram to access the scale
+    def __init__(self, treeGram, theNode, lenFromNode, title, color, size, pinLen, pinLenScale):   
         TreeGramGraphic.__init__(self)
         self.tg = treeGram
         self.node = theNode
-        self.size = size
+        self.lenFromNode = lenFromNode
         self.color = color
+        self.size = size
+        self.pinLen = pinLen
+        self.pinLenScale = pinLenScale    # 1.0 by default, same as self.tg.scale
         self.title = title
-        cA = GramCoord(0, 0)
-        cB = GramCoord(1, 1)
-        self.box = GramRect(cA, cB)
-        self.box.fill = color        # although the user can change their mind before setPositions()
-        self.box.draw = False        # no border line
+        cA_vL = GramCoord(0, 0)
+        cB_vL = GramCoord(1, 1)
+        cA_hL = GramCoord(1,1)
+        cB_hL = GramCoord(2, 1)
+        self.vLine = GramLine(cA_vL, cB_vL)
+        self.vLine.lineThickness = "ultra thin"
+        self.vLine.cap = "round"
+        self.hLine = GramLine(cA_hL, cB_hL)
+        self.hLine.lineThickness = "ultra thin"
+        self.hLine.cap = "round"
+
+        cA_bx = GramCoord(0, 0)
+        cB_bx = GramCoord(1,1)
+        self.box = GramRect(cA_bx, cB_bx)
+        self.box.draw = None
+        self.box.fill = self.color
+
 
     def setPositions(self):
-        halfSize = self.size / 2.0
-        self.box.cA.xPosn = self.node.cA.xPosn - halfSize
-        self.box.cA.yPosn = self.node.cA.yPosn - halfSize
-        self.box.cB.xPosn = self.node.cA.xPosn + halfSize
-        self.box.cB.yPosn = self.node.cA.yPosn + halfSize
+        # cA_vL will be on the branch, cB_vL will be above
+        self.vLine.cA.xPosn = self.node.cA.xPosn - (self.lenFromNode * self.tg.scale)
+        self.vLine.cA.yPosn = self.node.cA.yPosn
 
-        self.box.color = self.color
+        self.vLine.cB.xPosn = self.vLine.cA.xPosn   # vertical line, so cB.xPosn is cA.xPosn
+
+        # random height might be wanted sometimes ---
+        # self.line.cB.yPosn = self.line.cA.yPosn  + (0.4 * self.tg.yScale * random.random()) 
+
+        # Height of self.vLine.
+        # The closer it is to the node, the lower it will be, but with a non-zero minimum, and a max of 0.45 yScale
+        brLineLen = self.node.cA.xPosn - self.node.cB.xPosn  # already scaled by self.tg.scale
+        thisMin = 0.05 * self.tg.yScale
+        self.vLine.cB.yPosn = self.vLine.cA.yPosn  + thisMin + (
+            ((self.lenFromNode * self.tg.scale) / brLineLen)  * 0.4 * self.tg.yScale)
+        # self.vLine.cB.yPosn = self.vLine.cA.yPosn  + thisMin
+        
+        # hLine
+        self.hLine.cA.xPosn = self.vLine.cB.xPosn
+        self.hLine.cA.yPosn = self.vLine.cB.yPosn
+        self.hLine.cB.xPosn = self.hLine.cA.xPosn + (self.pinLen * self.tg.scale * self.pinLenScale)
+        self.hLine.cB.yPosn = self.hLine.cA.yPosn
+
+        # the box
+        halfSize = self.size / 2.0
+        # cAr = GramCoord(self.line.cB.xPosn - halfSize, self.line.cB.yPosn - halfSize)
+        # cBr = GramCoord(self.line.cB.xPosn + halfSize, self.line.cB.yPosn + halfSize)
+        self.box.cA.xPosn = self.hLine.cB.xPosn - halfSize
+        self.box.cA.yPosn = self.hLine.cB.yPosn - halfSize
+        self.box.cB.xPosn = self.hLine.cB.xPosn + halfSize
+        self.box.cB.yPosn = self.hLine.cB.yPosn + halfSize
+        
 
     def getTikz(self):
         pass
 
     def getSvg(self):
         ss = []
-        ss.append("<g>")
-        ss.append(self.box.getSvg())
-        ss.append("<title>%s</title>" % self.title)
-        ss.append("</g>")
+
+        if self.title:
+            ss.append("<g>")
+            ss.append(self.box.getSvg())
+            ss.append("<title>\n%s</title>" % self.title)
+            ss.append("</g>")
+        else:
+            ss.append(self.box.getSvg())
+
+        ss.append(self.vLine.getSvg())
+        ss.append(self.hLine.getSvg())
+        
         return '\n'.join(ss)
+
+# class TreeGramBranchBar(TreeGramGraphic):
+
+#     def __init__(self, treeGram, theNode, height, fill, title=None):   # need treeGram to access the scale
+#         TreeGramGraphic.__init__(self)
+#         self.tg = treeGram
+#         self.node = theNode
+#         self.height = height
+#         self.title = title
+#         cA = GramCoord(0, 0)
+#         cB = GramCoord(1, 1)
+#         self.bar = GramRect(cA, cB)
+#         self.bar.draw = False
+#         self.bar.fill = fill
+
+#     def setPositions(self):
+#         self.bar.cA.xPosn = self.node.line.cA.xPosn
+#         self.bar.cA.yPosn = self.node.line.cA.yPosn
+#         self.bar.cB.xPosn = self.node.line.cB.xPosn
+#         self.bar.cB.yPosn = self.node.line.cB.yPosn
+#         self.bar.cB.yPosn += self.height
+
+#     def getTikz(self):
+#         pass
+
+#     def getSvg(self):
+#         ss = []
+#         if self.title:
+#             ss.append("<g>")
+#             ss.append(self.bar.getSvg())                   # a GramRect
+#             ss.append("<title>\n%s</title>" % self.title)
+#             ss.append("</g>")
+#             return '\n'.join(ss)
+#         else:
+#             return self.bar.getSvg()
 
 
