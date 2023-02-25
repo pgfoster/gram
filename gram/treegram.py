@@ -491,7 +491,7 @@ class TreeGram(Gram):
         g = GramText('Xxy')
         g.cA = GramCoord(0, 0)
         g.name = 'leaf'
-        g.anchor = 'west'    # vertically unbalanced if "mid west" and the textSize is not normalsize
+        g.anchor = 'mid west'    # vertically unbalanced if "mid west" and the textSize is not normalsize
         g.textSize = self.leafLabelSize
         if g.defaultTextFamily:
             g.textFamily = g.defaultTextFamily
