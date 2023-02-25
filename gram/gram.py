@@ -2639,6 +2639,7 @@ class GramGraphic(GramTikzStyle):
         self.bb = [0.0] * 4
         #self.svgBb = [0.0] * 4
         self.svgId = None
+        self.titleAttribute = None
 
     def setPositions(self):
         for g in self.graphics:
@@ -4696,7 +4697,10 @@ class GramLine(GramGraphic):
         options = self.getSvgOptions()
         ss += options
 
-        ss.append('/>')
+        if self.titleAttribute:
+            ss.append("><title>\n%s</title></line>" % self.titleAttribute)
+        else:
+            ss.append('/>')
         return ' '.join(ss)
 
     def setBB(self):
