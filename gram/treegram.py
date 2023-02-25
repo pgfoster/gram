@@ -51,7 +51,6 @@ class TreeGram(Gram):
         # self.thickBranches = []
         self.cBoxes = []            # node confidence boxes
         self.brokenBranches = []
-        self.nodeTooltipBoxes = []
 
         Gram.__init__(self)
         self.dirName = 'Gram'
@@ -407,9 +406,7 @@ class TreeGram(Gram):
         theNode = self.tree.node(nodeSpecifier)
         self.brokenBranches.append(TreeGramBrokenBranch(self, theNode))
 
-    def nodeTooltipBox(self, nodeSpecifier, size=0.05, color="red", title="title"):
         theNode = self.tree.node(nodeSpecifier)
-        self.nodeTooltipBoxes.append(TreeGramNodeTooltipBox(self, theNode, size, color, title))
 
     def extraYSpaceAtNode(self, nodeSpecifier, extra):
         theNode = self.tree.node(nodeSpecifier)
@@ -810,7 +807,6 @@ class TreeGram(Gram):
         for bb in self.brokenBranches:
             bb.setPositions()
 
-        for b in self.nodeTooltipBoxes:
             b.setPositions()
 
         if self.scaleBar:
@@ -932,8 +928,6 @@ class TreeGram(Gram):
             for bb in self.brokenBranches:
                 ss.append(bb.getTikz())
 
-        if self.nodeTooltipBoxes:
-            print("nodeTooltipBoxes are not implemented in TikZ")
 
         # if self.thickBranches:
         #     ss.append('')
@@ -1002,12 +996,6 @@ class TreeGram(Gram):
         hasBranchNames = False
 
         #print "TreeGram.getSvg() here"
-
-        if self.nodeTooltipBoxes:
-            ss.append('')
-            ss.append("<!--  node tooltip boxes -->")
-            for bb in self.nodeTooltipBoxes:
-                ss.append(bb.getSvg())
 
         for gr in self.graphics:
             ss.append(gr.getSvg())
@@ -1636,9 +1624,7 @@ class TreeGramBrokenBranch(TreeGramGraphic):
         self.bb[3] = self.cA.xPosn  # + halfLineThick
         # print("TreeGramBrokenBranch ")
 
-class TreeGramNodeTooltipBox(TreeGramGraphic):
 
-    def __init__(self, treeGram, theNode, size, color, title):
         TreeGramGraphic.__init__(self)
         self.tg = treeGram
         self.node = theNode
