@@ -932,6 +932,15 @@ class TreeGram(Gram):
             ss.append("%% branchlines")
             for n in self.tree.iterNodes():
                 if n.line:
+                    if hasattr(n, "emphasizedBranch"):
+                        # n.emphasizedBranch.dump()
+                        if n.emphasizedBranch.thickness:
+                            n.line.lineThickness = n.emphasizedBranch.thickness
+                        if n.emphasizedBranch.color:
+                            n.line.color = n.emphasizedBranch.color
+                            #print("set n.line.color.")
+                            #n.line.color.dump()
+
                     ss.append(n.line.getTikz())
 
         if self.brokenBranches:
@@ -1065,6 +1074,14 @@ class TreeGram(Gram):
             ss.append("<!--  branchlines -->")
             for n in self.tree.iterNodes():
                 if n.line:
+                    if hasattr(n, "emphasizedBranch"):
+                        # n.emphasizedBranch.dump()
+                        if n.emphasizedBranch.thickness:
+                            n.line.lineThickness = n.emphasizedBranch.thickness
+                        if n.emphasizedBranch.color:
+                            n.line.color = n.emphasizedBranch.color
+                            #print("set n.line.color.")
+                            #n.line.color.dump()
                     ss.append(n.line.getSvg())
 
         if self.brokenBranches:
@@ -1487,37 +1504,6 @@ class TreeGramBracket(TreeGramGraphic):
 
 
 
-# class TreeGramThickBranch(TreeGramGraphic):
-
-#     def __init__(self, treeGram, theNode, thickness, colour):
-#         TreeGramGraphic.__init__(self)
-#         assert theNode.parent
-#         # self.tg = treeGram
-#         self.node = theNode
-#         #self.thickness = thickness
-#         self.cA = GramCoord(0, 0)
-#         self.cB = GramCoord(1, 1)
-
-#         self.gl = GramLine(self.cA, self.cB)
-#         self.gl.color = colour
-#         self.gl.lineThickness = thickness
-            
-
-#     def setPositions(self):
-#         self.cA.xPosn = self.node.cA.xPosn
-#         self.cA.yPosn = self.node.cA.yPosn
-#         self.cB.xPosn = self.node.parent.cA.xPosn
-#         self.cB.yPosn = self.node.cA.yPosn
-        
-
-#     def getTikz(self):
-#         return self.gl.getTikz()
-
-#     def getSvg(self):
-#         return self.gl.getSvg()
-
-#     def setBB(self):
-#         pass
 
 class TreeGramEmphasizedBranch(TreeGramGraphic):
 
