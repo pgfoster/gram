@@ -1152,7 +1152,7 @@ class Gram(object):
             resolution, pngFileName, pdfFileName))
         os.system("%s %s" % (self.pngViewer, pngFileName))
         
-    def svg(self, extraMarginHack=1.0, writeWidthHeight=True):
+    def svg(self, extraMarginHack=1.0, writeWidthHeight=False):
 
         # This is a complex and ugly hack.
         # Together with calcBigBoundingBox() it should be re-written
