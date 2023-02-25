@@ -1249,6 +1249,7 @@ class Gram(object):
             vb4 = (myHt * self.svgPxForCm)
 
         flob.write('  viewBox="%.2f %.2f %.2f %.2f"\n' % (vb1, vb2, vb3, vb4))
+        # See https://developer.mozilla.org/en-US/docs/Web/SVG/Namespaces_Crash_Course
         flob.write('  xmlns="http://www.w3.org/2000/svg"\n')
         flob.write('  xmlns:xlink="http://www.w3.org/1999/xlink">\n')
         flob.write('\n')
