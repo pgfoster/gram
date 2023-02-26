@@ -234,7 +234,7 @@ class Gram(object):
     _goodLineThicknesses = [
         'ultra thin', 'very thin', 'thin', 'semithick', 'thick', 'very thick', 'ultra thick']
     _goodTextFamilies = ['rmfamily', 'sffamily', 'ttfamily']
-    _goodTextSeries = ['bfseries']
+    _goodTextSeries = ['bfseries', 'mdseries']
     _goodTextShapes = ['itshape', 'scshape']
     _goodTextSizes = ['tiny', 'scriptsize', 'footnotesize', 'small', 'normalsize', 'large',
                       'Large', 'LARGE', 'huge', 'Huge']
