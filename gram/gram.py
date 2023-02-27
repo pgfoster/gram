@@ -3365,6 +3365,13 @@ class GramText(GramGraphic):
         self.svgBaseline_cm = 0.0   # Used to calculate underhang from inkscape bb
         # Gram._svgNormalsize_x = None  # vertical size, for mid anchor, measured by inkscape
 
+        # parts, to make make multi-texts easier, 
+        # eg normal red-BOLD blue-italic backToNormal in the same text object
+        # with different outputs for tikz and svg, but a shared interface.
+        # Parts are GramText objects, and are added, once, to rawText in setPositions()
+        self.parts = []
+        self.partsHaveBeenAdded = False
+
          
         self.fontSizeMultiplierDict = {
             'tiny': 0.5,
@@ -3381,6 +3388,11 @@ class GramText(GramGraphic):
 
         self.gX = 0.0
         self.gY = 0.0
+
+    def append(self, aText):
+        tp = GramText(aText)
+        self.parts.append(tp)
+        return tp
 
     def dump(self):
         print("GramText.dump()")
@@ -3408,6 +3420,7 @@ class GramText(GramGraphic):
             self.cookedText = self.mpText
         else:
             self.cookedText = self.cookText(self.rawText)
+        # print(f"Cooked Text: {self.cookedText}")
 
     def cookText(self, rawText):
         """Add adjectives like sffamily, bfseries, itshape, Large, etc to rawText.
@@ -4010,10 +4023,38 @@ class GramText(GramGraphic):
 
         self.mpText = r"\begin{minipage}{%s}%s %s \end{minipage}" % (widStr, myCmds, cookedText)
 
-    def setPositions(self):
+    def setPositions(self):          # GramText
         gm = ['GramText.setPositions() rawText=%s' % self.rawText]
         
         if self.engine == "tikz":
+
+            if not self.partsHaveBeenAdded:
+                for tp in self.parts:
+                    if tp.color:
+                        cs = tp.color.color  # cs is colourString
+                        if tp.color.value:
+                            cs = f"{cs}!{100 * float(tp.color.value):.0f}"
+                        theText = "\\textcolor{%s}{%s}" % (cs, tp.rawText)
+                    else:
+                        theText = tp.rawText
+                    
+                    theTextFamily = tp.getTextFamily()
+                    theTextSeries = tp.getTextSeries()
+                    theTextShape = tp.getTextShape()
+                    theSize = tp.getTextSize()
+
+                    if theTextShape:
+                        theText = r"\%s %s" % (theTextShape, theText)
+                    if theTextSeries:
+                        theText = r"\%s %s" % (theTextSeries, theText)
+                    if theTextFamily:
+                        theText = r"\%s %s" % (theTextFamily, theText)
+                    if theSize and theSize != 'normalsize':
+                        theText = r"\%s %s" % (theSize, theText)
+                    theText = "{" + theText + "}"
+                    self.rawText += theText
+                self.partsHaveBeenAdded = True
+
             if not self.haveStartedPyX:
                 self.startPyX()
 
@@ -4036,8 +4077,63 @@ class GramText(GramGraphic):
             self.setBB()
 
         elif self.engine == "svg":
-            pass
+            if not self.partsHaveBeenAdded:
+                ss = []
+                for tp in self.parts:
+
+                    myClass = None
+                    myTextFamilyString = tp.getTextFamily()
+                    if myTextFamilyString == 'ttfamily':
+                        myClass = 'ttfamily'
+                    elif myTextFamilyString == "sffamily":
+                        myClass = "sffamily"
+                    
+                    myTextSizeStr = tp.getTextSize()
+                    if myTextSizeStr is None or myTextSizeStr == 'normalsize':
+                        myTextSizeCm = self.svgTextNormalsize
+                    else:
+                        myTextSizeCm = self.fontSizeMultiplierDict[
+                            myTextSizeStr] * self.svgTextNormalsize
+                    myTextSizeStr = "%.2f" % (myTextSizeCm * self.svgPxForCm)
+
+                    ss.append('<tspan ')
+                    if myClass:
+                        ss.append('class="%s" ' % myClass)
+                    ss.append('font-size="%s" ' % myTextSizeStr)
             
+                    myTextShape = tp.getTextShape()  #  ['itshape', 'scshape']
+                    if myTextShape == 'scshape':
+                        ss.append('font-variant="small-caps" ')
+                    if myTextShape == 'itshape':
+                        if tp.font == 'helvetica':
+                            ss.append('font-style="oblique" ')
+                        elif tp.font == 'cm':
+                            if myTextShape == 'scshape':
+                                ss.append('font-style="oblique"')
+                            else:
+                                ss.append('font-style="italic" ')
+                        elif tp.font in ['palatino', 'times']:
+                            ss.append('font-style="italic" ')
+
+                    # Since font-weight is part of the style, I need to use "style=..."
+                    myTextSeries = tp.getTextSeries()   # 'bfseries' or 'mdseries'
+                    if myTextSeries == "bfseries":
+                        ss.append('style="font-weight:bold" ')   # or a number?
+                    elif myTextSeries == "mdseries":
+                        ss.append('style="font-weight:normal" ')
+
+                    myColor = tp.getColor()
+                    if myColor:
+                        ss.append('fill="%s" ' % myColor.color)
+                        if myColor.transparent:
+                            ss.append('fill-opacity="%s" ' % myColor.value)
+
+                    ss.append(">%s</tspan>" % tp.rawText)
+
+                theText = "".join(ss)
+                self.rawText += theText
+                self.partsHaveBeenAdded = True
+
 
 
     def getTikz(self):   # GramText
@@ -4540,9 +4636,15 @@ class GramText(GramGraphic):
 
             ss.append('/>\n')
             
-        ss.append('<text id="%s" ' % self.svgId)
+        ss.append('<text id="%s"' % self.svgId)
         if myClass:
             ss.append('class="%s"' % myClass)
+
+        # preserve spaces.  The default mucks with spaces
+        # This is deprecated, but it is still used by inkscape, so
+        # leave it.   When svg v 2 is more fully supported by inkscape, 
+        # then use style="white-space: pre" instead
+        ss.append('xml:space="preserve"')
 
         myX = (self.svgPxForCmF(self.cA.xPosn))
 
@@ -4571,9 +4673,11 @@ class GramText(GramGraphic):
                 ss.append('font-style="italic"')
 
         # Since font-weight is part of the style, I need to use "style=..."
-        myTextSeries = self.getTextSeries()   # only 'bfseries'
+        myTextSeries = self.getTextSeries()   # 'bfseries' or 'mdseries'
         if myTextSeries == "bfseries":
             ss.append('style="font-weight:bold"')   # or a number?
+        elif myTextSeries == "mdseries":
+            ss.append('style="font-weight:normal"')
 
         myColor = self.getColor()
         if myColor:
@@ -5504,14 +5608,14 @@ text.ttfamily {
 """
 
 svgCss2 = """
-text {
+text,tspan {
     font-family: %s;
     font-weight: %i;
 }
-text.sffamily {
+text.sffamily,tspan.sffamily {
     font-family: "Latin Modern Sans", Helvetica, sans-serif;
 }
-text.ttfamily {
+text.ttfamily,tspan.ttfamily {
     font-family: "Latin Modern Mono", "Courier New", Courier, monospace;
 }
 """
