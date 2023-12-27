@@ -1148,8 +1148,10 @@ class Gram(object):
         pngFileName = "%s/%s.png" % (self.dirName, self.baseName)
         writeInColour("Writing PNG file %s : resolution %i\n" % (pngFileName, resolution), 'blue')
         sys.stdout.flush()
-        os.system("gs -dNOPAUSE -sDEVICE=pngalpha -r%i -dBATCH -sOutputFile=%s %s" % (
-            resolution, pngFileName, pdfFileName))
+        myCmd = "gs -dNOPAUSE -sDEVICE=pngalpha -r%i -dBATCH -sOutputFile=%s %s" % (
+            resolution, pngFileName, pdfFileName)
+        print(myCmd)
+        os.system(myCmd)
         os.system("%s %s" % (self.pngViewer, pngFileName))
         
     def svg(self, extraMarginHack=1.0, writeWidthHeight=False):
