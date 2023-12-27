@@ -3338,7 +3338,7 @@ class GramText(GramGraphic):
         #print("GramText.__init__(%s)" % text)
         self.rawText = text
         self.cookedText = None                 # with added modifiers like sffamily, bfseries, itshape, Large, etc
-        if text.startswith(r"\begin{minipage}"):
+        if r"\begin{minipage}" in text:
             self.mpText = text
         else:
             self.mpText = None                     # wrapped in a minipage
