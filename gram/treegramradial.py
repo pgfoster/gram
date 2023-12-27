@@ -432,9 +432,9 @@ class TreeGramRadial(TreeGram):
                         else:
                             n.label.style = 'tgr internal'
                 if n.br:
-                    if n.br.label:
+                    if hasattr(n.br, "label") and n.br.label:
                         n.br.label.style = 'tgr branch'
-                    if n.br.uLabel:
+                    if hasattr(n.br, "uLabel") and n.br.uLabel:
                         n.br.uLabel.style = 'tgr branch'
 
             self.slopedBrLabels = slopedBrLabels
@@ -493,7 +493,7 @@ class TreeGramRadial(TreeGram):
                                 # 3 o'clock
                                 n.label.anchor = 'west'
 
-                if n.br and n.br.label:
+                if n.br and hasattr(n.br, "label") and n.br.label:
                     tb = n.br.label
                     if self.slopedBrLabels:
                         piOver2 = math.pi / 2.
@@ -539,7 +539,7 @@ class TreeGramRadial(TreeGram):
                         elif n.angle < 0:
                             # print "angle h"
                             tb.anchor = 'south'
-                if n.br and n.br.uLabel:
+                if n.br and hasattr(n.br, "uLabel") and n.br.uLabel:
                     tb = n.br.uLabel
                     if self.slopedBrLabels:
                         piOver2 = math.pi / 2.
@@ -744,12 +744,12 @@ class TreeGramRadial(TreeGram):
                     # # if theYShift is not None:
                     # #     n.label.cA.yPosn += theYShift
 
-            if n.br and n.br.label:
+            if n.br and hasattr(n.br, "label") and n.br.label:
                 n.br.label.cA.xPosn = n.cB.xPosn + \
                     (n.cA.xPosn - n.cB.xPosn) / 2.
                 n.br.label.cA.yPosn = n.cB.yPosn + \
                     (n.cA.yPosn - n.cB.yPosn) / 2.
-            if n.br and n.br.uLabel:
+            if n.br and hasattr(n.br, "uLabel") and n.br.uLabel:
                 n.br.uLabel.cA.xPosn = n.cB.xPosn + \
                     (n.cA.xPosn - n.cB.xPosn) / 2.
                 n.br.uLabel.cA.yPosn = n.cB.yPosn + \
