@@ -4119,6 +4119,7 @@ class GramText(GramGraphic):
 
                     # Since font-weight is part of the style, I need to use "style=..."
                     myTextSeries = tp.getTextSeries()   # 'bfseries' or 'mdseries'
+                    # print("myTextSeries: %s" % myTextSeries)
                     if myTextSeries == "bfseries":
                         ss.append('style="font-weight:bold" ')   # or a number?
                     elif myTextSeries == "mdseries":
