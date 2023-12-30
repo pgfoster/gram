@@ -4041,7 +4041,7 @@ class GramText(GramGraphic):
                         theText = tp.rawText
                     
                     theTextFamily = tp.getTextFamily()
-                    theTextSeries = tp.getTextSeries()
+                    theTextSeries = tp.getTextSeries()   # 'bfseries' or 'mdseries'
                     theTextShape = tp.getTextShape()
                     theSize = tp.getTextSize()
 
