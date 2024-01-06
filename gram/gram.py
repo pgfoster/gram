@@ -770,6 +770,10 @@ class Gram(object):
         # TreeGram.render() and Plot.render() continue ...
 
     def startPyX(self):
+        pass
+
+
+    def startPyX_off(self):
 
         if self.haveStartedPyX:
             return
@@ -3667,9 +3671,11 @@ class GramText(GramGraphic):
         else:
             raise GramError("GramText.setBogusBB().  anch '%s' not implemented." % theAnch)
 
-        
+    def setBB(self):
+        #self.setBogusBB()
+        pass
 
-    def setBB(self):    # GramText
+    def setBB_off(self):    # GramText
         # print("GramText '%s'  setBB()" % self.rawText)
         
         if not self.cA:
