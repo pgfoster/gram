@@ -3402,7 +3402,10 @@ class GramText(GramGraphic):
         print(f"{spacer} rawText: {self.rawText}")
         print(f"{spacer} cookedText: {self.cookedText}")
         # print(f"{spacer} name: {self.name}")
-        print(f"{spacer} cA: {self.cA.xPosn:.3f},{self.cA.yPosn:.3f}")
+        if self.cA:
+            print(f"{spacer} cA: {self.cA.xPosn:.3f},{self.cA.yPosn:.3f}")
+        else:
+            print(f"{spacer} cA: None")
         print(f"{spacer} anchor: {self.getAnch()}")
         print(f"{spacer} bb: {self.bb}")
         print(f"{spacer} length: {self.length:.5f}")
