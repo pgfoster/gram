@@ -235,7 +235,7 @@ class Gram(object):
         'ultra thin', 'very thin', 'thin', 'semithick', 'thick', 'very thick', 'ultra thick']
     _goodTextFamilies = ['rmfamily', 'sffamily', 'ttfamily']
     _goodTextSeries = ['bfseries', 'mdseries']
-    _goodTextShapes = ['itshape', 'scshape']
+    _goodTextShapes = ['itshape', 'scshape', "upshape"]   # plus "slshape"?
     _goodTextSizes = ['tiny', 'scriptsize', 'footnotesize', 'small', 'normalsize', 'large',
                       'Large', 'LARGE', 'huge', 'Huge']
 
@@ -1886,7 +1886,7 @@ class GramTikzStyle(Gram):
         self._textSize = None
         self._textFamily = None
         self._textSeries = None
-        self._textShape = None
+        self._textShape = None  # "upshape"
         self._anchor = None
         self._anchorOverRide = None
         self._xShift = None
@@ -2054,14 +2054,14 @@ class GramTikzStyle(Gram):
 
     textSeries = property(_getTextSeries, _setTextSeries, _delTextSeries)
 
-    #_goodTextShapes = ['itshape', 'scshape']
+    #_goodTextShapes = ['itshape', 'scshape', "upshape"]          # and "slshape"?
     def _getTextShape(self):
         return self._textShape
 
     def _setTextShape(self, newVal):
         gm = ['GramTikzStyle._setTextShape()']
         if newVal == None:
-            self._textShape = None
+            self._textShape = "upshape"
         else:
             assert isinstance(newVal, str)
             lowVal = newVal.lower()
@@ -3429,7 +3429,7 @@ class GramText(GramGraphic):
         """
         #_goodTextFamilies = ['rmfamily', 'sffamily', 'ttfamily']
         #_goodTextSeries = ['bfseries']
-        #_goodTextShapes = ['itshape', 'scshape']
+        #_goodTextShapes = ['itshape', 'scshape', "upshape"]         # and "slshape"?
 
         if not rawText:
             return ''
@@ -4103,9 +4103,13 @@ class GramText(GramGraphic):
                         ss.append('class="%s" ' % myClass)
                     ss.append('font-size="%s" ' % myTextSizeStr)
             
-                    myTextShape = tp.getTextShape()  #  ['itshape', 'scshape']
+                    myTextShape = tp.getTextShape()  #  ['itshape', 'scshape', "upshape"]  # and slshape?
                     if myTextShape == 'scshape':
                         ss.append('font-variant="small-caps" ')
+                    if myTextShape == "upshape":
+                        pass
+                    if myTextShape == None:
+                        pass
                     if myTextShape == 'itshape':
                         if tp.font == 'helvetica':
                             ss.append('font-style="oblique" ')
@@ -4661,9 +4665,13 @@ class GramText(GramGraphic):
         if myDy:
             ss.append('dy="%.2f"' % myDy)
 
-        myTextShape = self.getTextShape()  #  ['itshape', 'scshape']
+        myTextShape = self.getTextShape()  #  ['itshape', 'scshape', "upshape"]     # and slshape?
         if myTextShape == 'scshape':
             ss.append('font-variant="small-caps"')
+        if myTextShape == "upshape":
+            pass
+        if myTextShape == None:
+            pass
         if myTextShape == 'itshape':
             if self.font == 'helvetica':
                 ss.append('font-style="oblique"')
