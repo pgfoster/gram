@@ -3416,7 +3416,7 @@ class GramText(GramGraphic):
         print(f"{spacer} rise (cm): {self.rise}")
         print(f"{spacer} svgNormalsize_x (cm): {Gram._svgNormalsize_x}")
         print(f"{spacer} svgBaseline_cm (cm): {self.svgBaseline_cm}")
-        # print(f"{spacer} ")
+        print(f"{spacer} textShape: {self.getTextShape()}")
         # print(f"{spacer} ")
 
 
