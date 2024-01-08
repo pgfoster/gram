@@ -4047,121 +4047,135 @@ class GramText(GramGraphic):
 
         self.mpText = r"\begin{minipage}{%s}%s %s \end{minipage}" % (widStr, myCmds, cookedText)
 
-    def setPositions(self):          # GramText
-        gm = ['GramText.setPositions() rawText=%s' % self.rawText]
-        
+    def setPositions(self):    # GramText
         if self.engine == "tikz":
-
-            if not self.partsHaveBeenAdded:
-                for tp in self.parts:
-                    if tp.color:
-                        cs = tp.color.color  # cs is colourString
-                        if tp.color.value:
-                            cs = f"{cs}!{100 * float(tp.color.value):.0f}"
-                        theText = "\\textcolor{%s}{%s}" % (cs, tp.rawText)
-                    else:
-                        theText = tp.rawText
-                    
-                    theTextFamily = tp.getTextFamily()
-                    theTextSeries = tp.getTextSeries()   # 'bfseries' or 'mdseries'
-                    theTextShape = tp.getTextShape()
-                    theSize = tp.getTextSize()
-
-                    if theTextShape:
-                        theText = r"\%s %s" % (theTextShape, theText)
-                    if theTextSeries:
-                        theText = r"\%s %s" % (theTextSeries, theText)
-                    if theTextFamily:
-                        theText = r"\%s %s" % (theTextFamily, theText)
-                    if theSize and theSize != 'normalsize':
-                        theText = r"\%s %s" % (theSize, theText)
-                    theText = "{" + theText + "}"
-                    self.rawText += theText
-                self.partsHaveBeenAdded = True
-
-            if not self.haveStartedPyX:
-                self.startPyX()
-
-            if self.mpText:    # a minipage
-                pass
-            else:
-                # Is it to be wrapped, multi-line?
-                # If so, put it in a minipage
-                isWrapped = False
-                if self.textWrapWidth:
-                    isWrapped = True
-                else:
-                    if r"\\" in self.rawText:
-                        isWrapped = True
-                        self.textWrapWidth = self.getBiggestWidth()
-
-                if isWrapped:
-                    self.wrapRawInMinipage()
-
-            self.setBB()
-
+            self.setPositionsForTikz()
         elif self.engine == "svg":
-            if not self.partsHaveBeenAdded:
-                ss = []
-                for tp in self.parts:
+            self.setPositionsForSvg()
 
-                    myClass = None
-                    myTextFamilyString = tp.getTextFamily()
-                    if myTextFamilyString == 'ttfamily':
-                        myClass = 'ttfamily'
-                    elif myTextFamilyString == "sffamily":
-                        myClass = "sffamily"
-                    
-                    myTextSizeStr = tp.getTextSize()
-                    if myTextSizeStr is None or myTextSizeStr == 'normalsize':
-                        myTextSizeCm = self.svgTextNormalsize
-                    else:
-                        myTextSizeCm = self.fontSizeMultiplierDict[
-                            myTextSizeStr] * self.svgTextNormalsize
-                    myTextSizeStr = "%.2f" % (myTextSizeCm * self.svgPxForCm)
 
-                    ss.append('<tspan ')
-                    if myClass:
-                        ss.append('class="%s" ' % myClass)
-                    ss.append('font-size="%s" ' % myTextSizeStr)
-            
-                    myTextShape = tp.getTextShape()  #  ['itshape', 'scshape', "upshape"]  # and slshape?
-                    if myTextShape == 'scshape':
-                        ss.append('font-variant="small-caps" ')
-                    if myTextShape == "upshape":
-                        pass
-                    if myTextShape == None:
-                        pass
-                    if myTextShape == 'itshape':
-                        if tp.font == 'helvetica':
-                            ss.append('font-style="oblique" ')
-                        elif tp.font == 'cm':
-                            if myTextShape == 'scshape':
-                                ss.append('font-style="oblique"')
-                            else:
-                                ss.append('font-style="italic" ')
-                        elif tp.font in ['palatino', 'times']:
-                            ss.append('font-style="italic" ')
+    def setPositionsForTikz(self): 
+        gm = ['GramText.setPositionsForTikz() rawText=%s' % self.rawText]
 
-                    # Since font-weight is part of the style, I need to use "style=..."
-                    myTextSeries = tp.getTextSeries()   # 'bfseries' or 'mdseries'
-                    # print("myTextSeries: %s" % myTextSeries)
-                    if myTextSeries == "bfseries":
-                        ss.append('style="font-weight:bold" ')   # or a number?
-                    elif myTextSeries == "mdseries":
-                        ss.append('style="font-weight:normal" ')
+        assert self.engine == "tikz"
 
-                    myColor = tp.getColor()
-                    if myColor:
-                        ss.append('fill="%s" ' % myColor.color)
-                        if myColor.transparent:
-                            ss.append('fill-opacity="%s" ' % myColor.value)
+        if not self.partsHaveBeenAdded:
+            for tp in self.parts:
+                if tp.color:
+                    cs = tp.color.color  # cs is colourString
+                    if tp.color.value:
+                        cs = f"{cs}!{100 * float(tp.color.value):.0f}"
+                    theText = "\\textcolor{%s}{%s}" % (cs, tp.rawText)
+                else:
+                    theText = tp.rawText
 
-                    ss.append(">%s</tspan>" % tp.rawText)
+                theTextFamily = tp.getTextFamily()
+                theTextSeries = tp.getTextSeries()   # 'bfseries' or 'mdseries'
+                theTextShape = tp.getTextShape()
+                theSize = tp.getTextSize()
 
-                theText = "".join(ss)
+                if theTextShape:
+                    theText = r"\%s %s" % (theTextShape, theText)
+                if theTextSeries:
+                    theText = r"\%s %s" % (theTextSeries, theText)
+                if theTextFamily:
+                    theText = r"\%s %s" % (theTextFamily, theText)
+                if theSize and theSize != 'normalsize':
+                    theText = r"\%s %s" % (theSize, theText)
+                theText = "{" + theText + "}"
                 self.rawText += theText
-                self.partsHaveBeenAdded = True
+            self.partsHaveBeenAdded = True
+
+        if not self.haveStartedPyX:
+            self.startPyX()
+
+        if self.mpText:    # a minipage
+            pass
+        else:
+            # Is it to be wrapped, multi-line?
+            # If so, put it in a minipage
+            isWrapped = False
+            if self.textWrapWidth:
+                isWrapped = True
+            else:
+                if r"\\" in self.rawText:
+                    isWrapped = True
+                    self.textWrapWidth = self.getBiggestWidth()
+
+            if isWrapped:
+                self.wrapRawInMinipage()
+
+        self.setBB()
+
+
+    def setPositionsForSvg(self): 
+        gm = ['GramText.setPositionsForSvg() rawText=%s' % self.rawText]
+
+        assert self.engine == "svg"
+
+        if self.partsHaveBeenAdded:
+            pass
+        else:
+            ss = []
+            for tp in self.parts:
+
+                myClass = None
+                myTextFamilyString = tp.getTextFamily()
+                if myTextFamilyString == 'ttfamily':
+                    myClass = 'ttfamily'
+                elif myTextFamilyString == "sffamily":
+                    myClass = "sffamily"
+
+                myTextSizeStr = tp.getTextSize()
+                if myTextSizeStr is None or myTextSizeStr == 'normalsize':
+                    myTextSizeCm = self.svgTextNormalsize
+                else:
+                    myTextSizeCm = self.fontSizeMultiplierDict[
+                        myTextSizeStr] * self.svgTextNormalsize
+                myTextSizeStr = "%.2f" % (myTextSizeCm * self.svgPxForCm)
+
+                ss.append('<tspan ')
+                if myClass:
+                    ss.append('class="%s" ' % myClass)
+                ss.append('font-size="%s" ' % myTextSizeStr)
+
+                myTextShape = tp.getTextShape()  #  ['itshape', 'scshape', "upshape"]  # and slshape?
+                if myTextShape == 'scshape':
+                    ss.append('font-variant="small-caps" ')
+                if myTextShape == "upshape":
+                    pass
+                if myTextShape == None:
+                    pass
+                if myTextShape == 'itshape':
+                    if tp.font == 'helvetica':
+                        ss.append('font-style="oblique" ')
+                    elif tp.font == 'cm':
+                        if myTextShape == 'scshape':
+                            ss.append('font-style="oblique"')
+                        else:
+                            ss.append('font-style="italic" ')
+                    elif tp.font in ['palatino', 'times']:
+                        ss.append('font-style="italic" ')
+
+                # Since font-weight is part of the style, I need to use "style=..."
+                myTextSeries = tp.getTextSeries()   # 'bfseries' or 'mdseries'
+                # print("myTextSeries: %s" % myTextSeries)
+                if myTextSeries == "bfseries":
+                    ss.append('style="font-weight:bold" ')   # or a number?
+                elif myTextSeries == "mdseries":
+                    ss.append('style="font-weight:normal" ')
+
+                myColor = tp.getColor()
+                if myColor:
+                    ss.append('fill="%s" ' % myColor.color)
+                    if myColor.transparent:
+                        ss.append('fill-opacity="%s" ' % myColor.value)
+
+                ss.append(">%s</tspan>" % tp.rawText)
+
+            theText = "".join(ss)
+            self.rawText += theText
+            self.partsHaveBeenAdded = True
 
 
 
