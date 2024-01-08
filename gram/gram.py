@@ -1,3 +1,4 @@
+# I need p4 for p4.Tree, and for a few functions in p4.func
 from p4 import func
 import pyx
 import os
@@ -255,6 +256,7 @@ class Gram(object):
     _tikzPictureDefaults = None
     _htmlColorDict = {}
     _haveStartedPyX = False
+    _latexTextMetricsUses = "pyx"  # or latex
     
     
     _useTikzPlotMarkLib = False
@@ -537,6 +539,17 @@ class Gram(object):
             raise GramError(
                 "Set haveStartedPyX to True or False, only (got %s)" % newVal)
     haveStartedPyX = property(_getHaveStartedPyX, _setHaveStartedPyX)
+
+    def _getLatexTextMetricsUses(self):
+        return Gram._latexTextMetricsUses
+
+    def _setLatexTextMetricsUses(self, newVal):
+        if newVal in ["pyx", "latex"]:
+            Gram._latexTextMetricsUses = newVal
+        else:
+            raise GramError(
+                "Set latexTextMetricsUses to pyx or latex, only (got %s)" % newVal)
+    latexTextMetricsUses = property(_getLatexTextMetricsUses, _setLatexTextMetricsUses)
 
     def _getDefaultInnerSep(self):
         if Gram._defaultInnerSep:
@@ -3441,7 +3454,7 @@ class GramText(GramGraphic):
         if rawText.startswith(r"\begin{minipage}"):
             raise GramError("programming error: cookText with minipage.")
 
-        if 1:
+        if 0:
             theText = func.fixCharsForLatex(rawText)
         else:
             theText = rawText
@@ -3463,7 +3476,14 @@ class GramText(GramGraphic):
 
         return theText
 
-    def setTextLengthHeightAndMetrics(self):
+    def setTextMetrics(self):
+        if self._latexTextMetricsUses == "pyx":
+            self.setTextMetricsUsingPyx()
+        else:
+            raise GramError("set text metrics using latex not ready yet")
+
+
+    def setTextMetricsUsingPyx(self):
         """This runs pyx on the cookedText, gets length and height
         
         and X, x, yuh measurements
@@ -3481,7 +3501,7 @@ class GramText(GramGraphic):
 
         tbb = t.bbox()
         self.tbb = [tbb.llx_pt * ptToCm, tbb.lly_pt * ptToCm, tbb.urx_pt * ptToCm, tbb.ury_pt * ptToCm]
-        # print(f"GramText.setTextLengthAndMetrics().  self.tbb is {self.tbb} ")
+        # print(f"GramText.setTextMetricsUsingPyx().  self.tbb is {self.tbb} ")
 
         self.length = (tbb.urx_pt - tbb.llx_pt) * ptToCm
 
@@ -3496,7 +3516,7 @@ class GramText(GramGraphic):
         self.fullHeight = (tbb.ury_pt - tbb.lly_pt) * ptToCm
         self.underhang = -tbb.lly_pt * ptToCm    # might be zero
         self.rise = tbb.ury_pt * ptToCm
-        # print("setTextLengthHeightAndMetrics() The text '%s' is %.3f cm long, and %.3f cm  high" % (self.cookedText, self.length, self.fullHeight))
+        # print("setTextMetricsUsingPyx() The text '%s' is %.3f cm long, and %.3f cm  high" % (self.cookedText, self.length, self.fullHeight))
         # sys.exit()
 
         #self.length = 3.
@@ -3693,7 +3713,7 @@ class GramText(GramGraphic):
         #    pass
 
         self.setCookedText()
-        self.setTextLengthHeightAndMetrics()
+        self.setTextMetrics()
 
         if 0:
             print("a GramText.setBB() for '%s';" % self.rawText)  

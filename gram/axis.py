@@ -494,7 +494,7 @@ class XYAxis(Axis):
                         tick.text.style = 'tickLabel'
                         #tick.text.textSize = self.labelTextSize
                         # tick.text.setCookedText()
-                        # tick.text.setTextLengthHeightAndMetrics()
+                        # tick.text.setTextMetrics()
                         if self.orientation == 'h':
                             if self.position == 'b':
                                 tick.text.anchor = 'north'
@@ -670,7 +670,7 @@ class BarsAxis(Axis):
                         #tick.text.textSize = self.labelTextSize
                         tick.text.anchor = 'north'
                         # tick.text.setCookedText()
-                        # tick.text.setTextLengthHeightAndMetrics()
+                        # tick.text.setTextMetrics()
                         if tick.textRotate:
                             if tick.textRotate > 0.0:
                                 tick.text.anchor = 'north east'
