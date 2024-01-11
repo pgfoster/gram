@@ -1194,16 +1194,17 @@ class Gram(object):
         # Maybe it is not needed anymore?
         # So zero a couple of things.
 
-        agt = self.getAllGramTexts()
+        agt = []
+        agt = self.getAllGramTexts(agt)
         for gt in agt:
-        #     print(f"fullHeight {gt.fullHeight}")
-        #     gt.fullHeight = 0.0
-        #     gt.underhang = 0.0
-        #     gt.svgBaseline_cm = 0.0
-        #     gt.rise = 0.0
+            # print(f"fullHeight {gt.fullHeight}")
+            # gt.fullHeight = 0.0
+            # gt.underhang = 0.0
+            # gt.svgBaseline_cm = 0.0
+            # gt.rise = 0.0
             gt.svg_half_normal_x = 0.0
 
-        # I probably should not have used class attributes here ...
+        # Should these be class attributes here? ...
         Gram._svgNormalsize_x = None
         Gram._svgHackDoRotate = False
         Gram._svgHack_x_Only = True
@@ -1619,18 +1620,21 @@ class Gram(object):
 
     ###########################################################
 
-    def getAllGramTexts(self):
-        """Does not recurse into self.grams"""
-        agt = []
+    def getAllGramTexts(self, agt):
+        """Recurses into self.grams"""
+
         for g in self.graphics:
             if isinstance(g, GramText):
                 agt.append(g)
+        for gr in self.grams:
+            gr.getAllGramTexts(agt)
         #print("Got %i texts" % len(agt))
         return agt
         
 
     def fixTextOverlaps(self):
-        tbb = self.getAllGramTexts()
+        tbb = []
+        tbb = self.getAllGramTexts(tbb)
         if len(tbb) < 2:
             return
 
