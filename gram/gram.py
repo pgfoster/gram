@@ -257,6 +257,7 @@ class Gram(object):
     _htmlColorDict = {}
     _haveStartedPyX = False
     _latexTextMetricsUses = "pyx"  # or latex
+    _svgTextMetricsUses = "inkscape"  # or "rsvg"
     
     
     _useTikzPlotMarkLib = False
@@ -550,6 +551,17 @@ class Gram(object):
             raise GramError(
                 "Set latexTextMetricsUses to pyx or latex, only (got %s)" % newVal)
     latexTextMetricsUses = property(_getLatexTextMetricsUses, _setLatexTextMetricsUses)
+
+    def _getSvgTextMetricsUses(self):
+        return Gram._svgTextMetricsUses
+
+    def _setSvgTextMetricsUses(self, newVal):
+        if newVal in ["inkscape", "rsvg"]:
+            Gram._svgTextMetricsUses = newVal
+        else:
+            raise GramError(
+                "Set svgTextMetricsUses to inkscape or rsvg, only (got %s)" % newVal)
+    svgTextMetricsUses = property(_getSvgTextMetricsUses, _setSvgTextMetricsUses)
 
     def _getDefaultInnerSep(self):
         if Gram._defaultInnerSep:
@@ -1492,7 +1504,7 @@ class Gram(object):
                         top = -(float(splL[2])) 
                         fullHeight = (float(splL[4]))
                         g.svgBaseline_cm = (top - fullHeight) / self.svgPxForCm
-                        if 1:
+                        if 0:
                             print(f"""svgCalcBigBoundingBox() cd self.svgPxForCm: 
                             {self.svgPxForCm}, top: {top}, fullHeight: {fullHeight} 
                             g.svgBaseline_cm: {g.svgBaseline_cm}""")
