@@ -3495,14 +3495,14 @@ class GramText(GramGraphic):
 
         return theText
 
-    def setTextMetrics(self):
-        if self._latexTextMetricsUses == "pyx":
-            self.setTextMetricsUsingPyx()
+    def setLatexTextMetrics(self):
+        if self.latexTextMetricsUses == "pyx":
+            self.setLatexTextMetricsUsingPyx()
         else:
             raise GramError("set text metrics using latex not ready yet")
 
 
-    def setTextMetricsUsingPyx(self):
+    def setLatexTextMetricsUsingPyx(self):
         """This runs pyx on the cookedText, gets length and height
         
         and X, x, yuh measurements
@@ -3520,7 +3520,7 @@ class GramText(GramGraphic):
 
         tbb = t.bbox()
         self.tbb = [tbb.llx_pt * ptToCm, tbb.lly_pt * ptToCm, tbb.urx_pt * ptToCm, tbb.ury_pt * ptToCm]
-        # print(f"GramText.setTextMetricsUsingPyx().  self.tbb is {self.tbb} ")
+        # print(f"GramText.setLatexTextMetricsUsingPyx().  self.tbb is {self.tbb} ")
 
         self.length = (tbb.urx_pt - tbb.llx_pt) * ptToCm
 
@@ -3535,7 +3535,7 @@ class GramText(GramGraphic):
         self.fullHeight = (tbb.ury_pt - tbb.lly_pt) * ptToCm
         self.underhang = -tbb.lly_pt * ptToCm    # might be zero
         self.rise = tbb.ury_pt * ptToCm
-        # print("setTextMetricsUsingPyx() The text '%s' is %.3f cm long, and %.3f cm  high" % (self.cookedText, self.length, self.fullHeight))
+        # print("setLatexTextMetricsUsingPyx() The text '%s' is %.3f cm long, and %.3f cm  high" % (self.cookedText, self.length, self.fullHeight))
         # sys.exit()
 
         #self.length = 3.
@@ -3732,7 +3732,7 @@ class GramText(GramGraphic):
         #    pass
 
         self.setCookedText()
-        self.setTextMetrics()
+        self.setLatexTextMetrics()
 
         if 0:
             print("a GramText.setBB() for '%s';" % self.rawText)  
