@@ -1421,10 +1421,10 @@ class Gram(object):
             #self.tikzCalcBigBoundingBox()
         else:
             assert self.engine == 'svg'
-            self.svgCalcBigBoundingBox()
+            self.svgSetTextMetrics()
 
-    def svgCalcBigBoundingBox(self):
-        gm = ["Gram.svgCalcBigBoundingBox()"]
+    def svgSetTextMetrics(self):
+        gm = ["Gram.svgSetTextMetrics()"]
         #print(gm[0], "Gram._svgHackDoRotate is %s, Gram._svgHack_x_Only is %s" % (
         #    Gram._svgHackDoRotate, Gram._svgHack_x_Only))
         flob = io.StringIO()
@@ -1461,7 +1461,7 @@ class Gram(object):
         # So do theUnicodeStuff.encode('utf-8')
         ret = p.communicate(input=thisRet)
         if 0:
-            print("======================== svgCalcBigBoundingBox, returned from inkscape")
+            print("======================== svgSetTextMetrics, returned from inkscape")
             print(ret)
             print(type(ret[0])) # class 'bytes'
             print("-------------------------")
@@ -1487,7 +1487,7 @@ class Gram(object):
         self.bbb[1] = float(splL[2]) / self.svgPxForCm
         self.bbb[2] = self.bbb[0] + float(splL[3]) / self.svgPxForCm
         self.bbb[3] = self.bbb[1] + float(splL[4]) / self.svgPxForCm
-        # print("svgCalcBigBoundingBox() got bbb:", self.bbb[0], self.bbb[1], self.bbb[2], self.bbb[3]) 
+        # print("svgSetTextMetrics() got bbb:", self.bbb[0], self.bbb[1], self.bbb[2], self.bbb[3]) 
 
         # print("svgGForIdDict is now", self.svgGForIdDict)
 
@@ -1509,7 +1509,7 @@ class Gram(object):
                         fullHeight = (float(splL[4]))
                         g.svgBaseline_cm = (top - fullHeight) / self.svgPxForCm
                         if 0:
-                            print(f"""svgCalcBigBoundingBox() cd self.svgPxForCm: 
+                            print(f"""svgSetTextMetrics() cd self.svgPxForCm: 
                             {self.svgPxForCm}, top: {top}, fullHeight: {fullHeight} 
                             g.svgBaseline_cm: {g.svgBaseline_cm}""")
                     else:
@@ -1554,10 +1554,10 @@ class Gram(object):
                         inkLine = splL
                         break
             assert inkLine
-            # print(f"svgCalcBigBoundingBox() got inkLine for normalsize x {inkLine}")
+            # print(f"svgSetTextMetrics() got inkLine for normalsize x {inkLine}")
             my_x = float(inkLine[4]) / self.svgPxForCm
             Gram._svgNormalsize_x = my_x
-            # print(f"svgCalcBigBoundingBox() got Gram._svgNormalsize_x {Gram._svgNormalsize_x}")
+            # print(f"svgSetTextMetrics() got Gram._svgNormalsize_x {Gram._svgNormalsize_x}")
             
             # Clean up
             self.graphics.remove(gx)

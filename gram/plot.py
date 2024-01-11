@@ -721,7 +721,7 @@ class Plot(Gram):
             #self.tikzCalcBigBoundingBox()
         else:
             assert self.engine == 'svg'
-            self.svgCalcBigBoundingBox()
+            self.svgSetTextMetrics()
 
     # def svg(self):       
     #     Gram.svg(self)

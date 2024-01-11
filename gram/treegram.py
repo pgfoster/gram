@@ -1159,7 +1159,7 @@ class TreeGram(Gram):
             #self.tikzCalcBigBoundingBox()
         else:
             assert self.engine == 'svg'
-            self.svgCalcBigBoundingBox()
+            self.svgSetTextMetrics()
 
     # def tikzCalcBigBoundingBox(self):
     #     # print "TreeGram.calcBigBoundingBox().  self is %s" % self
