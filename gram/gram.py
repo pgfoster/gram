@@ -1328,6 +1328,10 @@ class Gram(object):
         tricks = self.getSvg()
         flob.write(tricks)
         flob.write('\n')
+        self.svgWriteEmbeddedGramsToOpenFile(flob)
+        flob.write('</svg>\n')
+
+    def svgWriteEmbeddedGramsToOpenFile(self, flob):
         for gr in self.grams:
             if gr.gX or gr.gY:
                 flob.write('<g transform="translate(%.2f, %.2f)">\n' %
@@ -1335,10 +1339,9 @@ class Gram(object):
             tricks = gr.getSvg()
             flob.write(tricks)
             flob.write("\n")
+            gr.svgWriteEmbeddedGramsToOpenFile(flob)  # recurse
             if gr.gX or gr.gY:
                 flob.write('</g>\n')
-        flob.write('</svg>\n')
-
 
     def cat(self):
         assert self.dirName
