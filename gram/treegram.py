@@ -1153,7 +1153,7 @@ class TreeGram(Gram):
         return '\n'.join(ss)
 
 
-    def calcBigBoundingBox(self):
+    def setTextMetrics(self):
         if self.engine == 'tikz':
             print("TreeGram.tikzCalcBigBoundingBox() is turned off.")
             #self.tikzCalcBigBoundingBox()

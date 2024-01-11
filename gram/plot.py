@@ -715,7 +715,7 @@ class Plot(Gram):
         ss.append('')
         return '\n'.join(ss)
 
-    def calcBigBoundingBox(self):
+    def setTextMetrics(self):
         if self.engine == 'tikz':
             print("Plot.tikzCalcBigBoundingBox() is turned off.")
             #self.tikzCalcBigBoundingBox()

@@ -1181,9 +1181,6 @@ class Gram(object):
         
     def svg(self, extraMarginHack=1.0, writeWidthHeight=False):
 
-        # This is a complex and ugly hack.
-        # Together with calcBigBoundingBox() it should be re-written
-
         verbose = False
         if verbose:
             print("Gram.svg() start")
@@ -1213,9 +1210,9 @@ class Gram(object):
             print("Gram.svg() first go, about to render")
         self.render()
         if verbose:
-            print("Gram.svg() first go, about to calcBigBoundingBox")
+            print("Gram.svg() first go, about to setTextMetrics")
 
-        self.calcBigBoundingBox()
+        self.setTextMetrics()
         if verbose:
             print("Gram.svg() finished first go")
 
@@ -1223,16 +1220,16 @@ class Gram(object):
         Gram._svgHack_x_Only = False
         self.render()
         if verbose:
-            print("Gram.svg() second go, about to calcBigBoundingBox")
-        self.calcBigBoundingBox()
+            print("Gram.svg() second go, about to setTextMetrics")
+        self.setTextMetrics()
         if verbose:
             print("Gram.svg() finished second go")
 
         Gram._svgHackDoRotate = True
         self.render()
         if verbose:
-            print("Gram.svg() third go, about to calcBigBoundingBox")
-        self.calcBigBoundingBox()
+            print("Gram.svg() third go, about to setTextMetrics")
+        self.setTextMetrics()
 
         # The final product.
         svgFName = "%s.svg" % self.baseName
@@ -1415,9 +1412,9 @@ class Gram(object):
         for l in ll:
             print(l)
 
-    def calcBigBoundingBox(self):
+    def setTextMetrics(self):
         if self.engine == 'tikz':
-            print("Gram.calcBigBoundingBox() is turned off for tikz")
+            print("Gram.setTextMetrics() is turned off for tikz")
             #self.tikzCalcBigBoundingBox()
         else:
             assert self.engine == 'svg'
