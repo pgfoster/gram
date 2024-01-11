@@ -1212,6 +1212,8 @@ class Gram(object):
         if verbose:
             print("Gram.svg() second go, about to calcBigBoundingBox")
         self.calcBigBoundingBox()
+        if verbose:
+            print("Gram.svg() finished second go")
 
         Gram._svgHackDoRotate = True
         self.render()
@@ -1416,6 +1418,7 @@ class Gram(object):
 
         if 0:
             fNm = f"debug{Gram._svgHackDoRotate}{Gram._svgHack_x_Only}.svg"
+            print(f"writing debug svg file {fNm}")
             f = open(fNm, "w")
             self.svgWriteToOpenFile(f, theBBB=[0., 0., 1., 1.])
             f.close()
@@ -1461,23 +1464,24 @@ class Gram(object):
         #print ret[0]
         ll = [l for l in ret[0].split(b'\n') if l]
         splL = ll[0].split(b',')
-        #print("got splL: ", splL)
+        # print("got splL: ", splL)
         assert splL[0].startswith(b'svg')
         # pxPerCm = 35.43307   # official
         self.bbb[0] = float(splL[1]) / self.svgPxForCm
         self.bbb[1] = float(splL[2]) / self.svgPxForCm
         self.bbb[2] = self.bbb[0] + float(splL[3]) / self.svgPxForCm
         self.bbb[3] = self.bbb[1] + float(splL[4]) / self.svgPxForCm
-        #print("svgCalcBigBoundingBox() got bbb:", self.bbb[0], self.bbb[1], self.bbb[2], self.bbb[3]) 
+        # print("svgCalcBigBoundingBox() got bbb:", self.bbb[0], self.bbb[1], self.bbb[2], self.bbb[3]) 
 
-        #print("svgGForIdDict is now", self.svgGForIdDict)
+        # print("svgGForIdDict is now", self.svgGForIdDict)
 
-        # For this hack, if Gram._svgHackDoRotate is turned on, then the text is
+        # For this hack, if Gram._svgHackDoRotate is turned off, then the text is
         # not rotated, and we can get the length from the inkscape bounding box.
         if not Gram._svgHackDoRotate:  # so any text is not rotated
 
             for l in ll[1:]:
                 if l.startswith(b'text'):
+                    # print(l)
                     splL = l.split(b',')
                     # print(splL)
                     #print("svgGForIdDict", self.svgGForIdDict)
@@ -1488,9 +1492,10 @@ class Gram(object):
                         top = -(float(splL[2])) 
                         fullHeight = (float(splL[4]))
                         g.svgBaseline_cm = (top - fullHeight) / self.svgPxForCm
-                        # print(f"""svgCalcBigBoundingBox() cd self.svgPxForCm: 
-                        # {self.svgPxForCm}, top: {top}, fullHeight: {fullHeight} 
-                        #  g.svgBaseline_cm: {g.svgBaseline_cm}""")
+                        if 1:
+                            print(f"""svgCalcBigBoundingBox() cd self.svgPxForCm: 
+                            {self.svgPxForCm}, top: {top}, fullHeight: {fullHeight} 
+                            g.svgBaseline_cm: {g.svgBaseline_cm}""")
                     else:
 
                         # Get, for the un-rotated text, 
@@ -1533,8 +1538,10 @@ class Gram(object):
                         inkLine = splL
                         break
             assert inkLine
+            # print(f"svgCalcBigBoundingBox() got inkLine for normalsize x {inkLine}")
             my_x = float(inkLine[4]) / self.svgPxForCm
             Gram._svgNormalsize_x = my_x
+            # print(f"svgCalcBigBoundingBox() got Gram._svgNormalsize_x {Gram._svgNormalsize_x}")
             
             # Clean up
             self.graphics.remove(gx)
@@ -4327,7 +4334,7 @@ class GramText(GramGraphic):
         twoOuterSep = cmForLineThickness(theLineThickness)
         oneOuterSep = 0.5 * twoOuterSep
 
-        # For mid anchors, need half_normal_x
+        # For mid anchors, need half_normal_x, but it does not exist at first
         if Gram._svgNormalsize_x:
             self.svg_half_normal_x = Gram._svgNormalsize_x / 2.
         # print(f"{gm[0]} svg_half_normal_x is {self.svg_half_normal_x}")
