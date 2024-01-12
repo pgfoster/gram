@@ -1391,7 +1391,7 @@ class Gram(object):
         for l in ll:
             print(l)
 
-    def setTextMetrics(self):
+    def setTextMetrics(self):        # Gram
         if self.engine == 'tikz':
             print("Gram.setTextMetrics() is turned off for tikz")
             #self.tikzCalcBigBoundingBox()
@@ -3484,11 +3484,12 @@ class GramText(GramGraphic):
 
         return theText
 
-    def setLatexTextMetrics(self):
+    def setLatexTextMetrics(self):    # GramText
         if self.latexTextMetricsUses == "pyx":
             self.setLatexTextMetricsUsingPyx()
         else:
-            raise GramError("set text metrics using latex not ready yet")
+            # raise GramError("set text metrics using latex not ready yet")
+            pass
 
 
     def setLatexTextMetricsUsingPyx(self):
@@ -4094,8 +4095,9 @@ class GramText(GramGraphic):
                 self.rawText += theText
             self.partsHaveBeenAdded = True
 
-        if not self.haveStartedPyX:
-            self.startPyX()
+        if self.latexTextMetricsUses == 'pyx':
+            if not self.haveStartedPyX:
+                self.startPyX()
 
         if self.mpText:    # a minipage
             pass
