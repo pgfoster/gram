@@ -273,15 +273,13 @@ class Gram(object):
     #_svgTextNormalsize = 0.34
     _svgTextNormalsize = 0.36      # estimate
     _defaultInnerSep = None
-    _svgIdCounter = 1
-    _svgGForIdDict = {}
+    _gIdCounter = 1
+    _gForGIdDict = {}
     _svgHackDoRotate = False
     _svgHack_x_Only = False
     _svgNormalsize_x = None
     _svgTextNormalWeight = 400    # Slightly bold     
 
-    # _labelIdCounter = 1
-    # _labelGForIdDict = {}
     
     def __init__(self):
         self._dirName = 'Gram'
@@ -669,19 +667,19 @@ class Gram(object):
     svgTextNormalsize = property(
         _get_svgTextNormalsize, _set_svgTextNormalsize)
 
-    def _get_svgIdCounter(self):
-        return Gram._svgIdCounter
+    def _get_gIdCounter(self):
+        return Gram._gIdCounter
 
-    def _set_svgIdCounter(self, newVal):
-        Gram._svgIdCounter = float(newVal)
-    svgIdCounter = property(_get_svgIdCounter, _set_svgIdCounter)
+    def _set_gIdCounter(self, newVal):
+        Gram._gIdCounter = int(newVal)
+    gIdCounter = property(_get_gIdCounter, _set_gIdCounter)
 
-    def _get_svgGForIdDict(self):
-        return Gram._svgGForIdDict
+    def _get_gForGIdDict(self):
+        return Gram._gForGIdDict
 
-    def _set_svgGForIdDict(self, newVal):
-        raise GramError("Don't set svgGForIdDict, just read it.")
-    svgGForIdDict = property(_get_svgGForIdDict, _set_svgGForIdDict)
+    def _set_gForGIdDict(self, newVal):
+        raise GramError("Don't set gForGIdDict, just read it.")
+    gForGIdDict = property(_get_gForGIdDict, _set_gForGIdDict)
 
     def _get_svgTextNormalWeight(self):
         return Gram._svgTextNormalWeight
@@ -690,19 +688,6 @@ class Gram(object):
         Gram._svgTextNormalWeight = int(newVal)
     svgTextNormalWeight = property(_get_svgTextNormalWeight, _set_svgTextNormalWeight)
 
-    # def _get_labelIdCounter(self):
-    #     return Gram._labelIdCounter
-
-    # def _set_labelIdCounter(self, newVal):
-    #     Gram._labelIdCounter = int(newVal)
-    # labelIdCounter = property(_get_labelIdCounter, _set_labelIdCounter)
-
-    # def _get_labelGForIdDict(self):
-    #     return Gram._labelGForIdDict
-
-    # def _set_labelGForIdDict(self, newVal):
-    #     raise GramError("Don't set labelGForIdDict, just read it.")
-    # labelGForIdDict = property(_get_labelGForIdDict, _set_labelGForIdDict)
 
     ##################################
 
@@ -767,11 +752,6 @@ class Gram(object):
 
     def svgPxForCmF(self, cm):  # float version
         return (cm * self.svgPxForCm)
-
-    def setSvgIdAndAddToDict(self, typeString):
-        self.svgId = "%s-%i" % (typeString, self.svgIdCounter)
-        self.svgIdCounter += 1
-        self.svgGForIdDict[self.svgId] = self
 
     ###############################################################
 
@@ -1130,7 +1110,6 @@ class Gram(object):
             for k in theKeys:
                 self.styleDict[k].setBB()
 
-        assert self.dirName
         # print("Gram.pdf() about to do writeTikz()")
         self.writeTikz()
         # print("Gram.pdf() finished writeTikz()")
@@ -1486,7 +1465,7 @@ class Gram(object):
         self.bbb[3] = self.bbb[1] + float(splL[4]) / self.svgPxForCm
         # print("svgSetTextMetrics() got bbb:", self.bbb[0], self.bbb[1], self.bbb[2], self.bbb[3]) 
 
-        # print("svgGForIdDict is now", self.svgGForIdDict)
+        # print("gForGIdDict is now", self.gForGIdDict)
 
         # For this hack, if Gram._svgHackDoRotate is turned off, then the text is
         # not rotated, and we can get the length from the inkscape bounding box.
@@ -1497,8 +1476,8 @@ class Gram(object):
                     # print(l)
                     splL = l.split(b',')
                     # print(splL)
-                    #print("svgGForIdDict", self.svgGForIdDict)
-                    g = self.svgGForIdDict.get(splL[0].decode("utf-8"))
+                    #print("gForGIdDict", self.gForGIdDict)
+                    g = self.gForGIdDict.get(splL[0].decode("utf-8"))
                     assert g
                     if Gram._svgHack_x_Only:
                         
@@ -1545,7 +1524,7 @@ class Gram(object):
             for l in ll[1:]:
                 if l.startswith(b'text'):
                     splL = l.split(b',')
-                    g = self.svgGForIdDict.get(splL[0].decode("utf-8"))
+                    g = self.gForGIdDict.get(splL[0].decode("utf-8"))
                     assert g
                     if g == gx:
                         inkLine = splL
@@ -1558,7 +1537,7 @@ class Gram(object):
             
             # Clean up
             self.graphics.remove(gx)
-            g = self.svgGForIdDict.pop(inkLine[0].decode("utf-8"))
+            g = self.gForGIdDict.pop(inkLine[0].decode("utf-8"))
             assert g == gx
                 
 
@@ -2667,7 +2646,7 @@ class GramGraphic(GramTikzStyle):
 
     """Base class for Gram graphic objects."""
 
-    def __init__(self):
+    def __init__(self):  # GramGraphic
         GramTikzStyle.__init__(self)
         # cA is the GramCoord where the Graphic is put.
         self.cA = None
@@ -2675,9 +2654,16 @@ class GramGraphic(GramTikzStyle):
         self.style = None
         self.myStyle = None
         self.bb = [0.0] * 4
-        #self.svgBb = [0.0] * 4
-        self.svgId = None
+        self.gId = None
         self.titleAttribute = None
+
+    def setGIdAndAddToDict(self, typeString):
+        if self.gId:
+            assert self.gForGIdDict[self.gId] == self
+        else:
+            self.gId = "%s-%i" % (typeString, self.gIdCounter)
+            self.gIdCounter += 1
+            self.gForGIdDict[self.gId] = self
 
     def setPositions(self):
         for g in self.graphics:
@@ -3366,7 +3352,7 @@ class GramText(GramGraphic):
         # self.style = None
         # self.myStyle = None
         # self.bb = [0.0] * 4
-        # self.svgId = None
+        # self.gId = None
         # Plus all the stuff inherited from GramTikzStyle
         # That includes _textHeight and _textDepth, and GramTikzStyle properties textHeight and TextDepth
 
@@ -3378,9 +3364,8 @@ class GramText(GramGraphic):
             self.mpText = text
         else:
             self.mpText = None                     # wrapped in a minipage
-        # self.name = f"l{self.labelIdCounter}"  
-        # self.labelIdCounter += 1
-        # self.labelGForIdDict[self.name] = self  # Gram-wide dictionary
+        self.setGIdAndAddToDict('text')
+
         self.length = 0.1
 
         self.corners = None
@@ -4306,11 +4291,7 @@ class GramText(GramGraphic):
         # print(gm[0])
         if not self.cA:
             self.cA = GramCoord()
-        if self.svgId:
-            assert self.svgGForIdDict.get(self.svgId)
-        else:
-            self.setSvgIdAndAddToDict('text')
-        # print gm[0], self.svgId, self.svgGForIdDict[self.svgId].rawText
+        # print gm[0], self.gId, self.gForGIdDict[self.gId].rawText
 
         myClass = None
         myTextFamilyString = self.getTextFamily()
@@ -4702,7 +4683,7 @@ class GramText(GramGraphic):
 
             ss.append('/>\n')
             
-        ss.append('<text id="%s"' % self.svgId)
+        ss.append('<text id="%s"' % self.gId)
         if myClass:
             ss.append('class="%s"' % myClass)
 
@@ -4902,6 +4883,7 @@ class GramRect(GramLine):
         GramLine.__init__(self, cA, cB)
         self.color = None
         self.draw = True
+        self.setGIdAndAddToDict('rect')
 
     def getTikz(self):
         ss = []
@@ -4942,14 +4924,10 @@ class GramRect(GramLine):
 
     def getSvg(self):
         gm = ['GramRect.getSvg()']
-        if self.svgId:
-            assert self.svgGForIdDict.get(self.svgId)
-        else:
-            self.setSvgIdAndAddToDict('rect')
-        # print gm[0], self.svgId
+        # print gm[0], self.gId
 
         ss = []
-        ss.append('<rect id="%s" ' % self.svgId)
+        ss.append('<rect id="%s" ' % self.gId)
         ss.append('x="%.2f" y="%.2f"' % (
             self.svgPxForCmF(self.cA.xPosn), -self.svgPxForCmF(self.cB.yPosn)))
         ss.append('width="%.2f" height="%.2f"' % (
