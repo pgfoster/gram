@@ -10,6 +10,8 @@ from subprocess import Popen, PIPE
 import textwrap
 import copy
 import configparser
+from collections import UserDict
+import colorsys
 
 # I got these definitions of points from the web somewhere.
 # The didot system originated in France but was used in most of Europe.
@@ -64,6 +66,10 @@ import configparser
 # | in   | inch 1in equals 90px (and therefore 90 user units)                   |
 
 # svg colors, from the svgnames option of the LaTeX xcolor package.
+# Duplicate colors: Aqua = Cyan, Fuchsia = Magenta; Navy = NavyBlue; Gray = Grey, DarkGray = DarkGrey, LightGray = LightGrey, SlateGray = SlateGrey, DarkSlateGray = DarkSlateGrey, LightSlateGray = LightSlateGrey, DimGray = DimGrey.
+# HTML4 color keyword subset: Aqua, Black, Blue, Fuchsia, Gray, Green, Lime, Maroon, Navy, Olive, Purple, Red, Silver, Teal, White, Yellow.
+# Colors taken from Unix/X11: LightGoldenrod, LightSlateBlue, NavyBlue, VioletRed -- these are not in CSS4_COLORS below
+
 validSvgColorNames = ['AliceBlue', 'AntiqueWhite', 'Aqua', 'Aquamarine', 'Azure', 'Beige', 'Bisque', 'Black', 'BlanchedAlmond', 'Blue', 'BlueViolet', 'Brown', 'BurlyWood', 'CadetBlue', 'Chartreuse', 'Chocolate', 'Coral', 'CornflowerBlue', 'Cornsilk', 'Crimson', 'Cyan', 'DarkBlue', 'DarkCyan', 'DarkGoldenrod', 'DarkGray', 'DarkGreen', 'DarkGrey', 'DarkKhaki', 'DarkMagenta', 'DarkOliveGreen', 'DarkOrange', 'DarkOrchid', 'DarkRed', 'DarkSalmon', 'DarkSeaGreen', 'DarkSlateBlue', 'DarkSlateGray', 'DarkSlateGrey', 'DarkTurquoise', 'DarkViolet', 'DeepPink', 'DeepSkyBlue', 'DimGray', 'DimGrey', 'DodgerBlue', 'FireBrick', 'FloralWhite', 'ForestGreen', 'Fuchsia', 'Gainsboro', 'GhostWhite', 'Gold', 'Goldenrod', 'Gray', 'Green', 'GreenYellow', 'Grey', 'Honeydew', 'HotPink', 'IndianRed', 'Indigo', 'Ivory', 'Khaki', 'Lavender', 'LavenderBlush', 'LawnGreen', 'LemonChiffon', 'LightBlue', 'LightCoral', 'LightCyan', 'LightGoldenrod', 'LightGoldenrodYellow', 'LightGray', 'LightGreen', 'LightGrey', 'LightPink', 'LightSalmon', 'LightSeaGreen', 'LightSkyBlue', 'LightSlateBlue', 'LightSlateGray', 'LightSlateGrey', 'LightSteelBlue', 'LightYellow', 'Lime', 'LimeGreen', 'Linen', 'Magenta', 'Maroon', 'MediumAquamarine', 'MediumBlue', 'MediumOrchid', 'MediumPurple', 'MediumSeaGreen', 'MediumSlateBlue', 'MediumSpringGreen', 'MediumTurquoise', 'MediumVioletRed', 'MidnightBlue', 'MintCream', 'MistyRose', 'Moccasin', 'NavajoWhite', 'Navy', 'NavyBlue', 'OldLace', 'Olive', 'OliveDrab', 'Orange', 'OrangeRed', 'Orchid', 'PaleGoldenrod', 'PaleGreen', 'PaleTurquoise', 'PaleVioletRed', 'PapayaWhip', 'PeachPuff', 'Peru', 'Pink', 'Plum', 'PowderBlue', 'Purple', 'Red', 'RosyBrown', 'RoyalBlue', 'SaddleBrown', 'Salmon', 'SandyBrown', 'SeaGreen', 'Seashell', 'Sienna', 'Silver', 'SkyBlue', 'SlateBlue', 'SlateGray', 'SlateGrey', 'Snow', 'SpringGreen', 'SteelBlue', 'Tan', 'Teal', 'Thistle', 'Tomato', 'Turquoise', 'Violet', 'VioletRed', 'Wheat', 'White', 'WhiteSmoke', 'Yellow', 'YellowGreen']
 
 baseColors = ['black',
@@ -85,6 +91,19 @@ baseColors = ['black',
  'violet',
  'white',
  'yellow']
+
+# black #000000
+# white #FFFFFF
+# blue  #0000FF
+
+svgLowColorsNotInCSS4 = ["lightgoldenrod", "lightslateblue", "navyblue", "violetred"]
+
+# From matplotlib.colors module.
+# It had lowercase names, and hex values.
+# I added rgb values on range zero-1.0, as
+# h = v.lstrip("#")
+# r,g,b = tuple([int(h[i:i+2], 16)/255. for i in (0, 2, 4)])
+CSS4_COLORS = {'aliceblue': ('#F0F8FF', (0.9411764705882353, 0.9725490196078431, 1.0), 'AliceBlue'), 'antiquewhite': ('#FAEBD7', (0.9803921568627451, 0.9215686274509803, 0.8431372549019608), 'AntiqueWhite'), 'aqua': ('#00FFFF', (0.0, 1.0, 1.0), 'Aqua'), 'aquamarine': ('#7FFFD4', (0.4980392156862745, 1.0, 0.8313725490196079), 'Aquamarine'), 'azure': ('#F0FFFF', (0.9411764705882353, 1.0, 1.0), 'Azure'), 'beige': ('#F5F5DC', (0.9607843137254902, 0.9607843137254902, 0.8627450980392157), 'Beige'), 'bisque': ('#FFE4C4', (1.0, 0.8941176470588236, 0.7686274509803922), 'Bisque'), 'black': ('#000000', (0.0, 0.0, 0.0), 'Black'), 'blanchedalmond': ('#FFEBCD', (1.0, 0.9215686274509803, 0.803921568627451), 'BlanchedAlmond'), 'blue': ('#0000FF', (0.0, 0.0, 1.0), 'Blue'), 'blueviolet': ('#8A2BE2', (0.5411764705882353, 0.16862745098039217, 0.8862745098039215), 'BlueViolet'), 'brown': ('#A52A2A', (0.6470588235294118, 0.16470588235294117, 0.16470588235294117), 'Brown'), 'burlywood': ('#DEB887', (0.8705882352941177, 0.7215686274509804, 0.5294117647058824), 'BurlyWood'), 'cadetblue': ('#5F9EA0', (0.37254901960784315, 0.6196078431372549, 0.6274509803921569), 'CadetBlue'), 'chartreuse': ('#7FFF00', (0.4980392156862745, 1.0, 0.0), 'Chartreuse'), 'chocolate': ('#D2691E', (0.8235294117647058, 0.4117647058823529, 0.11764705882352941), 'Chocolate'), 'coral': ('#FF7F50', (1.0, 0.4980392156862745, 0.3137254901960784), 'Coral'), 'cornflowerblue': ('#6495ED', (0.39215686274509803, 0.5843137254901961, 0.9294117647058824), 'CornflowerBlue'), 'cornsilk': ('#FFF8DC', (1.0, 0.9725490196078431, 0.8627450980392157), 'Cornsilk'), 'crimson': ('#DC143C', (0.8627450980392157, 0.0784313725490196, 0.23529411764705882), 'Crimson'), 'cyan': ('#00FFFF', (0.0, 1.0, 1.0), 'Cyan'), 'darkblue': ('#00008B', (0.0, 0.0, 0.5450980392156862), 'DarkBlue'), 'darkcyan': ('#008B8B', (0.0, 0.5450980392156862, 0.5450980392156862), 'DarkCyan'), 'darkgoldenrod': ('#B8860B', (0.7215686274509804, 0.5254901960784314, 0.043137254901960784), 'DarkGoldenrod'), 'darkgray': ('#A9A9A9', (0.6627450980392157, 0.6627450980392157, 0.6627450980392157), 'DarkGray'), 'darkgreen': ('#006400', (0.0, 0.39215686274509803, 0.0), 'DarkGreen'), 'darkgrey': ('#A9A9A9', (0.6627450980392157, 0.6627450980392157, 0.6627450980392157), 'DarkGrey'), 'darkkhaki': ('#BDB76B', (0.7411764705882353, 0.7176470588235294, 0.4196078431372549), 'DarkKhaki'), 'darkmagenta': ('#8B008B', (0.5450980392156862, 0.0, 0.5450980392156862), 'DarkMagenta'), 'darkolivegreen': ('#556B2F', (0.3333333333333333, 0.4196078431372549, 0.1843137254901961), 'DarkOliveGreen'), 'darkorange': ('#FF8C00', (1.0, 0.5490196078431373, 0.0), 'DarkOrange'), 'darkorchid': ('#9932CC', (0.6, 0.19607843137254902, 0.8), 'DarkOrchid'), 'darkred': ('#8B0000', (0.5450980392156862, 0.0, 0.0), 'DarkRed'), 'darksalmon': ('#E9967A', (0.9137254901960784, 0.5882352941176471, 0.47843137254901963), 'DarkSalmon'), 'darkseagreen': ('#8FBC8F', (0.5607843137254902, 0.7372549019607844, 0.5607843137254902), 'DarkSeaGreen'), 'darkslateblue': ('#483D8B', (0.2823529411764706, 0.23921568627450981, 0.5450980392156862), 'DarkSlateBlue'), 'darkslategray': ('#2F4F4F', (0.1843137254901961, 0.30980392156862746, 0.30980392156862746), 'DarkSlateGray'), 'darkslategrey': ('#2F4F4F', (0.1843137254901961, 0.30980392156862746, 0.30980392156862746), 'DarkSlateGrey'), 'darkturquoise': ('#00CED1', (0.0, 0.807843137254902, 0.8196078431372549), 'DarkTurquoise'), 'darkviolet': ('#9400D3', (0.5803921568627451, 0.0, 0.8274509803921568), 'DarkViolet'), 'deeppink': ('#FF1493', (1.0, 0.0784313725490196, 0.5764705882352941), 'DeepPink'), 'deepskyblue': ('#00BFFF', (0.0, 0.7490196078431373, 1.0), 'DeepSkyBlue'), 'dimgray': ('#696969', (0.4117647058823529, 0.4117647058823529, 0.4117647058823529), 'DimGray'), 'dimgrey': ('#696969', (0.4117647058823529, 0.4117647058823529, 0.4117647058823529), 'DimGrey'), 'dodgerblue': ('#1E90FF', (0.11764705882352941, 0.5647058823529412, 1.0), 'DodgerBlue'), 'firebrick': ('#B22222', (0.6980392156862745, 0.13333333333333333, 0.13333333333333333), 'FireBrick'), 'floralwhite': ('#FFFAF0', (1.0, 0.9803921568627451, 0.9411764705882353), 'FloralWhite'), 'forestgreen': ('#228B22', (0.13333333333333333, 0.5450980392156862, 0.13333333333333333), 'ForestGreen'), 'fuchsia': ('#FF00FF', (1.0, 0.0, 1.0), 'Fuchsia'), 'gainsboro': ('#DCDCDC', (0.8627450980392157, 0.8627450980392157, 0.8627450980392157), 'Gainsboro'), 'ghostwhite': ('#F8F8FF', (0.9725490196078431, 0.9725490196078431, 1.0), 'GhostWhite'), 'gold': ('#FFD700', (1.0, 0.8431372549019608, 0.0), 'Gold'), 'goldenrod': ('#DAA520', (0.8549019607843137, 0.6470588235294118, 0.12549019607843137), 'Goldenrod'), 'gray': ('#808080', (0.5019607843137255, 0.5019607843137255, 0.5019607843137255), 'Gray'), 'green': ('#008000', (0.0, 0.5019607843137255, 0.0), 'Green'), 'greenyellow': ('#ADFF2F', (0.6784313725490196, 1.0, 0.1843137254901961), 'GreenYellow'), 'grey': ('#808080', (0.5019607843137255, 0.5019607843137255, 0.5019607843137255), 'Grey'), 'honeydew': ('#F0FFF0', (0.9411764705882353, 1.0, 0.9411764705882353), 'Honeydew'), 'hotpink': ('#FF69B4', (1.0, 0.4117647058823529, 0.7058823529411765), 'HotPink'), 'indianred': ('#CD5C5C', (0.803921568627451, 0.3607843137254902, 0.3607843137254902), 'IndianRed'), 'indigo': ('#4B0082', (0.29411764705882354, 0.0, 0.5098039215686274), 'Indigo'), 'ivory': ('#FFFFF0', (1.0, 1.0, 0.9411764705882353), 'Ivory'), 'khaki': ('#F0E68C', (0.9411764705882353, 0.9019607843137255, 0.5490196078431373), 'Khaki'), 'lavender': ('#E6E6FA', (0.9019607843137255, 0.9019607843137255, 0.9803921568627451), 'Lavender'), 'lavenderblush': ('#FFF0F5', (1.0, 0.9411764705882353, 0.9607843137254902), 'LavenderBlush'), 'lawngreen': ('#7CFC00', (0.48627450980392156, 0.9882352941176471, 0.0), 'LawnGreen'), 'lemonchiffon': ('#FFFACD', (1.0, 0.9803921568627451, 0.803921568627451), 'LemonChiffon'), 'lightblue': ('#ADD8E6', (0.6784313725490196, 0.8470588235294118, 0.9019607843137255), 'LightBlue'), 'lightcoral': ('#F08080', (0.9411764705882353, 0.5019607843137255, 0.5019607843137255), 'LightCoral'), 'lightcyan': ('#E0FFFF', (0.8784313725490196, 1.0, 1.0), 'LightCyan'), 'lightgoldenrodyellow': ('#FAFAD2', (0.9803921568627451, 0.9803921568627451, 0.8235294117647058), 'LightGoldenrodYellow'), 'lightgray': ('#D3D3D3', (0.8274509803921568, 0.8274509803921568, 0.8274509803921568), 'LightGray'), 'lightgreen': ('#90EE90', (0.5647058823529412, 0.9333333333333333, 0.5647058823529412), 'LightGreen'), 'lightgrey': ('#D3D3D3', (0.8274509803921568, 0.8274509803921568, 0.8274509803921568), 'LightGrey'), 'lightpink': ('#FFB6C1', (1.0, 0.7137254901960784, 0.7568627450980392), 'LightPink'), 'lightsalmon': ('#FFA07A', (1.0, 0.6274509803921569, 0.47843137254901963), 'LightSalmon'), 'lightseagreen': ('#20B2AA', (0.12549019607843137, 0.6980392156862745, 0.6666666666666666), 'LightSeaGreen'), 'lightskyblue': ('#87CEFA', (0.5294117647058824, 0.807843137254902, 0.9803921568627451), 'LightSkyBlue'), 'lightslategray': ('#778899', (0.4666666666666667, 0.5333333333333333, 0.6), 'LightSlateGray'), 'lightslategrey': ('#778899', (0.4666666666666667, 0.5333333333333333, 0.6), 'LightSlateGrey'), 'lightsteelblue': ('#B0C4DE', (0.6901960784313725, 0.7686274509803922, 0.8705882352941177), 'LightSteelBlue'), 'lightyellow': ('#FFFFE0', (1.0, 1.0, 0.8784313725490196), 'LightYellow'), 'lime': ('#00FF00', (0.0, 1.0, 0.0), 'Lime'), 'limegreen': ('#32CD32', (0.19607843137254902, 0.803921568627451, 0.19607843137254902), 'LimeGreen'), 'linen': ('#FAF0E6', (0.9803921568627451, 0.9411764705882353, 0.9019607843137255), 'Linen'), 'magenta': ('#FF00FF', (1.0, 0.0, 1.0), 'Magenta'), 'maroon': ('#800000', (0.5019607843137255, 0.0, 0.0), 'Maroon'), 'mediumaquamarine': ('#66CDAA', (0.4, 0.803921568627451, 0.6666666666666666), 'MediumAquamarine'), 'mediumblue': ('#0000CD', (0.0, 0.0, 0.803921568627451), 'MediumBlue'), 'mediumorchid': ('#BA55D3', (0.7294117647058823, 0.3333333333333333, 0.8274509803921568), 'MediumOrchid'), 'mediumpurple': ('#9370DB', (0.5764705882352941, 0.4392156862745098, 0.8588235294117647), 'MediumPurple'), 'mediumseagreen': ('#3CB371', (0.23529411764705882, 0.7019607843137254, 0.44313725490196076), 'MediumSeaGreen'), 'mediumslateblue': ('#7B68EE', (0.4823529411764706, 0.40784313725490196, 0.9333333333333333), 'MediumSlateBlue'), 'mediumspringgreen': ('#00FA9A', (0.0, 0.9803921568627451, 0.6039215686274509), 'MediumSpringGreen'), 'mediumturquoise': ('#48D1CC', (0.2823529411764706, 0.8196078431372549, 0.8), 'MediumTurquoise'), 'mediumvioletred': ('#C71585', (0.7803921568627451, 0.08235294117647059, 0.5215686274509804), 'MediumVioletRed'), 'midnightblue': ('#191970', (0.09803921568627451, 0.09803921568627451, 0.4392156862745098), 'MidnightBlue'), 'mintcream': ('#F5FFFA', (0.9607843137254902, 1.0, 0.9803921568627451), 'MintCream'), 'mistyrose': ('#FFE4E1', (1.0, 0.8941176470588236, 0.8823529411764706), 'MistyRose'), 'moccasin': ('#FFE4B5', (1.0, 0.8941176470588236, 0.7098039215686275), 'Moccasin'), 'navajowhite': ('#FFDEAD', (1.0, 0.8705882352941177, 0.6784313725490196), 'NavajoWhite'), 'navy': ('#000080', (0.0, 0.0, 0.5019607843137255), 'Navy'), 'oldlace': ('#FDF5E6', (0.9921568627450981, 0.9607843137254902, 0.9019607843137255), 'OldLace'), 'olive': ('#808000', (0.5019607843137255, 0.5019607843137255, 0.0), 'Olive'), 'olivedrab': ('#6B8E23', (0.4196078431372549, 0.5568627450980392, 0.13725490196078433), 'OliveDrab'), 'orange': ('#FFA500', (1.0, 0.6470588235294118, 0.0), 'Orange'), 'orangered': ('#FF4500', (1.0, 0.27058823529411763, 0.0), 'OrangeRed'), 'orchid': ('#DA70D6', (0.8549019607843137, 0.4392156862745098, 0.8392156862745098), 'Orchid'), 'palegoldenrod': ('#EEE8AA', (0.9333333333333333, 0.9098039215686274, 0.6666666666666666), 'PaleGoldenrod'), 'palegreen': ('#98FB98', (0.596078431372549, 0.984313725490196, 0.596078431372549), 'PaleGreen'), 'paleturquoise': ('#AFEEEE', (0.6862745098039216, 0.9333333333333333, 0.9333333333333333), 'PaleTurquoise'), 'palevioletred': ('#DB7093', (0.8588235294117647, 0.4392156862745098, 0.5764705882352941), 'PaleVioletRed'), 'papayawhip': ('#FFEFD5', (1.0, 0.9372549019607843, 0.8352941176470589), 'PapayaWhip'), 'peachpuff': ('#FFDAB9', (1.0, 0.8549019607843137, 0.7254901960784313), 'PeachPuff'), 'peru': ('#CD853F', (0.803921568627451, 0.5215686274509804, 0.24705882352941178), 'Peru'), 'pink': ('#FFC0CB', (1.0, 0.7529411764705882, 0.796078431372549), 'Pink'), 'plum': ('#DDA0DD', (0.8666666666666667, 0.6274509803921569, 0.8666666666666667), 'Plum'), 'powderblue': ('#B0E0E6', (0.6901960784313725, 0.8784313725490196, 0.9019607843137255), 'PowderBlue'), 'purple': ('#800080', (0.5019607843137255, 0.0, 0.5019607843137255), 'Purple'), 'rebeccapurple': ('#663399', (0.4, 0.2, 0.6), 'NO_VALID_SVG_NAME'), 'red': ('#FF0000', (1.0, 0.0, 0.0), 'Red'), 'rosybrown': ('#BC8F8F', (0.7372549019607844, 0.5607843137254902, 0.5607843137254902), 'RosyBrown'), 'royalblue': ('#4169E1', (0.2549019607843137, 0.4117647058823529, 0.8823529411764706), 'RoyalBlue'), 'saddlebrown': ('#8B4513', (0.5450980392156862, 0.27058823529411763, 0.07450980392156863), 'SaddleBrown'), 'salmon': ('#FA8072', (0.9803921568627451, 0.5019607843137255, 0.4470588235294118), 'Salmon'), 'sandybrown': ('#F4A460', (0.9568627450980393, 0.6431372549019608, 0.3764705882352941), 'SandyBrown'), 'seagreen': ('#2E8B57', (0.1803921568627451, 0.5450980392156862, 0.3411764705882353), 'SeaGreen'), 'seashell': ('#FFF5EE', (1.0, 0.9607843137254902, 0.9333333333333333), 'Seashell'), 'sienna': ('#A0522D', (0.6274509803921569, 0.3215686274509804, 0.17647058823529413), 'Sienna'), 'silver': ('#C0C0C0', (0.7529411764705882, 0.7529411764705882, 0.7529411764705882), 'Silver'), 'skyblue': ('#87CEEB', (0.5294117647058824, 0.807843137254902, 0.9215686274509803), 'SkyBlue'), 'slateblue': ('#6A5ACD', (0.41568627450980394, 0.35294117647058826, 0.803921568627451), 'SlateBlue'), 'slategray': ('#708090', (0.4392156862745098, 0.5019607843137255, 0.5647058823529412), 'SlateGray'), 'slategrey': ('#708090', (0.4392156862745098, 0.5019607843137255, 0.5647058823529412), 'SlateGrey'), 'snow': ('#FFFAFA', (1.0, 0.9803921568627451, 0.9803921568627451), 'Snow'), 'springgreen': ('#00FF7F', (0.0, 1.0, 0.4980392156862745), 'SpringGreen'), 'steelblue': ('#4682B4', (0.27450980392156865, 0.5098039215686274, 0.7058823529411765), 'SteelBlue'), 'tan': ('#D2B48C', (0.8235294117647058, 0.7058823529411765, 0.5490196078431373), 'Tan'), 'teal': ('#008080', (0.0, 0.5019607843137255, 0.5019607843137255), 'Teal'), 'thistle': ('#D8BFD8', (0.8470588235294118, 0.7490196078431373, 0.8470588235294118), 'Thistle'), 'tomato': ('#FF6347', (1.0, 0.38823529411764707, 0.2784313725490196), 'Tomato'), 'turquoise': ('#40E0D0', (0.25098039215686274, 0.8784313725490196, 0.8156862745098039), 'Turquoise'), 'violet': ('#EE82EE', (0.9333333333333333, 0.5098039215686274, 0.9333333333333333), 'Violet'), 'wheat': ('#F5DEB3', (0.9607843137254902, 0.8705882352941177, 0.7019607843137254), 'Wheat'), 'white': ('#FFFFFF', (1.0, 1.0, 1.0), 'White'), 'whitesmoke': ('#F5F5F5', (0.9607843137254902, 0.9607843137254902, 0.9607843137254902), 'WhiteSmoke'), 'yellow': ('#FFFF00', (1.0, 1.0, 0.0), 'Yellow'), 'yellowgreen': ('#9ACD32', (0.6039215686274509, 0.803921568627451, 0.19607843137254902), 'YellowGreen')}
 
 
 def cmForLineThickness(lt):
@@ -1792,30 +1811,77 @@ class GramCode(Gram):
         assert isinstance(mygram, Gram)
         self.code = code
         mygram.graphics.append(self)
-                  
+
     def getTikz(self):
         return '%s' % self.code
 
     def getSvg(self):
         return '%s' % self.code
-                  
-
 
 class GramColor(Gram):
     def __init__(self):
-        #self.svgColor = None
-        #self.svgColorOpacity = None
-        #self.tikzColor = None
-        #self.tikzColorOpacity = None 
         self.color = None
-        self.value = None
-        self.type = None       # svg, base (ie latex), html
-        self.transparent = True
+        self._value = None
+        #self.type = None       # svg, base (ie latex), hex
+        self._transparent = False
+
+    def _getValue(self):
+        return self._value
+
+    def _setValue(self, theValue):
+        gm = ['Gram._setValue()']
+        assert isinstance(theValue, str)
+        if ' ' in theValue:
+            gm.append("The value should not have any spaces.")
+            raise GramError(gm)
+
+        try:
+            fVal = float(theValue)
+        except ValueError:
+            gm.append("color value should be a number between 0 and 1.0")
+            gm.append("but not equal to either zero or 1.0")
+            gm.append(f"Got {theValue}")
+            raise GramError(gm)
+
+        if (fVal == 0.0) or (fVal == 1.0):
+            gm.append("color value should be a number between 0 and 1.0")
+            gm.append("but not equal to either zero or 1.0")
+            gm.append(f"Got {theValue}")
+            raise GramError(gm)
+
+        self._value = theValue
+
+    def _delValue(self):
+        gm = ['Gram._delValue()']
+        gm.append(
+            "Caught an attempt to delete self.value-- Set it to something else, or None, but don't delete it, ok?")
+        raise GramError(gm)
+
+    value = property(_getValue, _setValue, _delValue)
+
+    def _getTransparent(self):
+        return self._transparent
+
+    def _setTransparent(self, theTransparent):
+        gm = ['Gram._setTransparent()']
+        assert isinstance(theTransparent, bool)
+        if theTransparent:
+            if not self.value:
+                gm.append("Setting a color to transparent without setting aColor.value does not work.")
+                raise GramError(gm)
+        self._transparent = theTransparent
+
+    def _delTransparent(self):
+        gm = ['Gram._delTransparent()']
+        gm.append("Can't delete property GramColor.transparent")
+        raise GramError(gm)
+
+    transparent = property(_getTransparent, _setTransparent, _delTransparent)
 
     def dump(self):
         print("GramColor.dump()")
-        print(f"    color={self.color}, value={self.value}, type={self.type}, transparent={self.transparent}")
-        
+        print(f"    color={self.color}, value={self.value}, transparent={self.transparent}")
+
     def setColorFromString(self, theColor):
         assert isinstance(theColor, str)
         gm = ['GramColor.setColorFromString(%s)' % theColor]
@@ -1831,63 +1897,144 @@ class GramColor(Gram):
             except ValueError:
                 gm.append("Can't make sense of color '%s'" % theColor)
                 raise GramError(gm)
-            if theNum < 0 or theNum >= 100:
-                gm.append("The number in the color should be from 0-99.  Got %i" % theNum)
+            if theNum <= 0 or theNum >= 100:
+                gm.append("The 'value' in the color (eg in blue!50) should be from 1-99.  Got %i" % theNum)
                 raise GramError(gm)
             self.value = "%.2f" % (0.01 * theNum)
             theColorNoValue = splColor[0]
         else:
             theColorNoValue = theColor
 
+        theColorNoValue = theColorNoValue.lower()
+
         # Now see if theColorNoValue is a base color (eg "red") or an svg color
-        # (eg "Red") or an html color (eg 99ff33 or #FF00AA)
+        # (eg "Red") or a hex color (eg 99ff33 or #FF00AA)
         if theColorNoValue in baseColors:
-            self.type = "base"
-        elif theColorNoValue in validSvgColorNames:
-            self.type = 'svg'
-        elif len(theColorNoValue) in [6,7]:
-            if len(theColorNoValue) == 7:
-                if not theColorNoValue.startswith("#"):
-                    gm.append("HTML colour?  I don't understand this.")
-                    raise GramError(gm)
-
-                theColorNoValue = theColorNoValue[1:]
-
-            # Make the hex value uppercase
-            theColorNoValue = theColorNoValue.upper()
-
-            # Check for only digits and uppercase A-F
-            goods = string.digits + string.ascii_uppercase[:6]
-            for c in theColorNoValue:
-                if c not in goods:
-                    gm.append("Got non-hex character '%s' " % c)
-                    gm.append("problem with HTML? colour %s." % theColorNoValue)
-                    raise GramError(gm)
-
-            # Put it in the self.latexHtmlColorDefsDict, but first check if we have seen it before
-            theKey = "gCol" + theColorNoValue
-            ret = self.htmlColorDict.get(theKey)
-            if ret:
-                if ret != theColorNoValue:
-                    gm.append("Duplicate key '%s' in GramColor.htmlColorDict" % theKey)
-                    gm.append("Old value '%s', new value '%s'" % (ret, theColorNoValue))
-                    raise GramError(gm)
-                else:
-                    pass
-            else:
-                self.htmlColorDict[theKey] = theColorNoValue
-            theColorNoValue = theKey  # switcheroo, so self.color becomes gColXXXXXX
-            self.type = 'html'
+            # self.type = "base"
+            pass
+        elif theColorNoValue in CSS4_COLORS:
+            #self.type = 'svg'
+            pass
+            if theColorNoValue == "rebeccapurple":
+                writeInColour(f"Warning: Colour rebeccapurple is a valid CSS (for SVG) color, but not for Latex/Tikz\n", 
+                              colour='violet')
+        elif theColorNoValue.startswith("#") and len(theColorNoValue) == 7:
+            #self.type = "hex"
+            pass
+        elif theColorNoValue in svgLowColorsNotInCSS4:
+            # gm.append(f"got color {theColorNoValue}")
+            # gm.append("It is a valid SVG color, but is not in CSS4")
+            writeInColour(f"Warning: Colour {theColorNoValue} is a valid SVG color, but not in CSS4 for SVG\n", 
+                          colour='violet')
         else:
             gm.append("I don't understand the color '%s'" % theColorNoValue)
-            print("This week, the colour should be based on base or svg names.  One of ---")
+            print("This week, the colour should be based on base or svg/html names.  One of ---")
             print("%s" % baseColors)
-            print("%s" % validSvgColorNames)
+            print("%s" % CSS4_COLORS.keys())
             raise GramError(gm)
 
         self.color = theColorNoValue
-        
 
+    def getSvgOptions(self, stroke=None):    # GramColor
+        gm = [f"GramColor.getSvgOptions(color:{self.color}, value:{self.value}, stroke:{stroke})"]
+        #print(gm[0])
+        # self.dump()
+
+        if self.value:
+            fValue = float(self.value)
+            if fValue == 0.0:
+                gm.append("Got colour value of zero.  Does that work?")
+                raise GramError(gm)
+            elif fValue == 1.0:
+                gm.append("Got colour value of 1.0.  Does that make sense?")
+                raise GramError(gm)
+
+        # if self.transparent:
+        #     if not self.value:
+        #         gm.append(f"If the color (here {self.color}) is transparent (which it is)")
+        #         gm.append(f"then it should have a 'value', usually given by eg 'thecolor!30'")
+        #         raise GramError(gm)
+
+        options = []
+        if self.value and fValue > 0.0 and fValue < 1.0:
+            if self.transparent:
+                if stroke == "fill":
+                    options.append('fill="%s"' % self.color)
+                    options.append('fill-opacity="%s"' % self.value)
+                else:
+                    options.append('stroke="%s"' % self.color)
+                    options.append('stroke-opacity="%s"' % self.value)
+            else:
+                # For cases when we have color.value, eg from red!50,
+                # with non-transparent svg,
+                # we should not put the self.value in stroke-opacity.
+
+                # Rather, need to decrease the color saturation.
+                # Do that by
+                # 1a. either converting hex to rgb, or
+                # 1b. looking up the rgb from the named color
+                # 2.  converting to hsv
+                # 3.  decreasing s by fValue
+                # 4.  converting back to rgb
+                # 5.  converting rgb to hex
+
+                if self.color.startswith("#"):
+                    r,g,b = self.getRgbFromHex(self.color)
+                elif self.color in CSS4_COLORS:
+                    ret = CSS4_COLORS.get(self.color)
+                    assert ret
+                    r,g,b = ret[1]
+                    #print(f"rgb {r} {g} {b}; {r * 255} {g * 255} {b * 255}")
+                h,s,v = colorsys.rgb_to_hsv(r,g,b)
+                #print(f"GramColor.getSvgOptions() color:{self.color} value:{self.value}, {h},{s},{v}")
+                if s == 0.0:    # black.  This looks like a bug to me.
+                    r,g,b = (1.0 - fValue, 1.0 - fValue, 1.0 - fValue)
+                else:
+                    s *= fValue
+
+                    # Hack alert.  This is not quite right, but not as bad as ignoring it.
+                    newV = v + ((1.0 - fValue) * (1.0 - v))
+                    assert newV >= 0.0
+                    assert newV <= 1.0
+                    r,g,b = colorsys.hsv_to_rgb(h,s,newV)
+                newHex = self.getHexFromRgb((r,g,b))
+                if stroke == "fill":
+                    options.append('fill="%s"' % newHex)
+                else:
+                    options.append('stroke="%s"' % newHex)
+        else:
+            if stroke == "fill":
+                options.append('fill="%s"' % self.color)
+            else:
+                options.append('stroke="%s"' % self.color)
+
+        return options
+
+
+    def getRgbFromHex(self, theHex):
+        h = theHex.lstrip('#')
+        r,g,b = tuple([int(h[i:i+2], 16)/255. for i in (0, 2, 4)])
+        # print(f"GramColor.getRgbFromHex({theHex}): {r:.4f}  {g:.4f}  {b:.4f}") 
+        return (r,g,b)
+
+    def getHexFromRgb(self, theRgb):
+        h = "#"
+        assert len(theRgb) == 3
+        for indx in [0,1,2]:
+            v = theRgb[indx]
+            assert isinstance(v, float)
+            assert v >= 0.0 and v <= 1.0
+            hPart = hex(round(v * 255))
+            #print(f"GramColor.getHexFromRgb()  {v} {hPart}")
+            if len(hPart) == 3:
+                h += "0"
+                h += hPart[2]
+            elif len(hPart) == 4:
+                h += hPart[2:]
+            else:
+                raise GramError(f"unexpected getHexFromRgb from {v}; got {hPart}")
+        assert len(h) == 7
+        return h
 
 class GramTikzStyle(Gram):
 
