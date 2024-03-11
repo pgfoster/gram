@@ -63,7 +63,7 @@ class Tick(GramGraphic):
         self.sig = "%.0f"
         self.line = None
         self.text = None
-        self.textOn = True
+        self.textOn = True  # for cases where the text is not displayed
 
     def getTikz(self):
         ss = []
@@ -406,9 +406,10 @@ class XYAxis(Axis):
                     tick.val, tick.textRotate, tick.sig), tick.sig % tick.val)
             sys.exit()
 
-    def setPositions(self):
-        
-        gm = ["XYAxis.setPositions()"]
+
+    def setPositionsBeforeTextMetrics(self):    # XYAxis
+
+        gm = ["XYAxis.setPositionsBeforeTextMetrics()"]
         if self.useBarVals:
             assert self.orientation == 'v', "orientation must be 'v' if useBarVals is turned on."
             theMinYToShow = self.plot.minBarValToShow
@@ -419,8 +420,8 @@ class XYAxis(Axis):
             theMaxYToShow = self.plot.maxYToShow
             theXYScaleY = self.plot.xYScaleY
 
-        if 0:
-            print("XYAxis.setPositions()")
+        if 1:
+            print("XYAxis.setPositionsBeforeTextMetrics()")
             print("    position = %s, orientation = %s" % (self.position, self.orientation))
             if self.orientation == 'h':
                 print("    minXInData = %s, maxXInData = %s" % (self.plot.minXInData, self.plot.maxXInData))
@@ -484,8 +485,7 @@ class XYAxis(Axis):
                 # If the text label does not exist yet, make it.
                 for tick in self.ticks:
                     if tick.textOn and not tick.text:
-                        # print "the tick.sig is %s, the tick.val is %s" %
-                        # (tick.sig, tick.val)
+                        # print(f"{gm[0]} tick.text {tick.text}, tick.val {tick.val}")
                         theText = tick.sig % tick.val
                         tick.text = GramText(theText)
                         #tick.text.draw = True
@@ -518,6 +518,22 @@ class XYAxis(Axis):
                                 tick.text.anchor = 'east'
                             elif self.position == 'r':
                                 tick.text.anchor = 'west'
+
+
+    def setPositions(self):
+
+        gm = ["XYAxis.setPositions()"]
+
+        if 'ticks' in self.styles:
+
+            if 'labels' in self.styles:
+
+                # If the text label does not exist yet, make it.
+                for tick in self.ticks:
+                    if tick.textOn and not tick.text:
+                        if not tick.text:
+                            gm.append(f"tick.text {tick.text}, tick.val {tick.val} not found")
+                            raise GramError(gm)
 
                 if 0 and self.orientation == 'h':
                     exemplar = None
@@ -567,6 +583,7 @@ class XYAxis(Axis):
                 tick.setPositions()
                 if tick.text:
                     if self.engine == 'tikz':
+                        # print(f"{gm[0]} tick text {tick.text.rawText}")
                         tick.text.setBB()  # needed to place the title
                     elif self.engine == 'svg':
                         tick.text.getSvg()
@@ -578,7 +595,6 @@ class XYAxis(Axis):
                 self.titleText.setBB()
             elif self.engine == "svg":
                 self.titleText.getSvg()
-                
 
 
 class BarsAxis(Axis):
@@ -597,9 +613,11 @@ class BarsAxis(Axis):
             raise GramError("BarsAxis must be position 'b', got attempt to set it to '%s'" % newVal)
     position = property(_getPosition, _setPosition)
 
-    def setPositions(self):
+    def setPositionsBeforeTextMetrics(self):
+
+        gm = ["BarsAxis.setPositionsBeforeTextMetrics()"]
         if 0:
-            print("BarsAxis.setPositions()")
+            print(gm[0])
             print("    position = %s, orientation = %s" % (self.position, self.orientation))
             if self.orientation == 'h':
                 print("    nBars %s" % self.plot.nBars)
@@ -627,8 +645,6 @@ class BarsAxis(Axis):
                 tick.cA = GramCoord()
                 tick.cB = GramCoord()
                 self.ticks.append(tick)
-                # for tick in self.ticks:
-                #    self.graphics.append(tick)
 
             # Set the coords of the tick, cA is where it touches the frame.
             for tick in self.ticks:
@@ -704,18 +720,24 @@ class BarsAxis(Axis):
                             tick.text.cA.xPosn += tickTextXOffset
                             #tick.text.cA.yPosn -= tickTextYOffset
                             # tick.text.setPositions()
-        for tick in self.ticks:
-            tick.setPositions()
-            if tick.text:
-                if self.engine == 'tikz':
-                    tick.text.setPositions()
-                elif self.engine == 'svg':
-                    tick.text.getSvg()
+
+
+
+    def setPositions(self):
+        gm = ["BarsAxis.setPositions()"]
+
+        if 'ticks' in self.styles:
+            for tick in self.ticks:
+                tick.setPositions()
+                if tick.text:
+                    if self.engine == 'tikz':
+                        tick.text.setBB()
+                    elif self.engine == 'svg':
+                        tick.text.getSvg()
 
         if self.titleText:
             self.setTitlePosition()
             if self.engine == "tikz":
-                self.titleText.setPositions()
+                self.titleText.setBB()
             elif self.engine == "svg":
                 self.titleText.getSvg()
-

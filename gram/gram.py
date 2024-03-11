@@ -1,6 +1,6 @@
 # I need p4 for p4.Tree, and for a few functions in p4.func
 from p4 import func
-import pyx
+# import pyx
 import os
 import math
 import string
@@ -41,7 +41,7 @@ import colorsys
 
 # I found the following on the web somewhere.  I don't think they are correct, tho.  But I use them anyway.
 # Command	Nominal Point Size	Exact Point Size
-# \tiny	                 5                    5
+# \tiny                  5                    5
 # \scriptsize            7                    7
 # \footnotesize          8                    8
 # \small                 9                    9
@@ -49,8 +49,8 @@ import colorsys
 # \large                12                   12
 # \Large                14                   14.40
 # \LARGE                18                   17.28
-# \huge	                20                   20.74
-# \Huge	                24                   24.88
+# \huge                 20                   20.74
+# \Huge                 24                   24.88
 
 # SVG UNITS
 # See here https://pythonhosted.org/svgwrite/overview.html#units
@@ -231,6 +231,64 @@ writeInColor = writeInColour
 setTerminalColor = setTerminalColour
 unsetTerminalColor = unsetTerminalColour
 
+def fixUnderscores(theText):
+    """Check and fix underscores.
+
+    Semi-smart in knowing math mode.  It can distinguish "x_y" from "$x_y$".
+    """
+
+    #raise GramError
+    fixed = []
+    isEscaped = False
+    inMaths = False
+
+    for c in theText:
+        if c == "$":
+            if isEscaped:
+                pass
+            elif not inMaths:
+                inMaths = True
+            elif inMaths:
+                inMaths = False
+            fixed.append(c)
+
+        elif c == "_":
+            if inMaths:
+                fixed.append(c)
+            elif isEscaped:
+                fixed.append(c)
+            else:
+                writeInColour("fixUnderscores() Underscore not escaped -- adding backslash\n", colour="CYAN")
+                fixed.append("\\" + c)
+        elif c.startswith("\\"):
+            if isEscaped:           # ie \\
+                isEscaped = False
+            elif inMaths:
+                pass
+            else:
+                isEscaped = True
+            fixed.append(c)
+            continue
+        else:
+            if isEscaped:
+                # print(r"Got escaped char %s not in maths." % c)
+                pass
+            fixed.append(c)
+        isEscaped = False
+    return "".join(fixed)
+
+class GDict(UserDict):
+    def dump(self):
+        kk = self.keys()
+        for k in kk:
+            g = self[k]
+            clas = ""
+            if isinstance(g, GramText):
+                clas = "GramText"
+                print(f"  {k:10} {clas:12} {g.rawText[:30]}")
+            else:
+                print(f"  {k:10}")
+
 
 
 ###################################################################
@@ -238,7 +296,7 @@ unsetTerminalColor = unsetTerminalColour
 class Gram(object):
 
     _font = 'helvetica'
-    _defaultTextFamily = "sffamily"  # 'sffamily'  rmfamily ttfamily
+    # _defaultTextFamily = None #  'sffamily'  rmfamily ttfamily; appears to be not required or used
     _engine = 'tikz'  # or 'svg'
     _documentFontSize = 10   # 10, 11, or 12
     _pdfViewer = 'ls'
@@ -248,7 +306,6 @@ class Gram(object):
 
     _config = None
     _configAttrs = """font documentFontSize pdfViewer pngViewer svgViewer
-                              defaultTextFamily
                               pngResolution svgPxForCm svgTextNormalWeight""".split()
 
     _goodLineThicknesses = [
@@ -264,21 +321,21 @@ class Gram(object):
                     'mid', 'mid west', 'mid east',
                     'south west', 'south', 'south east',
                     'center']  # center is the default
-   
+
     #_goodShapes = ['rounded rectangle']
     _goodLineStyles = [None, 'solid', 'dotted', 'densely dotted', 'loosely dotted',
                        'dashed', 'densely dashed', 'loosely dashed']
 
-    _goodTextAligns = [None, 'left', 'flush left', 'right', 'flush right', 
+    _goodTextAligns = [None, 'left', 'flush left', 'right', 'flush right',
                        'center', 'flush center', 'justify', 'none']
     _styleDict = {}
     _tikzPictureDefaults = None
     _htmlColorDict = {}
     _haveStartedPyX = False
-    _latexTextMetricsUses = "pyx"  # or latex
-    _svgTextMetricsUses = "inkscape"  # or "rsvg"
-    
-    
+    _latexTextMetricsUses = "latex"  # pyx or latex
+    _svgTextMetricsUses = "inkscape"  # inkscape or "rsvg"
+
+
     _useTikzPlotMarkLib = False
     _xRecenter = 1.
     _yRecenter = 1.
@@ -286,38 +343,40 @@ class Gram(object):
 
     _showTextBB = False
     _showTextAnchor = False
-    _pdflatexOutputGoesToDevNull = True
+    _latexOutputGoesToDevNull = True
 
     _svgPxForCm = 55.  # 70.86614  # 35.43307
     #_svgTextNormalsize = 0.34
     _svgTextNormalsize = 0.36      # estimate
     _defaultInnerSep = None
     _gIdCounter = 1
-    _gForGIdDict = {}
+    _gForGIdDict = GDict()
     _svgHackDoRotate = False
     _svgHack_x_Only = False
     _svgNormalsize_x = None
-    _svgTextNormalWeight = 400    # Slightly bold     
+    _svgTextNormalWeight = "normal"
+    _svgTextPreserveWhitespace = False # True adds xml:space="preserve" to a text
 
-    
+
     def __init__(self):
         self._dirName = 'Gram'
         self._baseName = 'gram'
         self.latexUsePackages = []
         self.latexOtherPreambleCommands = []
-        self.haveSetBuiltInStyles = False
         self.bbb = [0.0] * 4  # big bounding box, ie of the whole gram
         self.useSfMathIfSffamily = True      # sometimes roman math is wanted
 
         self.graphics = []
         self.grams = []
         self.gX = 0.0  # the xShift of an included gram
-        self.gY = 0.0  # the yShift 
+        self.gY = 0.0  # the yShift
 
         self.theGpdf = None
+        self.latexMetricsFileName = "grOut.txt"
 
         if not Gram._config:
-            config = configparser.SafeConfigParser()
+            #config = configparser.SafeConfigParser()
+            config = configparser.ConfigParser()
             Gram._config = config
             config.optionxform = str
             filesRead = config.read([os.path.expanduser('~/.gram.conf'), 'gram.conf'])
@@ -332,7 +391,7 @@ class Gram(object):
                     # for anOpt in theOpts:
                     #     ret = config.get('Gram', anOpt)
                     #     print anOpt, ret, type(ret)
-                    
+
                     for myAttr in self.configAttrs:
                         try:
                             ret = config.get('Gram', myAttr)
@@ -350,8 +409,8 @@ class Gram(object):
                         except configparser.NoOptionError:
                             pass
 
-    
-            
+
+
     def _getDirName(self):
         return self._dirName
 
@@ -396,52 +455,27 @@ class Gram(object):
         gm = ['Gram._setFont()']
         assert isinstance(theFont, str)
         lowFont = theFont.lower()
-        goodFonts = ['cm', 'helvetica', 'palatino', 'times']
+        goodFonts = ['lmr', 'lms', 'helvetica', 'palatino', "fira"]   # times?
         if lowFont not in goodFonts:
             gm.append("You can only set property 'font' to one of")
             gm.append("%s" % goodFonts)
             gm.append("Got attempt to set to '%s'" % theFont)
             raise GramError(gm)
         Gram._font = lowFont
+
     def _delFont(self):
         gm = ['Gram._delFont()']
         gm.append("Caught an attempt to delete self.font-- don't do that.")
         raise GramError(gm)
     font = property(_getFont, _setFont, _delFont)
 
-    def _getDefaultTextFamily(self):
-        return Gram._defaultTextFamily
-    def _setDefaultTextFamily(self, theDefaultTextFamily):
-        gm = ['Gram._setDefaultTextFamily()']
-        if theDefaultTextFamily == None:   # this week, not allowed
-            self._defaultTextFamily = None
-        else:
-            assert isinstance(theDefaultTextFamily, str)
-            lowDefaultTextFamily = theDefaultTextFamily.lower()
-            goodDefaultTextFamilies = self._goodTextFamilies
-            if lowDefaultTextFamily not in goodDefaultTextFamilies:
-                gm.append("You can only set property 'defaultTextFamily' to one of")
-                gm.append("%s" % goodDefaultTextFamilies)
-                gm.append("or None. Got attempt to set to '%s'" % theDefaultTextFamily)
-                raise GramError(gm)
-            if self.font == 'helvetica':
-                if lowDefaultTextFamily == "sffamily":
-                    pass
-                else:
-                    gm.append(f"Attempt to set defaultTextFamily to {theDefaultTextFamily}")
-                    gm.append("but helvetica is a sans font")
-                    raise GramError(gm)
-            elif self.font in ['palatino', 'times']:
-                if lowDefaultTextFamily == "rmfamily":
-                    pass
-                else:
-                    gm.append(f"Attempt to set defaultTextFamily to {theDefaultTextFamily}")
-                    gm.append(f"but {self.font} is a roman family font")
-                    raise GramError(gm)
-
-
-            Gram._defaultTextFamily = lowDefaultTextFamily
-    defaultTextFamily = property(_getDefaultTextFamily, _setDefaultTextFamily)
+    # def _getDefaultTextFamily(self):
+    #     return Gram._defaultTextFamily
+    # def _setDefaultTextFamily(self, theDefaultTextFamily):
+    #     gm = ['Gram.defaultTextFamily']
+    #     gm.append("Gram.defaultTextFamily is set by the font, not user-settable")
+    #     raise Gram.error(gm)
+    # defaultTextFamily = property(_getDefaultTextFamily, _setDefaultTextFamily)
 
     def _getEngine(self):
         return Gram._engine
@@ -466,6 +500,7 @@ class Gram(object):
         if not isinstance(theDocumentFontSize, int):
             raise GramError(gm)
         if theDocumentFontSize < 10 or theDocumentFontSize > 12:
+            gm.append(f"Got attempt to set to {theDocumentFontSize}")
             raise GramError(gm)
         Gram._documentFontSize = theDocumentFontSize
     documentFontSize = property(_getDocumentFontSize, _setDocumentFontSize)
@@ -565,8 +600,8 @@ class Gram(object):
         if newVal in ["pyx", "latex"]:
             Gram._latexTextMetricsUses = newVal
         else:
-            raise GramError(
-                "Set latexTextMetricsUses to pyx or latex, only (got %s)" % newVal)
+            raise GramError("Set latexTextMetricsUses to pyx or latex, only (got %s)" % newVal)
+
     latexTextMetricsUses = property(_getLatexTextMetricsUses, _setLatexTextMetricsUses)
 
     def _getSvgTextMetricsUses(self):
@@ -576,12 +611,11 @@ class Gram(object):
         if newVal in ["inkscape", "rsvg"]:
             Gram._svgTextMetricsUses = newVal
         else:
-            raise GramError(
-                "Set svgTextMetricsUses to inkscape or rsvg, only (got %s)" % newVal)
+            raise GramError("Set svgTextMetricsUses to inkscape or rsvg, only (got %s)" % newVal)
     svgTextMetricsUses = property(_getSvgTextMetricsUses, _setSvgTextMetricsUses)
 
     def _getDefaultInnerSep(self):
-        if Gram._defaultInnerSep:
+        if Gram._defaultInnerSep is not None:  # ie it has been set by the user, eg to 0.0
             return Gram._defaultInnerSep
         else:
             if Gram._engine == "tikz":
@@ -590,8 +624,7 @@ class Gram(object):
                 myDocumentFontSize *= cmPerPt
                 return myDocumentFontSize * 0.3333
             else:
-                myNormalSize = self.svgTextNormalsize  # cm
-                return myNormalSize * 0.3333
+                return self.svgTextNormalsize * 0.3333  # cm
 
     def _setDefaultInnerSep(self, newVal):
         try:
@@ -600,6 +633,7 @@ class Gram(object):
         except ValueError:
             raise GramError(
                 "_setDefaultInnerSep().  newVal should be a float.")
+        assert Gram._defaultInnerSep >= 0.0
     defaultInnerSep = property(_getDefaultInnerSep, _setDefaultInnerSep)
 
     def _getUseTikzPlotMarkLib(self):
@@ -648,7 +682,7 @@ class Gram(object):
             raise GramError("_set_recenterExtra().  newVal should be a float.")
         Gram._recenterExtra = nV
     recenterExtra = property(_get_recenterExtra, _set_recenterExtra)
-    
+
     def _get_showTextBB(self):
         return Gram._showTextBB
 
@@ -663,13 +697,13 @@ class Gram(object):
         Gram._showTextAnchor = newVal
     showTextAnchor = property(_get_showTextAnchor, _set_showTextAnchor)
 
-    def _get_pdflatexOutputGoesToDevNull(self):
-        return Gram._pdflatexOutputGoesToDevNull
+    def _get_latexOutputGoesToDevNull(self):
+        return Gram._latexOutputGoesToDevNull
 
-    def _set_pdflatexOutputGoesToDevNull(self, newVal):
-        Gram._pdflatexOutputGoesToDevNull = newVal
-    pdflatexOutputGoesToDevNull = property(
-        _get_pdflatexOutputGoesToDevNull, _set_pdflatexOutputGoesToDevNull)
+    def _set_latexOutputGoesToDevNull(self, newVal):
+        Gram._latexOutputGoesToDevNull = newVal
+    latexOutputGoesToDevNull = property(
+        _get_latexOutputGoesToDevNull, _set_latexOutputGoesToDevNull)
 
     def _get_svgPxForCm(self):
         return Gram._svgPxForCm
@@ -704,18 +738,36 @@ class Gram(object):
         return Gram._svgTextNormalWeight
 
     def _set_svgTextNormalWeight(self, newVal):
-        Gram._svgTextNormalWeight = int(newVal)
+        goodTextVals = ["normal", "bold", "light"]
+        try:
+            Gram._svgTextNormalWeight = int(newVal)
+        except ValueError:
+            assert newVal in goodTextVals, "weight as a string should be one of %s" % goodTextVals
+            Gram._svgTextNormalWeight = newVal
+
     svgTextNormalWeight = property(_get_svgTextNormalWeight, _set_svgTextNormalWeight)
+
+    def _get_svgTextPreserveWhitespace(self):
+        return Gram._svgTextPreserveWhitespace
+
+    def _set_svgTextPreserveWhitespace(self, newVal):
+        if newVal in [True, False]:
+            Gram._haveStartedPyX = newVal
+            Gram._svgTextPreserveWhitespace = newVal
+        else:
+            raise GramError(
+                "Set svgTextPreserveWhitespace to True or False, only (got %s)" % newVal)
+
+    svgTextPreserveWhitespace = property(_get_svgTextPreserveWhitespace, _set_svgTextPreserveWhitespace)
 
 
     ##################################
 
     def setPositions(self):
-        # print(self, "setPositions()")
-        if self._defaultInnerSep:  # it has been set by the user
+        if self._defaultInnerSep is not None:  # it has been set by the user, maybe to zero
             self.tikzPictureDefaults.innerSep = self.defaultInnerSep
-        if self.defaultTextFamily:
-            self.tikzPictureDefaults.textFamily = self.defaultTextFamily
+        # if self.defaultTextFamily:
+        #     self.tikzPictureDefaults.textFamily = self.defaultTextFamily
 
         for gr in self.graphics:
             gr.setPositions()
@@ -724,9 +776,9 @@ class Gram(object):
         gm = ['Gram.getTikz()']
         ss = []
 
-        if not self.haveStartedPyX:
-            self.startPyX()
-
+        if self.latexTextMetricsUses == 'pyx':
+            if not self.haveStartedPyX:
+                self.startPyX()
         for gr in self.graphics:
             try:
                 #print(gr)
@@ -774,43 +826,37 @@ class Gram(object):
 
     ###############################################################
 
-    def render(self):
-        # print("Gram.render() doing a render() on %s" % self)
+    def setPositionsBeforeTextMetrics(self):
+        # print(f"Gram.setPositionsBeforeTextMetrics() engine {self.engine}")
         if self.engine == 'tikz':
-            if not self.haveStartedPyX:
-                self.startPyX()
-            if not self.haveSetBuiltInStyles:
-                self.setBuiltInStyles()
-            self.haveSetBuiltInStyles = True
+            if self.latexTextMetricsUses == 'pyx':
+                if not self.haveStartedPyX:
+                    self.startPyX()
         elif self.engine == 'svg':
-            # print "Gram.render() here, set for svg"
-            if not self.haveSetBuiltInStyles:   # Is this needed for svg?  Yes, it is used.
-                self.setBuiltInStyles()
-            self.haveSetBuiltInStyles = True
-            # pass
-        self.setPositions()
+            pass
+
         for gr in self.grams:
-            gr.render()
-        # TreeGram.render() and Plot.render() continue ...
+            gr.setPositionsBeforeTextMetrics()
 
     def startPyX(self):
-
         if self.haveStartedPyX:
             return
         gm = ['Gram.startPyX()']
+        print(f"{gm[0]} starting")
 
         pyx.unit.set(defaultunit='pt')  # 'bp' no workee
 
-        pyx.text.set(engine=pyx.text.LatexEngine, docclass="article", 
+        pyx.text.set(engine=pyx.text.LatexEngine, docclass="article",
             docopt='%ipt' % self.documentFontSize)
 
         # construct pyxTextPreambleString, with latexUsePackages
-        pyxTextPreambleString = self._makeFontLine()
+        pyxTextPreambleString = self.getLatexFontDefString()
         if pyxTextPreambleString:
             pyxTextPreambleString += "\n"
 
         #pyxTextPreambleString += "\\usepackage{tikz}\n"
         pyxTextPreambleString += "\\usepackage[svgnames]{xcolor}\n"
+        pyxTextPreambleString += "\\usepackage{varwidth}\n"
         #if self.useTikzPlotMarkLib:
         #    pyxTextPreambleString += r"\usetikzlibrary{plotmarks}"
         #    pyxTextPreambleString += "\n"
@@ -823,41 +869,117 @@ class Gram(object):
         for lopc in self.latexOtherPreambleCommands:
             pyxTextPreambleString += lopc
 
-        # print("Gram.startPyX() pyxTextPreambleString is ---")
-        # print(f"{pyxTextPreambleString}\n(end of pyxTextPreambleString)")
+        print("Gram.startPyX() pyxTextPreambleString is ---")
+        print(f"{pyxTextPreambleString}\n(end of pyxTextPreambleString)")
 
         pyx.text.preamble(pyxTextPreambleString)
 
         self.haveStartedPyX = True
-        
+        print(f"{gm[0]} finished")
 
-    def _makeFontLine(self):
-        ss = []
-        if self.font == 'cm':
-            pass
-        elif self.font == 'helvetica':
-            self.defaultTextFamily = "sffamily"
-            # texStuffFontLine = r"\usepackage[scaled=.90]{helvet}"
-            ss.append("\\usepackage{helvet}")
-            ss.append(r"\usepackage{courier}")
-            ss.append(r"\renewcommand{\familydefault}{\sfdefault}")
-        elif self.font == 'palatino':
-            self.defaultTextFamily = "rmfamily"
-            ss.append(r"\usepackage[osf]{mathpazo}")    # this uses osf, old style figures
-            ss.append(r"\usepackage[scaled=.95]{helvet}")
-            ss.append(r"\usepackage{courier}")
-        elif self.font == 'times':
-            self.defaultTextFamily = "rmfamily"
-            ss.append(r"\usepackage{mathptmx}")  # osf no workee
-            ss.append(r"\usepackage[scaled=.95]{helvet}") 
-            ss.append(r"\usepackage{courier}")
 
-        if self.defaultTextFamily == "sffamily":
-            if self.useSfMathIfSffamily:
-                ss.append("\\usepackage{sfmath}")
-            if self.font != "helvetica":  # helvetica already done, above
+    def getLatexFontDefString(self):
+        gm = ["Gram.getLatexFontDefString()"]
+        assert self.engine == 'tikz'
+        if self.latexTextMetricsUses == 'pyx':
+            gm.append("Using pyx")
+            ss = []
+            if self.font == 'cm':
+                pass
+            elif self.font == "lmr":
+                pass
+
+            elif self.font == "lms":
                 ss.append(r"\renewcommand{\familydefault}{\sfdefault}")
-        return '\n'.join(ss)
+
+            elif self.font == 'helvetica':
+                #self.defaultTextFamily = "sffamily"
+                # texStuffFontLine = r"\usepackage[scaled=.90]{helvet}"
+                ss.append("\\usepackage{helvet}")
+                ss.append(r"\usepackage{courier}")
+                ss.append(r"\renewcommand{\familydefault}{\sfdefault}")
+            elif self.font == 'palatino':
+                #self.defaultTextFamily = "rmfamily"
+                ss.append(r"\usepackage[osf]{mathpazo}")    # this uses osf, old style figures
+                ss.append(r"\usepackage[scaled=.95]{helvet}")
+                ss.append(r"\usepackage{courier}")
+            elif self.font == 'times':
+                #self.defaultTextFamily = "rmfamily"
+                ss.append(r"\usepackage{mathptmx}")  # osf no workee
+                ss.append(r"\usepackage[scaled=.95]{helvet}")
+                ss.append(r"\usepackage{courier}")
+            else:
+                gm.append("got %s, not implemented" % self.font)
+                raise GramError(gm)
+
+            # if self.defaultTextFamily == "sffamily":
+            #     if self.useSfMathIfSffamily:
+            #         ss.append("\\usepackage{sfmath}")
+            #     if self.font != "helvetica":  # helvetica already done, above
+            #         ss.append(r"\renewcommand{\familydefault}{\sfdefault}")
+            return '\n'.join(ss)
+
+        elif self.latexTextMetricsUses == 'latex':
+            gm.append("Using latex for metrics")
+            ss = []
+            if self.font == "lmr":
+                #self.defaultTextFamily = "rmfamily"
+                ss.append(r"\usepackage{fontspec}")
+                ss.append(r"\usepackage{unicode-math}")
+                ss.append(r"\setmainfont[SmallCapsFont={Latin Modern Roman Caps}]{Latin Modern Roman}")
+                ss.append(r"\setsansfont{Latin Modern Sans}")
+                ss.append(r"\setmathfont{Latin Modern Math}")  # OldStyle figures does not work here.
+                # not mathastext
+
+            elif self.font == "lms":
+                # Latin modern sans
+                ss.append(r"\usepackage[no-math]{fontspec}")
+                ss.append(r"\usepackage{unicode-math}")
+                ss.append(r"\setmainfont{Latin Modern Sans}")  # no small caps
+                ss.append(r"\setsansfont{Latin Modern Sans}")
+                ss.append(r"%\setmathfont{Latin Modern Math}")
+                ss.append(r"\setmathfont{Fira Math Regular}")
+                ss.append(r"\usepackage[italic]{mathastext}")
+
+            elif self.font == 'helvetica':
+                # Helvetica.  No good maths font; use Fira math
+                ss.append(r"\usepackage[no-math]{fontspec}")
+                ss.append(r"\usepackage{unicode-math}")
+                # ss.append(r"\setmainfont{Helvetica}")
+                # ss.append(r"\setsansfont{Helvetica}")
+                ss.append(r"\setmainfont{Tex Gyre Heros}")
+                ss.append(r"\setsansfont{Tex Gyre Heros}")
+                ss.append(r"\setmathfont{Fira Math Regular}")
+                ss.append(r"\usepackage{mathastext}")
+
+            elif self.font == 'palatino':
+                # Palatino
+                ss.append(r"\usepackage{fontspec}")
+                ss.append(r"\usepackage{unicode-math}")
+                ss.append(r"\setmainfont{TeX Gyre Pagella}")
+                ss.append(r"\setsansfont{Optima Regular}")
+                ss.append(r"\setmathfont{TeX Gyre Pagella Math}")
+                # ss.append(r"%\setmathfont{Euler Math}")
+
+            elif self.font == "fira":
+                ss.append(r"\usepackage{fontspec}")
+                ss.append(r"\usepackage{unicode-math}")
+                ss.append(r"\setmainfont[BoldFont={Fira Sans Bold}, ItalicFont={Fira Sans Italic}, BoldItalicFont={Fira Sans Bold Italic}]{Fira Sans Regular}")
+                ss.append(r"\setsansfont{Fira Sans Regular}")
+                ss.append(r"\setmathfont{Fira Math Regular}")
+
+
+
+            else:
+                gm.append("got %s, not implemented" % self.font)
+                raise GramError(gm)
+
+            # if self.defaultTextFamily == "sffamily":
+            #     if self.useSfMathIfSffamily:
+            #         ss.append("\\usepackage{sfmath}")
+            #     if self.font != "helvetica":  # helvetica already done, above
+            #         ss.append(r"\renewcommand{\familydefault}{\sfdefault}")
+            return '\n'.join(ss)
 
     def _parseLatexUsePackages(self):
         """returns a multi-line string"""
@@ -875,12 +997,10 @@ class Gram(object):
                 ss.append(r"\usepackage{%s}" % lup)
         return '\n'.join(ss)
 
-    def setBuiltInStyles(self):
-        pass
 
-    def writeTikz(self):
-
+    def writeTikz(self):     # Gram
         gm = ['Gram.writeTikz()']
+
         thisDir = os.getcwd()
         # -p here means no error if existing.
         os.system('mkdir -p %s' % self.dirName)
@@ -912,6 +1032,7 @@ class Gram(object):
 
         if self.tikzPictureDefaults:
             theDefString = self.tikzPictureDefaults.getDefString()[1:-1]
+            # print(gm[0], f'tikzPictureDefaults is "{theDefString}"')
             if theDefString:
                 fA.write("[%s]" % theDefString)
         fA.write('\n')
@@ -924,8 +1045,7 @@ class Gram(object):
         fA.write('\n')
 
         if 0:
-            fA.write(
-                "\n\\path[ultra thin, draw=red] (current bounding box.south west) ")
+            fA.write("\n\\path[ultra thin, draw=red] (current bounding box.south west) ")
             fA.write("rectangle (current bounding box.north east);\n")
 
         self.writeTikzOfEmbeddedGrams(fA)
@@ -933,7 +1053,6 @@ class Gram(object):
         fA.write('\\end{tikzpicture}\n')
         fA.close()
         os.chdir(thisDir)
-        # print("Gram.writeTikz().  finished.")
 
     def writeTikzOfEmbeddedGrams(self, fA):
         for gr in self.grams:
@@ -947,8 +1066,8 @@ class Gram(object):
                 fA.write('\\end{scope}\n')
 
 
-    def _writeTexStuff(self, flavour, inputTikzLine=None, geometryLine=None):
 
+    def _writeTexStuff(self, flavour, inputTikzLine=None, geometryLine=None):
         # a4 is 20.99 by 29.70 cm, us letter paper is 21.59 by 27.94.  Assume a4.
         # If we make the margins 1 cm on each side, so thats [ 538.30897506  785.21109054] postscript points
         # If we make 7.5 mm margins, thats [ 552.48246045  799.38457593] postscript points.
@@ -964,27 +1083,32 @@ class Gram(object):
         if flavour == 'pdf':
             assert inputTikzLine
 
-        texStuffFontLine = self._makeFontLine()
+        texStuffFontLine = self.getLatexFontDefString()
         # print("===== texStuffFontLine")
         # print(texStuffFontLine)
         # print("==================")
 
-        f = open('Makefile', 'w')
-        f.write("TEXFILEROOT = %s\n" % self.baseName)
-        #f.write("JOBNAME=%s\n" % self.baseName)
-        #f.write("OUTFILEROOT=%s\n" % self.baseName)
-        if self.theGpdf:
-            f.write("COMPOSITEROOT=c\n")
-            f.write("COMPOSITEOUTFILEROOT=composite_%s\n" % self.baseName)
-        f.write("PDFVIEWER=%s\n" % self.pdfViewer)
-        if self.pdflatexOutputGoesToDevNull:
-            f.write(makeStuff_2)
-        else:
-            f.write(makeStuff_2b)
-        if self.theGpdf:
-            f.write(makeStuff_3)
-        f.write(makeStuff_4)
-        f.close()
+        if 0:
+            f = open('Makefile', 'w')
+            f.write("TEXFILEROOT = %s\n" % self.baseName)
+            if self.latexTextMetricsUses == "pyx":
+                f.write("LATEXPROGRAM = pdflatex\n")
+            elif self.latexTextMetricsUses == "latex":
+                f.write("LATEXPROGRAM = lualatex\n")
+            #f.write("JOBNAME=%s\n" % self.baseName)
+            #f.write("OUTFILEROOT=%s\n" % self.baseName)
+            if self.theGpdf:
+                f.write("COMPOSITEROOT=c\n")
+                f.write("COMPOSITEOUTFILEROOT=composite_%s\n" % self.baseName)
+            f.write("PDFVIEWER=%s\n" % self.pdfViewer)
+            if self.latexOutputGoesToDevNull:
+                f.write(makeStuff_2)
+            else:
+                f.write(makeStuff_2b)
+            if self.theGpdf:
+                f.write(makeStuff_3)
+            f.write(makeStuff_4)
+            f.close()
 
         f = open('%s.tex' % self.baseName, 'w')
         if flavour == 'pdfPage':
@@ -1000,7 +1124,9 @@ class Gram(object):
             f.write("%s\n" % texStuffFontLine)
         f.write(self._parseLatexUsePackages())
         f.write("\n")
+        f.write("\\usepackage{varwidth}\n")
         f.write("\\usepackage[svgnames]{xcolor}\n")
+        f.write("\\usepackage{graphicx}\n")
         f.write("\\usepackage{tikz}\n")
         if self.useTikzPlotMarkLib:
             f.write(r"\usetikzlibrary{plotmarks}")
@@ -1039,11 +1165,10 @@ class Gram(object):
 
         # os.chdir(thisDir)
 
-    #    a4 is 20.99 by 29.70 cm
-
     def pdfPage(self, maxWidth=19, maxHeight=27.7):
+        #    a4 is 20.99 by 29.70 cm
         gm = ['Gram.pdf()']
-        self.render()
+        self.setPostionsBeforeTextMetrics()
         theKeys = self.styleDict.keys()
         if theKeys:
             for k in theKeys:
@@ -1069,7 +1194,7 @@ class Gram(object):
 
         assert myWid > 0.0
         assert myHt > 0.0
-        
+
         if myWid > maxWidth or myHt > maxHeight:
             # \usepackage[margin=3cm,noheadfoot]{geometry}
             theScale = [1.0] * 2  # width and height
@@ -1110,28 +1235,34 @@ class Gram(object):
                 os.chdir(thisDir)
 
 
-    # def epdf(self):
-    #     """For backward compatability.  Calls pdf()"""
-    #     self.pdf()
-
-    def pdf(self):
+    def pdf(self, fixTextOverlaps=False):
         assert self.documentFontSize in [10, 11, 12]
+        assert self.dirName
+        self.engine = "tikz"
 
+        if self.latexTextMetricsUses == "pyx":
+            self.pdfUsingPyX()
+        elif self.latexTextMetricsUses == "latex":
+            self.pdfUsingLatex(fixTextOverlaps=fixTextOverlaps)
+
+    def pdfUsingPyX(self):
         if not self.haveStartedPyX:
             for k,v in self.htmlColorDict.items():
                 print(k,v)
                 myColorDef = r"\definecolor{%s}{HTML}{%s}" % (k, v)
                 self.latexOtherPreambleCommands.append(myColorDef)
 
-        self.render()
+        print("Gram.pdfUsingPyX() about to do setPositionsBeforeTextMetrics()")
+        self.setPositionsBeforeTextMetrics()
         theKeys = self.styleDict.keys()
         if theKeys:
             for k in theKeys:
                 self.styleDict[k].setBB()
 
-        # print("Gram.pdf() about to do writeTikz()")
+        print("Gram.pdfUsingPyX() about to do writeTikz()")
         self.writeTikz()
-        # print("Gram.pdf() finished writeTikz()")
+        print("Gram.pdfUsingPyX() finished writeTikz()")
+
         if os.path.isdir(self.dirName) and os.path.isfile("%s/%s.tikz.tex" % (self.dirName, self.baseName)):
             #inputTikzLine = '\\input{%s.tikz}' % self.baseName
             #geometryLine  = '\\usepackage[width=%.1fcm, height=%.1fcm,noheadfoot]{geometry}' % (myWid+2, myHt+2)
@@ -1152,8 +1283,40 @@ class Gram(object):
                 os.system('make composite')
             os.chdir(thisDir)
 
+    def render(self):
+        if self.engine == "tikz":
+            self.setPositionsBeforeTextMetrics()
+            self.tikzSetTextMetricsUsingLatex()
+            self.setPositions()
+        elif self.engine == "svg":
+            self.svgRender()
+
+    def pdfUsingLatex(self, fixTextOverlaps=False):
+        # TODO Need to deal with self.htmlColorDict, as in pdfUsingPyX
+
+        self.render()
+        if fixTextOverlaps:
+            self.fixTextOverlaps()
+
+        self.writeTikz()
+        assert os.path.isdir(self.dirName)
+        thisDir = os.getcwd()
+        os.chdir(self.dirName)
+        inputTikzLine = '\\input{%s.tikz}\n' % self.baseName
+        self._writeTexStuff('pdf', inputTikzLine)
+        if 1:
+            oldFName = "%s.pdf" % self.baseName
+            if os.path.isfile(oldFName):
+                os.remove(oldFName)
+        #os.system('make pdf')
+        if self.latexOutputGoesToDevNull:
+            os.system(f'lualatex {self.baseName} > /dev/null')
+        else:
+            os.system(f'lualatex {self.baseName}')
+        os.system(f"{self.pdfViewer} {self.baseName}.pdf")
+        os.chdir(thisDir)
+
     def png(self, resolution=None):
-        
         if not resolution:
             resolution = self.pngResolution
         pdfFileName = "%s/%s.pdf" % (self.dirName, self.baseName)
@@ -1176,28 +1339,23 @@ class Gram(object):
         print(myCmd)
         os.system(myCmd)
         os.system("%s %s" % (self.pngViewer, pngFileName))
-        
-    def svg(self, extraMarginHack=1.0, writeWidthHeight=False):
 
+    def svgRender(self):
         verbose = False
         if verbose:
             print("Gram.svg() start")
-        self.engine = 'svg'
+        assert self.engine == 'svg'
 
         # Leftover stuff from a previous call to this method causes
         # grief.  Not sure why.  It probably indicates a bug elsewhere.
-        # Maybe it is not needed anymore?
+        # Maybe this fix is not needed anymore?
         # So zero a couple of things.
 
-        agt = []
-        agt = self.getAllGramTexts(agt)
-        for gt in agt:
-            # print(f"fullHeight {gt.fullHeight}")
-            # gt.fullHeight = 0.0
-            # gt.underhang = 0.0
-            # gt.svgBaseline_cm = 0.0
-            # gt.rise = 0.0
-            gt.svg_half_normal_x = 0.0
+        kk = [k for k in self.gForGIdDict.keys() if k.startswith("text")]
+        for k in kk:
+            g = self.gForGIdDict.get(k)
+            g.svg_half_normal_x = 0.0
+            #g.dump()
 
         # Should these be class attributes here? ...
         Gram._svgNormalsize_x = None
@@ -1205,8 +1363,8 @@ class Gram(object):
         Gram._svgHack_x_Only = True
 
         if verbose:
-            print("Gram.svg() first go, about to render")
-        self.render()
+            print("Gram.svg() first go, about to setPositionsBeforeTextMetrics")
+        self.setPositionsBeforeTextMetrics()
         if verbose:
             print("Gram.svg() first go, about to setTextMetrics")
 
@@ -1216,37 +1374,57 @@ class Gram(object):
 
         Gram._svgHackDoRotate = False
         Gram._svgHack_x_Only = False
-        self.render()
+        self.setPositionsBeforeTextMetrics()
         if verbose:
             print("Gram.svg() second go, about to setTextMetrics")
         self.setTextMetrics()
+        self.setPositions()
         if verbose:
             print("Gram.svg() finished second go")
 
         Gram._svgHackDoRotate = True
-        self.render()
+        self.setPositionsBeforeTextMetrics()
         if verbose:
             print("Gram.svg() third go, about to setTextMetrics")
         self.setTextMetrics()
 
+        self.setPositions()
+
+    def svg(self, extraMarginHack=1.0, writeWidthHeight=False, fixTextOverlaps=False):
+        self.engine = 'svg'
+
+        self.svgRender()
+        if fixTextOverlaps:
+            self.fixTextOverlaps()
+
         # The final product.
         svgFName = "%s.svg" % self.baseName
-        f = open(svgFName, 'w')
-        writeInColour("Writing SVG file %s : svgPxForCm %.2f, extraMarginHack %.1f\n" % (
-            svgFName, self.svgPxForCm, extraMarginHack), 'blue')
+        if writeWidthHeight:
+            writeInColour("Writing SVG file %s, writing width and height : svgPxForCm %.2f, extraMarginHack %.1f\n" % (
+                svgFName, self.svgPxForCm, extraMarginHack), 'blue')
+        else:
+            writeInColour("Writing SVG file %s, not writing width and height : extraMarginHack %.1f\n" % (
+                svgFName, extraMarginHack), 'blue')
+
         sys.stdout.flush()
+        f = open(svgFName, 'w')
         self.svgWriteToOpenFile(f, self.bbb, doHackExtra=extraMarginHack, writeWidthHeight=writeWidthHeight)
         f.close()
 
         if self.svgViewer:
-            os.system("%s %s" % (self.svgViewer, svgFName)) 
-                  
+            os.system("%s %s" % (self.svgViewer, svgFName))
+
     def svgWriteToOpenFile(self, flob, theBBB, doHackExtra=0.0, writeWidthHeight=True):
-        gm = ['Gram.svgWriteToOpenFile()']
+        gm = ['Gram.svgWriteToOpenFile() doHackExtra=%f, writeWidthHeight %s' % (
+            doHackExtra, writeWidthHeight)]
+        # print(gm[0])
+        #print("theBBB = %.3f %.3f %.3f %.3f" % (theBBB[0], theBBB[1], theBBB[2], theBBB[3]))
+
         myWid = (theBBB[2] - theBBB[0])
         myHt = (theBBB[3] - theBBB[1])
-        assert myWid > 0.0
-        assert myHt > 0.0
+        assert myWid > 0.0, f"Got BBB wid {myWid}"
+        assert myHt > 0.0, f"Got BBB ht {myHt}"
+        # print(f"wid {myWid:.3f}  Ht {myHt:.3f}")
 
         #flob.write('<?xml-stylesheet type="text/css" href="/Users/peter/Write/Html/psvn1.css" ?>\n')
         flob.write('<svg ')
@@ -1276,35 +1454,46 @@ class Gram(object):
         flob.write('  viewBox="%.2f %.2f %.2f %.2f"\n' % (vb1, vb2, vb3, vb4))
         # See https://developer.mozilla.org/en-US/docs/Web/SVG/Namespaces_Crash_Course
         flob.write('  xmlns="http://www.w3.org/2000/svg"\n')
-        flob.write('  xmlns:xlink="http://www.w3.org/1999/xlink">\n')
-        flob.write('\n')
+        flob.write('  xmlns:xlink="http://www.w3.org/1999/xlink"\n')
+        if self.svgTextPreserveWhitespace:
+            flob.write('  xml:space="preserve">\n\n')
+        else:
+            flob.write('>\n\n')
 
-        if self.font == 'cm':
-            #raise GramError("Font cm does not work with svg")
-            # print()
-            # print("=" * 75)
-            # print("Font is currently 'cm', Computer Modern, which won't work with SVG files.")
-            # print("Switching to Helvetica.")
-            # print("=" * 75, "\n")
-            # self.font = 'helvetica'
-
-            if self.defaultTextFamily == "sffamily":
-                myFont = '"Latin Modern Sans", Helvetica, sans-serif'
-            else:
-                myFont = '"Latin Modern Roman", Times,serif'
-
-        if self.font == 'helvetica':
-            myFont = "Helvetica, sans-serif"
+        if self.font == "lmr":
+            myTextFontStack = '"Latin Modern Roman", serif'
+            mySFTextFontStack = '"Latin Modern Sans", sans-serif'
+            myTTTextFontStack = '"Latin Modern Mono", monospace';
+        elif self.font == "lms":
+            myTextFontStack = '"Latin Modern Sans", sans-serif'
+            mySFTextFontStack = '"Latin Modern Sans", sans-serif'
+            myTTTextFontStack = '"Latin Modern Mono", monospace';
+        elif self.font == "helvetica":
+            myTextFontStack = 'Helvetica, sans-serif'
+            mySFTextFontStack = 'Helvetica, sans-serif'
+            myTTTextFontStack = '"Lucida Console", monospace';
         elif self.font == "palatino":
-            myFont = '"Palatino Linotype", "Book Antiqua", Palatino, serif'
+            myTextFontStack = 'Palatino, serif'
+            mySFTextFontStack = 'Helvetica, sans-serif'
+            myTTTextFontStack = '"Lucida Console", monospace';
         elif self.font == "times":
-            myFont = '"Times New Roman",Times,serif'
+            myTextFontStack = '"Times New Roman", serif'
+            mySFTextFontStack = 'Helvetica, sans-serif'
+            myTTTextFontStack = 'Courier, monospace';
+        elif self.font == "fira":
+            myTextFontStack = '"Fira Sans Regular", sans-serif'
+            mySFTextFontStack = '"Fira Sans Regular", sans-serif'
+            myTTTextFontStack = '"Lucida Console", monospace';
+        else:
+            gm.append("font %s is not implemented" % self.font)
+            raise GramError(gm)
+
 
         flob.write("<style>\n")
-        if self.font == 'cm':
-            flob.write(svgCss2 % (myFont, self.svgTextNormalWeight))
-        else:
-            flob.write(svgCss1 % (myFont, self.svgTextNormalWeight))
+        flob.write(svgCss2 % (myTextFontStack,
+                              self.svgTextNormalWeight,
+                              mySFTextFontStack,
+                              myTTTextFontStack))
         flob.write("</style>\n")
 
         # Write markers in a <defs> </defs>  section.
@@ -1367,7 +1556,7 @@ class Gram(object):
         self.svgWriteToOpenFile(flob, theBBB=[0., 0., 1., 1.])
         flob.seek(0)
         thisRet = flob.read().encode('utf-8')
-        
+
         if 1:
             print("=+" * 20, "result of svgWriteToOpenFile()")
             # print(thisRet)
@@ -1381,7 +1570,7 @@ class Gram(object):
         p = Popen(['inkscape', '-S', '-p'],
                   stdout=PIPE, stdin=PIPE, stderr=PIPE)
 
-        # In Py3 if I used a StringIO()  then read() gives a str, and 
+        # In Py3 if I used a StringIO()  then read() gives a str, and
         # TypeError: memoryview: a bytes-like object is required, not 'str'
         # So do theUnicodeStuff.encode('utf-8')
         ret = p.communicate(input=thisRet)
@@ -1412,11 +1601,204 @@ class Gram(object):
 
     def setTextMetrics(self):        # Gram
         if self.engine == 'tikz':
-            print("Gram.setTextMetrics() is turned off for tikz")
-            #self.tikzCalcBigBoundingBox()
+            if self.latexTextMetricsUses == 'latex':
+                self.tikzSetTextMetricsUsingLatex()
         else:
             assert self.engine == 'svg'
             self.svgSetTextMetrics()
+
+    def tikzSetTextMetricsUsingLatex(self):
+        gm = ["Gram.tikzSetTextMetricsUsingLatex()"]
+        # print(f"{gm[0]} here")
+
+        # Get
+        # - width
+        # - fullHeight
+        # - underhang
+        # - rise
+        # - half_normal_x
+
+        # If there are any files referred to relatively, then they
+        # should be relative to the dirName directory.  For example,
+        # if I am doing \includegraphics{../../myGraphic.png}, that
+        # should be relative to the dirName directory, often Gram, and
+        # not relative to the current directory.  So I need to
+        # possibly make that directory, and cd to it, and then back
+        # out of it at the end.
+
+        thisDir = os.getcwd()
+        # -p here means no error if existing.
+        os.system('mkdir -p %s' % self.dirName)
+        os.chdir(self.dirName)
+
+
+        kk = [k for k in self.gForGIdDict.keys() if k.startswith("text")]
+        for k in kk:
+            g = self.gForGIdDict.get(k)
+
+            ret = fixUnderscores(g.rawText)
+            g.rawText = ret
+
+            # This next one does parts, and wraps in a minipage or varwidth.
+            # It does not do setCookedText or setBB()
+            g.setTextPartsTikz()
+            g.setMpTextTikz()
+            #g.dump()
+
+        fontLines = self.getLatexFontDefString()
+
+        # I usepackage varwidth, [svgnames]xcolor, graphicx, and tikz for all, by default.
+        # Any extras would be put in self.latexUsePackages
+        # and self.latexOtherPreambleCommands
+
+        # This should make the same output as in self._writeTextStuff()
+
+        pkgString = self._parseLatexUsePackages()
+
+        # otherPreambleCommands = ""
+        # if self.latexOtherPreambleCommands:
+
+        otherPreamble = []
+        if self.useTikzPlotMarkLib:
+            otherPreamble.append(r"\usetikzlibrary{plotmarks}")
+        for lopc in self.latexOtherPreambleCommands:
+            otherPreamble.append(lopc)
+        otherPreamble = "\n".join(otherPreamble)
+
+        texLines = [
+            r"\documentclass{article}",
+            fontLines,
+            pkgString,
+            r"\usepackage{varwidth}",
+            r"\usepackage[svgnames]{xcolor}",
+            r"\usepackage{graphicx}",
+            r"\usepackage{tikz}",
+            r"\newsavebox{\mysbox}",
+            r"\newcommand{\myStr}{}",
+            r"\newwrite\myotherfile",
+            otherPreamble,
+            r"\begin{document}",
+            r"\immediate\openout\myotherfile=%s" % self.latexMetricsFileName,
+        ]
+
+        for k in kk:
+            g = self.gForGIdDict[k]
+            if 1:
+                if g.mpText:
+                    myStr = g.mpText
+                else:
+                    g.setCookedText()
+                    myStr = g.cookedText
+                # print("ltx Gram.tikzSetTextMetricsUsingLatex() ", end=" ")
+                # print(f"raw: {g.rawText} cooked: {g.cookedText} myStr: {myStr}")
+
+            if 0:
+                ss = []
+                ss.append(r'\tikz\node')
+                options = g.getTikzOptions()
+                if options:
+                    ss.append('[%s]' % ','.join(options))
+                    ss.append('at (0.0,0.0)')
+
+                ss.append('{%s};' % g.rawText)
+                myStr = "".join(ss)
+
+            texLines.append(r"\renewcommand{\myStr}{%s}" % myStr)
+            texLines.append(r"\sbox{\mysbox}{\myStr}")
+            texLines.append(r"\immediate\write\myotherfile{%s\space\the\wd\mysbox\space\the\ht\mysbox\space\the\dp\mysbox}" % k)
+            if 0:
+                # makes pdf for debugging (turn off draftmode)
+                texLines.append(r"\myStr")
+            texLines.append(r"\renewcommand{\myStr}{x}")
+            texLines.append(r"\sbox{\mysbox}{\myStr}")
+            texLines.append(r"\immediate\write\myotherfile{%s\space x\space\the\ht\mysbox}" % k)
+
+        texLines.append(r"\immediate\closeout\myotherfile")
+        texLines.append(r"\end{document}")
+        texLines.append("")
+
+        if 0:
+            print("Gram.tikzSetTextMetricsUsingLatex() debug; writing to foo.tex")
+            fout = open("foo.tex", "w")
+            fout.write("\n".join(texLines))
+            fout.close()
+            #sys.exit()
+
+        # run it in memory
+        flob = io.BytesIO()
+        for prt in texLines:
+            flob.write(str.encode(prt))
+        flob.seek(0, 0)  # Go to the beginning of the flob
+        p = Popen(["lualatex", "-jobname=foo", "-draftmode"], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        ret = p.communicate(input=flob.getvalue())
+
+        isBad = False
+        if b"Undefined control sequence" in ret[0]:
+            isBad = True
+        elif b"Emergency stop" in ret[0]:
+            isBad = True
+        elif b"Fatal error occurred" in ret[0]:
+            isBad = True
+
+        if isBad:
+            print(ret)
+            gm.append("There was a problem with lualatex used for getting text sizes.")
+            gm.append(r"It may be an underscore that needs escaping eg xx_yy -> xx\_yy ?")
+            gm.append(r"or missing math mode with something like \alpha -> $\alpha$ ?")
+            raise GramError(gm)
+
+        assert os.path.isfile(self.latexMetricsFileName)  # grOut.txt
+        ll = [l for l in open(self.latexMetricsFileName)]
+
+        # 1 PostScript point = 0.35277138 mm
+        ptToCm = 0.035277138
+
+        for l in ll:
+            sl = l.split()
+            g = self.gForGIdDict.get(sl[0])
+            if not g:
+                for it in self.gForGIdDict.items():
+                    print(f"{it[0]:10}  {it[1].rawText[:30]}")
+                gm.append("could not get GramGraphic with gId %s" % sl[0])
+                raise GramError(gm)
+            assert isinstance(g, GramText)
+            assert g.gId == sl[0]
+            if len(sl) == 4:
+                # first number is wd, g.width
+                assert sl[1].endswith("pt")
+                myNum = float(sl[1][:-2])
+                # print(sl[0], sl[1], myNum)
+                g.width = myNum * ptToCm
+
+                # second number is ht, g.rise
+                assert sl[2].endswith("pt")
+                myNum = float(sl[2][:-2])
+                # print(sl[0], sl[2], myNum)
+                g.rise = myNum * ptToCm
+
+                # third number is dp, g.underhang
+                assert sl[3].endswith("pt")
+                myNum = float(sl[3][:-2])
+                # print(sl[0], sl[3], myNum)
+                g.underhang = myNum * ptToCm
+
+                g.fullHeight = g.underhang + g.rise
+
+                if 0:
+                    print(f"ltx {g.gId:8} width:{g.width:5.2f}cm ", end=" ")
+                    print(f" fullHeight:{g.fullHeight:5.2f}cm     {g.rawText[:30]}")
+
+            elif len(sl) == 3:
+                assert sl[1] == "x"
+                assert sl[2].endswith("pt")
+                myNum = float(sl[2][:-2])
+                # print(sl[0], sl[2], myNum)
+                g.half_normal_x = myNum  * ptToCm * 0.5
+
+        # chdir out of the dirName directory, back to the "script" directory
+        os.chdir(thisDir)
+        # print(f"{gm[0]} finished")
+
 
     def svgSetTextMetrics(self):
         gm = ["Gram.svgSetTextMetrics()"]
@@ -1433,7 +1815,7 @@ class Gram(object):
             f = open(fNm, "w")
             self.svgWriteToOpenFile(f, theBBB=[0., 0., 1., 1.])
             f.close()
-        
+
         if 0:
             if Gram._svgHackDoRotate:
                 if Gram._svgHack_x_Only:
@@ -1451,14 +1833,14 @@ class Gram(object):
         p = Popen(['inkscape', '-S', '-p'],
                   stdout=PIPE, stdin=PIPE, stderr=PIPE)
 
-        # In Py3 if I used a StringIO()  then read() gives a str, and 
+        # In Py3 if I used a StringIO()  then read() gives a str, and
         # TypeError: memoryview: a bytes-like object is required, not 'str'
         # So do theUnicodeStuff.encode('utf-8')
         ret = p.communicate(input=thisRet)
         if 0:
             print("======================== svgSetTextMetrics, returned from inkscape")
             print(ret)
-            print(type(ret[0])) # class 'bytes'
+            # print(type(ret[0])) # class 'bytes'
             print("-------------------------")
 
         flob.close()
@@ -1474,6 +1856,17 @@ class Gram(object):
             raise GramError(gm)
         #print ret[0]
         ll = [l for l in ret[0].split(b'\n') if l]
+
+        if 0:
+            print()
+            print("-" * 50, "svgSetTextMetrics().  lines returned from inkscape")
+            for l in ll:
+                print(l)
+            print("-" * 50)
+            print()
+
+
+
         splL = ll[0].split(b',')
         # print("got splL: ", splL)
         assert splL[0].startswith(b'svg')
@@ -1482,39 +1875,41 @@ class Gram(object):
         self.bbb[1] = float(splL[2]) / self.svgPxForCm
         self.bbb[2] = self.bbb[0] + float(splL[3]) / self.svgPxForCm
         self.bbb[3] = self.bbb[1] + float(splL[4]) / self.svgPxForCm
-        # print("svgSetTextMetrics() got bbb:", self.bbb[0], self.bbb[1], self.bbb[2], self.bbb[3]) 
+
+        # print("svgSetTextMetrics() got bbb:", self.bbb[0], self.bbb[1], self.bbb[2], self.bbb[3])
 
         # print("gForGIdDict is now", self.gForGIdDict)
 
         # For this hack, if Gram._svgHackDoRotate is turned off, then the text is
-        # not rotated, and we can get the length from the inkscape bounding box.
+        # not rotated, and we can get the width from the inkscape bounding box.
         if not Gram._svgHackDoRotate:  # so any text is not rotated
 
             for l in ll[1:]:
                 if l.startswith(b'text'):
-                    # print(l)
+                    #print(l)
                     splL = l.split(b',')
                     # print(splL)
                     #print("gForGIdDict", self.gForGIdDict)
                     g = self.gForGIdDict.get(splL[0].decode("utf-8"))
-                    assert g
+                    if not g:
+                        self.gForGIdDict.dump()
+                        gm.append("could not get graphic for gId %s" % splL[0].decode("utf-8"))
+                        raise GramError(gm)
                     if Gram._svgHack_x_Only:
-                        
-                        top = -(float(splL[2])) 
+                        top = -(float(splL[2]))
                         fullHeight = (float(splL[4]))
                         g.svgBaseline_cm = (top - fullHeight) / self.svgPxForCm
                         if 0:
-                            print(f"""svgSetTextMetrics() cd self.svgPxForCm: 
-                            {self.svgPxForCm}, top: {top}, fullHeight: {fullHeight} 
+                            print(f"""svgSetTextMetrics() cd self.svgPxForCm:
+                            {self.svgPxForCm}, top: {top}, fullHeight: {fullHeight}
                             g.svgBaseline_cm: {g.svgBaseline_cm}""")
                     else:
-
-                        # Get, for the un-rotated text, 
-                        # - g.length
+                        # Get, for the un-rotated text,
+                        # - g.width
                         # - g.fullHeight
                         # - g.underhang # descent
                         # - g.rise      # ascent
-                        g.length = float(splL[3]) / self.svgPxForCm
+                        g.width = float(splL[3]) / self.svgPxForCm
                         x1 = (float(splL[1])) / self.svgPxForCm
                         top = -(float(splL[2])) / self.svgPxForCm
                         x3 = x1 + (float(splL[3])) / self.svgPxForCm
@@ -1535,11 +1930,16 @@ class Gram(object):
             self.svgWriteToOpenFile(flob, theBBB=[0., 0., 1., 1.])
             flob.seek(0)
             thisRet = flob.read().encode('utf-8')
+            # print(thisRet)
             p = Popen(['inkscape', '-S', '-p'], stdout=PIPE, stdin=PIPE, stderr=PIPE)
             ret = p.communicate(input=thisRet)
             flob.close()
             ll = [l for l in ret[0].split(b'\n') if l]
             inkLine = None
+            if 0:
+                for l in ll:
+                    print(l)
+                print()
             for l in ll[1:]:
                 if l.startswith(b'text'):
                     splL = l.split(b',')
@@ -1553,12 +1953,11 @@ class Gram(object):
             my_x = float(inkLine[4]) / self.svgPxForCm
             Gram._svgNormalsize_x = my_x
             # print(f"svgSetTextMetrics() got Gram._svgNormalsize_x {Gram._svgNormalsize_x}")
-            
+
             # Clean up
             self.graphics.remove(gx)
             g = self.gForGIdDict.pop(inkLine[0].decode("utf-8"))
             assert g == gx
-                
 
     ##############################################################
     ##############################################################
@@ -1625,16 +2024,19 @@ class Gram(object):
             gr.getAllGramTexts(agt)
         #print("Got %i texts" % len(agt))
         return agt
-        
 
     def fixTextOverlaps(self):
+        """not working for rotated text"""
+        gm = ["Gram.fixTextOverlaps()"]
+        thisVerbose = True
         tbb = []
         tbb = self.getAllGramTexts(tbb)
+        if thisVerbose:
+            print(f"fixTextOverlaps() engine is '{self.engine}'")
+            print(f"fixTextOverlaps() got {len(tbb)} texts")
         if len(tbb) < 2:
             return
 
-        thisVerbose = False
-        self.render()
         theMax = -1000000.
         theMin = 1000000.
         for g in tbb:
@@ -1649,6 +2051,7 @@ class Gram(object):
             else:
                 raise GramError()
 
+            print(f"g.bb {g.bb}  {g.rawText}")
             g.lly = g.bb[1]
             if g.lly < theMin:
                 theMin = g.lly
@@ -1660,6 +2063,7 @@ class Gram(object):
             g = self.line(0, theCenterY, 3, theCenterY)
             g.color = 'blue'
             g.lineThickness = 'ultra thin'
+            # return
 
         indices = range(len(tbb))
 
@@ -1773,6 +2177,8 @@ class Gram(object):
             tb.innerSep = tb.savedInnerSep
             del(tb.savedInnerSep)
             del(tb.overlaps)
+        for gr in self.grams:
+            gr.fixTextOverlaps()
 
 
 class GramCoord(Gram):
@@ -1795,7 +2201,7 @@ class GramCoord(Gram):
     def getTikz(self):
         if self.name:
             ss = []
-            ss.append('\coordinate')
+            ss.append(r'\coordinate')
             ss.append('(%s)' % self.name)
             ss.append('at (%.3f,%.3f);' % (self.xPosn, self.yPosn))
             if self.comment:
@@ -1916,7 +2322,7 @@ class GramColor(Gram):
             #self.type = 'svg'
             pass
             if theColorNoValue == "rebeccapurple":
-                writeInColour(f"Warning: Colour rebeccapurple is a valid CSS (for SVG) color, but not for Latex/Tikz\n", 
+                writeInColour(f"Warning: Colour rebeccapurple is a valid CSS (for SVG) color, but not for Latex/Tikz\n",
                               colour='violet')
         elif theColorNoValue.startswith("#") and len(theColorNoValue) == 7:
             #self.type = "hex"
@@ -1924,7 +2330,7 @@ class GramColor(Gram):
         elif theColorNoValue in svgLowColorsNotInCSS4:
             # gm.append(f"got color {theColorNoValue}")
             # gm.append("It is a valid SVG color, but is not in CSS4")
-            writeInColour(f"Warning: Colour {theColorNoValue} is a valid SVG color, but not in CSS4 for SVG\n", 
+            writeInColour(f"Warning: Colour {theColorNoValue} is a valid SVG color, but not in CSS4 for SVG\n",
                           colour='violet')
         else:
             gm.append("I don't understand the color '%s'" % theColorNoValue)
@@ -2014,7 +2420,7 @@ class GramColor(Gram):
     def getRgbFromHex(self, theHex):
         h = theHex.lstrip('#')
         r,g,b = tuple([int(h[i:i+2], 16)/255. for i in (0, 2, 4)])
-        # print(f"GramColor.getRgbFromHex({theHex}): {r:.4f}  {g:.4f}  {b:.4f}") 
+        # print(f"GramColor.getRgbFromHex({theHex}): {r:.4f}  {g:.4f}  {b:.4f}")
         return (r,g,b)
 
     def getHexFromRgb(self, theRgb):
@@ -2070,18 +2476,18 @@ class GramTikzStyle(Gram):
         return self._color
 
     def _setColor(self, theColor):
-        if theColor is None:
-            self._color = None
+        # print(f"color being set to {theColor}")
+        if theColor in [None, True, False]:
+            self._color = theColor
+        elif isinstance(theColor, GramColor):
+            self._color = theColor
+        elif isinstance(theColor, str):
+            self._color = GramColor()
+            self._color.setColorFromString(theColor)
         else:
-            if isinstance(theColor, GramColor):
-                self._color = theColor
-            elif isinstance(theColor, str):
-                self._color = GramColor()
-                self._color.setColorFromString(theColor)
-            else:
-                gm = ['GramTikzStyle._setColor()']
-                gm.append("Can't set color to '%s'" % theColor)
-                raise GramError(gm)
+            gm = ['GramTikzStyle._setColor()']
+            gm.append("Can't set color to '%s'" % theColor)
+            raise GramError(gm)
 
     def _delColor(self):
         self._color = None
@@ -2096,16 +2502,15 @@ class GramTikzStyle(Gram):
         # Default None.  Set to True or False, or the colour.  This is for text boxes
         if theDraw in [None, True, False]:
             self._draw = theDraw
+        elif isinstance(theDraw, GramColor):
+            self._draw = theDraw
+        elif isinstance(theDraw, str):
+            self._draw = GramColor()
+            self._draw.setColorFromString(theDraw)
         else:
-            if isinstance(theDraw, GramColor):
-                self._draw = theDraw
-            elif isinstance(theDraw, str):
-                self._draw = GramColor()
-                self._draw.setColorFromString(theDraw)
-            else:
-                gm = ['GramTikzStyle._setDraw()']
-                gm.append("Can't set color to '%s'" % theDraw)
-                raise GramError(gm)
+            gm = ['GramTikzStyle._setDraw()']
+            gm.append("Can't set color to '%s'" % theDraw)
+            raise GramError(gm)
 
     def _delDraw(self):
         self._draw = None
@@ -2115,19 +2520,18 @@ class GramTikzStyle(Gram):
     def _getFill(self):
         return self._fill
 
-    def _setFill(self, theColor):
-        if theColor is None:
-            self._fill = None
+    def _setFill(self, theFill):
+        if theFill in [None, True, False]:
+            self._fill = theFill
+        elif isinstance(theFill, GramColor):
+            self._fill = theFill
+        elif isinstance(theFill, str):
+            self._fill = GramColor()
+            self._fill.setColorFromString(theFill)
         else:
-            if isinstance(theColor, GramColor):
-                self._fill = theColor
-            elif isinstance(theColor, str):
-                self._fill = GramColor()
-                self._fill.setColorFromString(theColor)
-            else:
-                gm = ['GramTikzStyle._setFill()']
-                gm.append("Can't set color to '%s'" % theColor)
-                raise GramError(gm)
+            gm = ['GramTikzStyle._setFill()']
+            gm.append("Can't set the fill to '%s'" % theFill)
+            raise GramError(gm)
 
     def _delFill(self):
         self._fill = None
@@ -2513,10 +2917,11 @@ class GramTikzStyle(Gram):
     roundedCorners = property(
         _getRoundedCorners, _setRoundedCorners, _delRoundedCorners)
 
-    # def getTikz(self):
-    #    return ''
-    def getTikzOptions(self): # GramTikzStyle
-        # print("  ------- GramTikzStyle.getTikzOptions()  self=%s" % self)
+    def getTikzOptions(self):  # GramTikzStyle
+        gm = ["GramTikzStyle.getTikzOptions()  self=%s" % self]
+        #print(gm[0])
+        #print(f"    xx-- color:{self.color}, draw:{self.draw}, fill:{self.fill}")
+
         options = []
         # or self.font=='helvetica':
         # extraSffamilyHasBeenWritten = False
@@ -2535,12 +2940,13 @@ class GramTikzStyle(Gram):
 
             if self.textFamily:
                 # print(f"getTikzOptions() Got textFamily {self.textFamily}")
-                if self.textFamily != self.defaultTextFamily:
-                    fStr += '\\%s' % self.textFamily
-            if self.name == "tikzPictureDefaults":
-                fStr += '\\%s' % self.defaultTextFamily
+                #if self.textFamily != self.defaultTextFamily:
+                fStr += '\\%s' % self.textFamily
+
+            # if self.name == "tikzPictureDefaults":
+            #     fStr += '\\%s' % self.defaultTextFamily
             if self.textSeries:
-                # If default sffamily and bfseries, then we need to repeat sffamily 
+                # If default sffamily and bfseries, then we need to repeat sffamily
                 # if self.textFamily == "sffamily" and not extraSffamilyHasBeenWritten:
                 #     fStr += '\\sffamily\\%s' % self.textSeries
                 # elif self.defaultTextFamily == "sffamily" and not extraSffamilyHasBeenWritten:
@@ -2552,58 +2958,70 @@ class GramTikzStyle(Gram):
             # print(f"style getTikzOptions() fStr is {fStr}")
             options.append(fStr)
         if self.color:
-            assert isinstance(self.color, GramColor)
-            # if self.color.value and not self.color.transparent:
-            #     options.append("%s!%s" % (self.color.color, self.color.value[2:]))
-            # else:
-            #     options.append("%s" % self.color.color)
-            # if self.color.transparent and self.color.value:
-            #     options.append("opacity=%s" % self.color.value)
+            if isinstance(self, GramRect):
+                gm.append('This week, "color" is not for GramRect objects')
+                raise GramError(gm)
 
-            if self.color.value:
-                if self.color.transparent:
-                    options.append("%s" % self.color.color)
-                    options.append("opacity=%s" % self.color.value)
-                else:
-                    options.append("%s!%s" % (self.color.color, self.color.value[2:]))
+            if self.color is True:
+                # options.append("color")
+                pass
             else:
-                options.append("%s" % self.color.color)
-            
+                assert isinstance(self.color, GramColor)
+                if self.color.value:
+                    if self.color.transparent:
+                        options.append("color=%s" % CSS4_COLORS[self.color.color][2])
+                        if isinstance(self, GramText):
+                            options.append("text opacity=%s" % self.color.value)
+                        else:
+                            options.append("opacity=%s" % self.color.value)
+                    else:
+                        options.append("color=%s!%s" % (CSS4_COLORS[self.color.color][2], self.color.value[2:]))
+                else:
+                    options.append("color=%s" % CSS4_COLORS[self.color.color][2])
+
+
         if self.draw:
+            if isinstance(self, GramText) or isinstance(self, GramRect):
+                pass
+            else:
+                gm.append('This week, "draw" is only for GramText or GramRect objects')
+                raise GramError(gm)
+
             if self.draw is True:
-                options.append("draw")
+                options.append("draw")  # black
             else:
                 assert isinstance(self.draw, GramColor)
                 if self.draw.value:
                     if self.draw.transparent:
-                        options.append("draw=%s" % self.draw.color)
-                        # If we do not say "draw" in this next line, the node 
-                        # text gets that opacity as well.
+                        options.append("draw=%s" % CSS4_COLORS[self.draw.color][2])
                         options.append("draw opacity=%s" % self.draw.value)
-                        
                     else:
-                        options.append("draw=%s!%s" % (self.draw.color, self.draw.value[2:]))
+                        options.append("draw=%s!%s" % (CSS4_COLORS[self.draw.color][2], self.draw.value[2:]))
                 else:
-                    options.append("draw=%s" % self.draw.color)
+                    options.append("draw=%s" % CSS4_COLORS[self.draw.color][2])
+
 
         if self.fill:
-            assert isinstance(self.fill, GramColor)
             # options.append("fill=%s" % self.fill.color)
             # if self.fill.transparent and self.fill.value:
             #     options.append("fill opacity=%s" % self.fill.value)
 
-            if self.fill.value:
-                if self.fill.transparent:
-                    options.append("fill=%s" % self.fill.color)
-                    options.append("fill opacity=%s" % self.fill.value)
-                else:
-                    options.append("fill=%s!%s" % (self.fill.color, self.fill.value[2:]))
+            if self.fill is True:
+                options.append("fill")
             else:
-                options.append("fill=%s" % self.fill.color)
+                assert isinstance(self.fill, GramColor)
+                if self.fill.value:
+                    if self.fill.transparent:
+                        options.append("fill=%s" % CSS4_COLORS[self.fill.color][2])
+                        options.append("fill opacity=%s" % self.fill.value)
+                    else:
+                        options.append("fill=%s!%s" % (CSS4_COLORS[self.fill.color][2], self.fill.value[2:]))
+                else:
+                    options.append("fill=%s" % CSS4_COLORS[self.fill.color][2])
 
             # Hack to overcome bug that makes text have the same opacity as fill opacity.
-            if self.fill.value and self.fill.transparent:
-                options.append("text opacity=1.0")
+            # if self.fill.value and self.fill.transparent:
+            #    options.append("text opacity=1.0")
 
 
         if self.anch:
@@ -2629,7 +3047,7 @@ class GramTikzStyle(Gram):
             options.append("%s" % self.lineStyle)
         if self.textHeight:
             options.append("text height=%.3fcm" % self.textHeight)
-        if self.textDepth or self.textDepth == 0.0:  
+        if self.textDepth or self.textDepth == 0.0:
             options.append("text depth=%.3fcm" % self.textDepth)
         if self.textWrapWidth:
             options.append("text width=%.3fcm" % self.textWrapWidth)
@@ -2642,7 +3060,9 @@ class GramTikzStyle(Gram):
         # print "GramTikzStyle.getTikzOptions() returning %s" % options
         return options
 
-    def getSvgOptions(self):
+    def getSvgOptions(self):   # GramTikzStyle
+        gm = ["GramTikzStyle.getSvgOptions()"]
+
         options = []
         # or self.font=='helvetica':
         if self.textSize or self.textFamily or self.textSeries or self.textShape:
@@ -2660,67 +3080,85 @@ class GramTikzStyle(Gram):
                 fStr += '\\%s' % self.textShape
             options.append(fStr)
 
-        # print("    GramTikzStyle.getSvgOptions() self is %s,  self.color is %s, self.draw is %s" % (self, self.color, self.draw))
+        #print("GramTikzStyle.getSvgOptions() self is %s" % self)
+        #print("    self.color is %s, self.draw is %s, self.fill= %s" % (self.color, self.draw, self.fill))
         if self.color:
             # print("    GramTikzStyle.getSvgOptions() self is %s,  self.color is %s" % (self, self.color))
-            assert isinstance(self.color, GramColor)
-            if self.color.value:
-                if self.color.transparent:
-                    options.append('stroke="%s"' % self.color.color)
-                    options.append('stroke-opacity="%s"' % self.color.value)
-                else:
-                    # color.value, eg red!50, does not work for non-tranaparent svg 
-                    options.append('stroke="%s"' % self.color.color) 
-            else:
-                options.append('stroke="%s"' % self.color.color)
 
-        # color, above, implies draw, and we do not want both
-        elif self.draw:
+            if isinstance(self, GramRect):
+                gm.append("This week, 'color' is not for GramRect objects")
+                gm.append("Got self: %s, color: %s" % (self, self.color))
+                raise GramError(gm)
+
+            if self.color == True:
+                options.append('stroke="black"')
+            else:
+                assert isinstance(self.color, GramColor)
+                options += self.color.getSvgOptions()
+        elif self.color in [False, None]:
+            if isinstance(self, GramRect):
+                pass
+            else:
+                options.append('stroke="black"')
+
+
+        if self.draw:
+            # "draw" is used for GramText objects, but we should not end up here,
+            # because it is handled by GramText.getSvg()
+            if isinstance(self, GramText):
+                gm.append("Setting draw for a GramText")
+                gm.append("Programming error -- this should not happen.")
+                raise GramError(gm)
+            elif isinstance(self, GramRect):
+                pass
+            else:
+                gm.append("This week, 'draw' is only for GramText and GramRect objects")
+                gm.append("Got self: %s, draw: %s" % (self, self.draw))
+                raise GramError(gm)
+
             if self.draw == True:
                 options.append('stroke="black"')
             else:
                 assert isinstance(self.draw, GramColor)
-                if self.draw.value:
-                    if self.draw.transparent:
-                        options.append('stroke="%s"' % self.draw.color)
-                        options.append('stroke-opacity="%s"' % self.draw.value)
-                    else:
-                        # color.value, eg red!50, does not work for non-tranaparent svg 
-                        options.append('stroke="%s"' % self.draw.color) 
-                else:
-                    options.append('stroke="%s"' % self.draw.color)
+                dOptions = self.draw.getSvgOptions()
+                # print(f"GramTikzStyle() draw options {dOptions}")
+                options += dOptions
 
-        if self.fill:
-            #print("    SVG.getSvgOptions() self is %s,  self.fill is %s" % (self, self.fill))
+        if self.fill:    # GramTikzStyle.getSvgOptions
+            # fill for GramText is handled by GramText.getSvg()
+            if isinstance(self, GramText):
+                gm.append("Setting fill for a GramText")
+                gm.append("Programming error -- this should not happen.")
+                raise GramError(gm)
+            elif isinstance(self, GramRect):
+                pass
+            elif isinstance(self, GramSvgMarker):
+                pass
+
+
+            # if not isinstance(self, GramRect):
+            #     gm.append(f'Setting the "fill" does not work for {self} objects')
+            #     raise GramError(gm)
+
+            # print(f"GramTikzStyle.getSvgOptions() self is {self}, color: {self.color} fill is {self.fill}")
             if self.fill == True:
                 options.append('fill="black"')
             else:
                 assert isinstance(self.fill, GramColor)
-                if self.fill.value:
-                    if self.fill.transparent:
-                        options.append('fill="%s"' % self.fill.color)
-                        options.append('fill-opacity="%s"' % self.fill.value)
-                    else:
-                        # color.value, eg red!50, does not work for non-tranaparent svg 
-                        options.append('fill="%s"' % self.fill.color) 
-                else:
-                    options.append('fill="%s"' % self.fill.color)
-        elif self.fill == None:
-            if isinstance(self, GramRect):
-                options.append('fill="none"')
-            elif isinstance(self, GramLine):
-                pass
-            else:
-                options.append('fill="none"')
-        
+                options += self.fill.getSvgOptions(stroke="fill")
+        elif self.fill in [False, None]:
+            options.append('fill="none"')   # needed, else fill is black
+
         #if self.anch:
         #    options.append('anchor=%s' % self.anch)
         #elif self.anchor:
         #    options.append('anchor=%s' % self.anchor)
+
         if self.xShift:
             options.append('xshift=%.3fcm' % self.xShift)
         if self.yShift:
             options.append('yshift=%.3fcm' % self.yShift)
+
         # if self.rotate:
         #     options.append('rotate=%.1f' % self.rotate)
         # if self.shape:
@@ -2804,6 +3242,12 @@ class GramGraphic(GramTikzStyle):
         self.gId = None
         self.titleAttribute = None
 
+    def pdf(self):
+        gm = ["pdf() method called on a GramGraphic instance"]
+        gm.append("That won't work.")
+        gm.append("Call it on a Gram instance")
+        raise GramError(gm)
+
     def setGIdAndAddToDict(self, typeString):
         if self.gId:
             assert self.gForGIdDict[self.gId] == self
@@ -2866,7 +3310,7 @@ class GramGraphic(GramTikzStyle):
         if theStyleObject and theStyleObject.textFamily == 'sffamily':
             if booger in nonStyleOptions:
                 nonStyleOptions.remove(booger)
-        
+
         # Here is a bit of a hack, to overcome what looks a lot like a bug.  If
         # the style says fill=white and the options include a color, then the
         # fill becomes that color, when I just wanted the text to be that color,
@@ -2886,7 +3330,7 @@ class GramGraphic(GramTikzStyle):
             print("    getTikzOptions()  D  (final) options = %s" % options)
         return options
 
-    def getSvgOptions(self):
+    def getSvgOptions(self):  # GramGraphic
         #print("------- GramGraphic.getSvgOptions()  self=%s" % self)
         options = []
 
@@ -2912,20 +3356,24 @@ class GramGraphic(GramTikzStyle):
                 print("styleDict can't find style '%s'" % theStyleString)
                 raise
             # print " *** theStyleObject.textFamily is %s" % theStyleObject.textFamily
-            # print "getTikzOptions()  A  theStyleObject.anchor is %s" %
-            # theStyleObject.anchor
+            # print("GramGraphic.getSvgOptions()  A  theStyleObject.anchor is %s" %
+            # theStyleObject.anchor)
             options.append(theStyleString)
-        #print "getSvgOptions()  B  style (ie class) options = %s" % options
+        # print("GramGraphic.getSvgOptions()  B  style (ie class) options = %s" % options)
 
         # Then get options not associated with the style from the style string.
+        # if isinstance(self, GramSvgMarker):
+        #     print("FIXME: by-passing getSvgOptions for GramSvgMarker")
+        #     nonStyleOptions = []
+        # else:
         nonStyleOptions = GramTikzStyle.getSvgOptions(self)
-        # print("getSvgOptions()  C  nonStyleOptions = %s" % nonStyleOptions)
+        # print("GramGraphic.getSvgOptions()  C  nonStyleOptions = %s" % nonStyleOptions)
 
         # Avoid repetition of font=\sffamily and anchor
-        booger = 'font=\\sffamily'
-        if theStyleObject and theStyleObject.textFamily == 'sffamily':
-            if booger in nonStyleOptions:
-                nonStyleOptions.remove(booger)
+        # booger = 'font=\\sffamily'
+        # if theStyleObject and theStyleObject.textFamily == 'sffamily':
+        #     if booger in nonStyleOptions:
+        #         nonStyleOptions.remove(booger)
 
         # if theStyleObject and theStyleObject.anchor:
         #    booger = "anchor=%s" % theStyleObject.anchor
@@ -2933,7 +3381,7 @@ class GramGraphic(GramTikzStyle):
         #        nonStyleOptions.remove(booger)
 
         options += nonStyleOptions
-        #print "getSvgOptions()  D  (final) options = %s" % options
+        # print("GramGraphic.getSvgOptions()  D  (final) options = %s" % options)
         return options
 
     def getTikz(self):
@@ -2984,8 +3432,8 @@ class GramGraphic(GramTikzStyle):
             ret = st.textFamily
         if ret is None and self.tikzPictureDefaults:
             ret = self.tikzPictureDefaults.textFamily
-        if ret is None and self.defaultTextFamily:
-            ret = self.defaultTextFamily
+        # if ret is None and self.defaultTextFamily:
+        #     ret = self.defaultTextFamily
         return ret
 
     def getTextSeries(self):
@@ -3133,23 +3581,23 @@ class GramGraphic(GramTikzStyle):
             st = self.styleDict[self.style]
             ret = st.innerSep
         if ret is None:
-            assert self.defaultInnerSep is not None
             ret = self.defaultInnerSep
         if ret is None:
-            gm = ["GramText.getInnerSep()"]
+            # We should never be here.
+            gm = ["GramGraphic GramText.getInnerSep()"]
             gm.append("rawText %s" % self.rawText)
             gm.append("getInnerSep() is None")
             raise GramError(gm)
         return ret
 
 class GramSvgMarker(GramGraphic):
-    
+
     _counter = 0
 
     def __init__(self, markerShape, markerRelativeSize=None):
         GramGraphic.__init__(self)
-        #assert markerShape in ['+', 'x', '*', '-', '|', 'o', 'asterisk',  ## 'star', 'oplus', 'oplus*',                
-        #                       ##'otimes', 'otimes*', 
+        #assert markerShape in ['+', 'x', '*', '-', '|', 'o', 'asterisk',  ## 'star', 'oplus', 'oplus*',
+        #                       ##'otimes', 'otimes*',
         #                        'square', 'square*', 'triangle',
         #                       'triangle*', 'diamond', 'diamond*' ##, 'pentagon', 'pentagon*']
         #assert markerShape in ['+', 'x', '*', 'asterisk']
@@ -3175,11 +3623,10 @@ class GramSvgMarker(GramGraphic):
         GramSvgMarker._counter += 1
         #self.haveDoneResetMarkerId = False
 
-
     def getTikz(self):
         pass
 
-    def getSvg(self):
+    def getSvg(self):    # GramSvgMarker
         gm = ["GramSvgMarker.getSvg() markerShape %s, markerId %s, color %s, fill %s" % (
             self.markerShape, self.markerId, self.color, self.fill)]
         #print gm[0]
@@ -3196,8 +3643,6 @@ class GramSvgMarker(GramGraphic):
         # if len(gm) == 2:
         #     print gm[1]
 
-            
-        
         #mySc = 0.035 * self.svgPxForCm
         mySc = 0.038 * self.svgPxForCm
 
@@ -3313,11 +3758,11 @@ class GramSvgMarker(GramGraphic):
         elif self.markerShape == 'asterisk':
             ss2 = []
             ss2.append('    <path d="M %.2f,%.2f L %.2f,%.2f M %.2f,%.2f L %.2f,%.2f M %.2f,%.2f L %.2f,%.2f"' % (
-                mySc * 3.732, mySc, 
-                mySc * 0.268, mySc * 3., 
-                mySc2, 0, 
-                mySc2, mySc4, 
-                mySc * 0.268, mySc, 
+                mySc * 3.732, mySc,
+                mySc * 0.268, mySc * 3.,
+                mySc2, 0,
+                mySc2, mySc4,
+                mySc * 0.268, mySc,
                 mySc * 3.732, mySc * 3.))
             # if self.color:
             #     ss2.append('stroke="%s"' % self.color.svgColor)
@@ -3355,7 +3800,6 @@ class GramSvgMarker(GramGraphic):
                     ss2.append('fill="black"')
             else:
                 ss2.append('fill="none"')
-               
             ss2.append('/>')
             ss.append(' '.join(ss2))
 
@@ -3384,7 +3828,6 @@ class GramSvgMarker(GramGraphic):
                     ss2.append('fill="black"')
             else:
                 ss2.append('fill="none"')
-               
             ss2.append('/>')
             ss.append(' '.join(ss2))
 
@@ -3412,7 +3855,6 @@ class GramSvgMarker(GramGraphic):
                     ss2.append('fill="black"')
             else:
                 ss2.append('fill="none"')
-               
             ss2.append('/>')
             ss.append(' '.join(ss2))
 
@@ -3420,8 +3862,6 @@ class GramSvgMarker(GramGraphic):
 
         ss.append('  </marker>\n')
         return '\n'.join(ss)
-
-                 
 
 class GramGrid(GramGraphic):
 
@@ -3445,7 +3885,7 @@ class GramGrid(GramGraphic):
         ss = []
         # if self.comment:
         #    ss.append("%% %s" % self.comment)
-        ss.append("\draw[%s,very thin] (%i,%i) grid (%i,%i);" %
+        ss.append("\\draw[%s,very thin] (%i,%i) grid (%i,%i);" %
                   (self.color.color, self.llx, self.lly, self.urx, self.ury))
         for gr in self.graphics:
             ss.append(gr.getTikz())
@@ -3490,7 +3930,7 @@ class GramGrid(GramGraphic):
 
 class GramText(GramGraphic):
 
-    def __init__(self, text):
+    def __init__(self, text, addToGIdDict=True):
         GramGraphic.__init__(self)
 
         # GramGraphic provides ---
@@ -3501,33 +3941,37 @@ class GramText(GramGraphic):
         # self.bb = [0.0] * 4
         # self.gId = None
         # Plus all the stuff inherited from GramTikzStyle
-        # That includes _textHeight and _textDepth, and GramTikzStyle properties textHeight and TextDepth
+        # That includes _textHeight and _textDepth, and
+        # GramTikzStyle properties textHeight and TextDepth, and
+        # textWrapWidth
 
-        
-        #print("GramText.__init__(%s)" % text)
+        gm = ["GramText.__init__(%s)" % text]
         self.rawText = text
-        self.cookedText = None                 # with added modifiers like sffamily, bfseries, itshape, Large, etc
+        self.cookedText = None   # with added modifiers like sffamily, bfseries, itshape, Large, etc
         if r"\begin{minipage}" in text:
+            self.mpText = text
+        elif r"\begin{varwidth}" in text:
             self.mpText = text
         else:
             self.mpText = None                     # wrapped in a minipage
-        self.setGIdAndAddToDict('text')
+        if addToGIdDict:
+            self.setGIdAndAddToDict('text')
 
-        self.length = 0.1
+        self.width = 0.1
 
         self.corners = None
-        self.fullHeight = 0.0         # Note we also have self.textHeight, inherited, which is different
+        self.fullHeight = 0.0    # Note we also have self.textHeight, inherited, which is different
         self.tbb = [0.0] * 4
 
-        # more text measurements for tikz/pyx 
+        # more text measurements for tikz/pyx
         # inner sep is initially 0.3333em
         # em is the point size; it is not the width of an M (although maybe in history it was ...)
         # default inner sep is 0.3333em for normalsize text, regardless of text size
         # So for 10pt documents, inner sep is 3.333pt
-        self.ex = 0.0         # vertical size of an x
-        self.exWid = 0.0      # width of an x
-        self.bigX = 0.0       # vertical size of a big X, cap height
-        self.yuh = 0.0        # vertical underhang of a y
+        # self.ex = 0.0         # vertical size of an x
+        # self.exWid = 0.0      # width of an x
+        # self.bigX = 0.0       # vertical size of a big X, cap height
+        # self.yuh = 0.0        # vertical underhang of a y
         self.half_normal_x = 0.0   # half vertical size of a normalsize x
         self.svg_half_normal_x = 0.0   # half vertical size of a normalsize x
         self.underhang = 0.0
@@ -3535,14 +3979,13 @@ class GramText(GramGraphic):
         self.svgBaseline_cm = 0.0   # Used to calculate underhang from inkscape bb
         # Gram._svgNormalsize_x = None  # vertical size, for mid anchor, measured by inkscape
 
-        # parts, to make make multi-texts easier, 
+        # parts, to make make multi-texts easier,
         # eg normal red-BOLD blue-italic backToNormal in the same text object
         # with different outputs for tikz and svg, but a shared interface.
         # Parts are GramText objects, and are added, once, to rawText in setPositions()
         self.parts = []
         self.partsHaveBeenAdded = False
 
-         
         self.fontSizeMultiplierDict = {
             'tiny': 0.5,
             'scriptsize': 0.7,
@@ -3576,14 +4019,15 @@ class GramText(GramGraphic):
             print(f"{spacer} cA: None")
         print(f"{spacer} anchor: {self.getAnch()}")
         print(f"{spacer} bb: {self.bb}")
-        print(f"{spacer} length: {self.length:.5f}")
+        print(f"{spacer} width: {self.width:.5f}")
         print(f"{spacer} fullHeight: {self.fullHeight:.5f}")
         print(f"{spacer} innerSep: {self.getInnerSep()}")
         print(f"{spacer} lineThickness (cm): {cmForLineThickness(self.getLineThickness())}")
         print(f"{spacer} underhang (cm): {self.underhang}")
         print(f"{spacer} rise (cm): {self.rise}")
-        print(f"{spacer} svgNormalsize_x (cm): {Gram._svgNormalsize_x}")
-        print(f"{spacer} svgBaseline_cm (cm): {self.svgBaseline_cm}")
+        print(f"{spacer} half_normal_x (cm): {self.half_normal_x}")
+        #print(f"{spacer} svgNormalsize_x (cm): {Gram._svgNormalsize_x}")
+        #print(f"{spacer} svgBaseline_cm (cm): {self.svgBaseline_cm}")
         print(f"{spacer} textShape: {self.getTextShape()}")
         # print(f"{spacer} ")
 
@@ -3605,8 +4049,7 @@ class GramText(GramGraphic):
         if not rawText:
             return ''
 
-        
-        if rawText.startswith(r"\begin{minipage}"):
+        if r"\begin{minipage}" in self.rawText:
             raise GramError("programming error: cookText with minipage.")
 
         if 0:
@@ -3615,33 +4058,37 @@ class GramText(GramGraphic):
             theText = rawText
         # print("cookText() the raw text is %s" % rawText)
         # print("cookText() theText (a) is %s" % theText)
-        theTextFamily = self.getTextFamily()
+        # try:
+        #     theTextFamily = self.getTextFamily()
+        # except:
+        #     print(self.styleDict)
+        #     print("cookText()  style is:", self.style)
+        #     sys.exit()
         theTextSeries = self.getTextSeries()
         theTextShape = self.getTextShape()
         theSize = self.getTextSize()
+        # print("cookText() the raw text is %s, theTextFamily %s, theTextSeries %s, theTextShape %s, theSize %s" % (
+        #     rawText, theTextFamily, theTextSeries, theTextShape, theSize))
 
         if theTextShape:
             theText = r"\%s %s" % (theTextShape, theText)
         if theTextSeries:
             theText = r"\%s %s" % (theTextSeries, theText)
-        if theTextFamily:
-            theText = r"\%s %s" % (theTextFamily, theText)
+        # if theTextFamily:
+        #     if theTextFamily == self.defaultTextFamily:
+        #         print("cookText()  textFamily %s is default, so not using it" % theTextFamily)
+        #     else:
+        #         theText = r"\%s %s" % (theTextFamily, theText)
         if theSize and theSize != 'normalsize':
             theText = r"\%s %s" % (theSize, theText)
 
         return theText
 
-    def setLatexTextMetrics(self):    # GramText
-        if self.latexTextMetricsUses == "pyx":
-            self.setLatexTextMetricsUsingPyx()
-        else:
-            # raise GramError("set text metrics using latex not ready yet")
-            pass
 
 
     def setLatexTextMetricsUsingPyx(self):
-        """This runs pyx on the cookedText, gets length and height
-        
+        """This runs pyx on the cookedText, gets width and height
+
         and X, x, yuh measurements
         """
 
@@ -3659,7 +4106,7 @@ class GramText(GramGraphic):
         self.tbb = [tbb.llx_pt * ptToCm, tbb.lly_pt * ptToCm, tbb.urx_pt * ptToCm, tbb.ury_pt * ptToCm]
         # print(f"GramText.setLatexTextMetricsUsingPyx().  self.tbb is {self.tbb} ")
 
-        self.length = (tbb.urx_pt - tbb.llx_pt) * ptToCm
+        self.width = (tbb.urx_pt - tbb.llx_pt) * ptToCm
 
         # Width for wrapping, or None
         theTextWrapWidth = self.getTextWrapWidth()
@@ -3667,34 +4114,34 @@ class GramText(GramGraphic):
             theInnerSep = self.getInnerSep()
             # print("theTextWrapWidth", theTextWrapWidth, " theInnerSep", theInnerSep)
             if theInnerSep:
-                self.length += theInnerSep
+                self.width += theInnerSep
 
         self.fullHeight = (tbb.ury_pt - tbb.lly_pt) * ptToCm
         self.underhang = -tbb.lly_pt * ptToCm    # might be zero
         self.rise = tbb.ury_pt * ptToCm
-        # print("setLatexTextMetricsUsingPyx() The text '%s' is %.3f cm long, and %.3f cm  high" % (self.cookedText, self.length, self.fullHeight))
+        # print("setLatexTextMetricsUsingPyx() The text '%s' is %.3f cm long, and %.3f cm  high" % (self.cookedText, self.width, self.fullHeight))
         # sys.exit()
 
-        #self.length = 3.
+        #self.width = 3.
         #self.fullHeight = 2.
         #self.underhang = 0.1
         #self.rise = 0.2
 
-        cooked = self.cookText('X')
-        t = pyx.text.text(0.0, 0.0, cooked)
-        tbb = t.bbox()
-        self.bigX = tbb.ury_pt * ptToCm
+        # cooked = self.cookText('X')
+        # t = pyx.text.text(0.0, 0.0, cooked)
+        # tbb = t.bbox()
+        # self.bigX = tbb.ury_pt * ptToCm
 
-        cooked = self.cookText('x')
-        t = pyx.text.text(0.0, 0.0, cooked)
-        tbb = t.bbox()
-        self.ex = tbb.ury_pt * ptToCm
-        self.exWid = tbb.urx_pt * ptToCm
+        # cooked = self.cookText('x')
+        # t = pyx.text.text(0.0, 0.0, cooked)
+        # tbb = t.bbox()
+        # self.ex = tbb.ury_pt * ptToCm
+        # self.exWid = tbb.urx_pt * ptToCm
 
-        cooked = self.cookText('y')
-        t = pyx.text.text(0.0, 0.0, cooked)
-        tbb = t.bbox()
-        self.yuh = -tbb.lly_pt * ptToCm
+        # cooked = self.cookText('y')
+        # t = pyx.text.text(0.0, 0.0, cooked)
+        # tbb = t.bbox()
+        # self.yuh = -tbb.lly_pt * ptToCm
 
         #cooked = 'M'
         #t = pyx.text.text(0.0, 0.0, cooked)
@@ -3845,22 +4292,24 @@ class GramText(GramGraphic):
 
 
     def setBB(self):    # GramText
-        # print("GramText '%s'  setBB()" % self.rawText)
-        
+        gm = ["GramText.setBB() %s" % self.rawText[:30]]
+        # print(gm[0])
+
         if not self.cA:
             self.cA = GramCoord()
 
         assert self.engine == 'tikz'
 
-        boogers = [r'\includegraphics', r'\parbox']
-        hasBooger = False
-        for booger in boogers:
-            if booger in self.rawText:
-                hasBooger = True
-                break
-        if hasBooger:
-            self.setBogusBB()
-            return
+        if self.latexTextMetricsUses == 'pyx':
+            boogers = [r'\includegraphics', r'\parbox']
+            hasBooger = False
+            for booger in boogers:
+                if booger in self.rawText:
+                    hasBooger = True
+                    break
+            if hasBooger:
+                self.setBogusBB()
+                return
 
 
         #if self.font == 'helvetica':
@@ -3868,16 +4317,17 @@ class GramText(GramGraphic):
         #    # self.textFamily = 'sffamily'
         #    pass
 
-        self.setCookedText()
-        self.setLatexTextMetrics()
+        if self.latexTextMetricsUses == 'pyx':
+            self.setLatexTextMetricsUsingPyx()
 
-        if 0:
-            print("a GramText.setBB() for '%s';" % self.rawText)  
-            print("    self.length is %s, self.fullHeight is %s" % (self.length, self.fullHeight))
-            print("    bb is %s" % self.bb)
+        if 1:
+            if self.rawText == "20":
+                print("a GramText.setBB() for '%s';" % self.rawText)
+                print("    self.width is %s, self.fullHeight is %s" % (self.width, self.fullHeight))
+                print("    bb is %s" % self.bb)
 
         halfHeight = self.fullHeight / 2.0
-        halfLength = self.length / 2.0
+        halfWidth = self.width / 2.0
         # oneSep = (self.normal_em * 0.3333) + 0.009 # The 0.009 is a total
         # fudge, but it appears to be right.
 
@@ -3897,36 +4347,35 @@ class GramText(GramGraphic):
         oneOuterSep = 0.5 * twoOuterSep
         # print "    oneInnerSep is %.3f" % oneInnerSep
         # print "    oneOuterSep is %.3f" % oneOuterSep
-        # print "  %s theAnch is %s, length=%.5f, height=%s, halfHeight=%s" % (
-        #    self.rawText, theAnch, self.length, self.fullHeight, halfHeight)
+        # print "  %s theAnch is %s, width=%.5f, height=%s, halfHeight=%s" % (
+        #    self.rawText, theAnch, self.width, self.fullHeight, halfHeight)
         # sys.exit()
-
 
         if theAnch == 'south west':
             self.tbb[0] = self.cA.xPosn + oneOuterSep + oneInnerSep
             self.tbb[1] = self.cA.yPosn + oneOuterSep + oneInnerSep
-            self.tbb[2] = self.tbb[0] + self.length
+            self.tbb[2] = self.tbb[0] + self.width
             self.tbb[3] = self.tbb[1] + self.fullHeight
 
             self.bb[0] = self.cA.xPosn
             self.bb[1] = self.cA.yPosn
-            self.bb[2] = self.cA.xPosn + self.length + twoInnerSep + twoOuterSep
+            self.bb[2] = self.cA.xPosn + self.width + twoInnerSep + twoOuterSep
             self.bb[3] = self.cA.yPosn + self.fullHeight + twoInnerSep + twoOuterSep
 
 
 
         elif theAnch == 'south':
             self.bb[0] = self.cA.xPosn - \
-                (halfLength + oneInnerSep + oneOuterSep)
+                (halfWidth + oneInnerSep + oneOuterSep)
             self.bb[1] = self.cA.yPosn
             self.bb[2] = self.cA.xPosn + \
-                (halfLength + oneInnerSep + oneOuterSep)
+                (halfWidth + oneInnerSep + oneOuterSep)
             self.bb[3] = self.cA.yPosn + \
                 self.fullHeight + twoInnerSep + twoOuterSep
 
         elif theAnch == 'south east':
             self.bb[0] = self.cA.xPosn - \
-                (self.length + twoInnerSep + twoOuterSep)
+                (self.width + twoInnerSep + twoOuterSep)
             self.bb[1] = self.cA.yPosn
             self.bb[2] = self.cA.xPosn
             self.bb[3] = self.cA.yPosn + \
@@ -3936,26 +4385,26 @@ class GramText(GramGraphic):
             # if self.textWrapWidth:
             if 0:
                 self.bb[0] = self.cA.xPosn - \
-                    (self.length + twoInnerSep + twoOuterSep)
+                    (self.width + twoInnerSep + twoOuterSep)
                 self.bb[1] = self.cA.yPosn - \
                     (self.fullHeight + oneInnerSep + oneOuterSep)
                 self.bb[2] = self.cA.xPosn
                 self.bb[3] = self.cA.yPosn + (oneInnerSep + oneOuterSep)
             else:
-                self.bb[0] = self.cA.xPosn - (self.length + twoInnerSep + twoOuterSep)
+                self.bb[0] = self.cA.xPosn - (self.width + twoInnerSep + twoOuterSep)
                 self.bb[1] = self.cA.yPosn - (self.underhang + oneInnerSep + oneOuterSep)
                 self.bb[2] = self.cA.xPosn
                 self.bb[3] = self.cA.yPosn + (self.rise + oneInnerSep + oneOuterSep)
 
         elif theAnch == 'east':
-            self.bb[0] = self.cA.xPosn - (self.length + twoInnerSep + twoOuterSep)
+            self.bb[0] = self.cA.xPosn - (self.width + twoInnerSep + twoOuterSep)
             self.bb[1] = self.cA.yPosn - (halfHeight + oneInnerSep + oneOuterSep)
             self.bb[2] = self.cA.xPosn
             self.bb[3] = self.cA.yPosn + (halfHeight + oneInnerSep + oneOuterSep)
 
         elif theAnch == 'north east':
             self.bb[0] = self.cA.xPosn - \
-                (self.length + twoInnerSep + twoOuterSep)
+                (self.width + twoInnerSep + twoOuterSep)
             self.bb[1] = self.cA.yPosn - \
                 (self.fullHeight + twoInnerSep + twoOuterSep)
             self.bb[2] = self.cA.xPosn
@@ -3963,11 +4412,11 @@ class GramText(GramGraphic):
 
         elif theAnch == 'north':
             self.bb[0] = self.cA.xPosn - \
-                (halfLength + oneInnerSep + oneOuterSep)
+                (halfWidth + oneInnerSep + oneOuterSep)
             self.bb[1] = self.cA.yPosn - \
                 (self.fullHeight + twoInnerSep + twoOuterSep)
             self.bb[2] = self.cA.xPosn + \
-                (halfLength + oneInnerSep + oneOuterSep)
+                (halfWidth + oneInnerSep + oneOuterSep)
             self.bb[3] = self.cA.yPosn
 
         elif theAnch == 'north west':
@@ -3975,7 +4424,7 @@ class GramText(GramGraphic):
             self.bb[1] = self.cA.yPosn - \
                 (self.fullHeight + twoInnerSep + twoOuterSep)
             self.bb[2] = self.cA.xPosn + \
-                (self.length + twoInnerSep + twoOuterSep)
+                (self.width + twoInnerSep + twoOuterSep)
             self.bb[3] = self.cA.yPosn
 
         elif theAnch == 'west':
@@ -3983,7 +4432,7 @@ class GramText(GramGraphic):
             self.bb[1] = self.cA.yPosn - \
                 (halfHeight + oneInnerSep + oneOuterSep)
             self.bb[2] = self.cA.xPosn + \
-                (self.length + twoInnerSep + twoOuterSep)
+                (self.width + twoInnerSep + twoOuterSep)
             self.bb[3] = self.cA.yPosn + \
                 (halfHeight + oneInnerSep + oneOuterSep)
 
@@ -3994,34 +4443,34 @@ class GramText(GramGraphic):
                 self.bb[1] = self.cA.yPosn - \
                     (self.fullHeight + oneInnerSep + oneOuterSep)
                 self.bb[2] = self.cA.xPosn + \
-                    (self.length + twoInnerSep + twoOuterSep)
+                    (self.width + twoInnerSep + twoOuterSep)
                 self.bb[3] = self.cA.yPosn + (oneInnerSep + oneOuterSep)
             else:
                 self.bb[0] = self.cA.xPosn
                 self.bb[1] = self.cA.yPosn - (self.underhang + oneInnerSep + oneOuterSep)
-                self.bb[2] = self.cA.xPosn + (self.length + twoInnerSep + twoOuterSep)
+                self.bb[2] = self.cA.xPosn + (self.width + twoInnerSep + twoOuterSep)
                 self.bb[3] = self.cA.yPosn + (self.rise + oneInnerSep + oneOuterSep)
 
         elif theAnch == 'base':
             # if self.textWrapWidth:
             if 0:
                 self.bb[0] = self.cA.xPosn - \
-                    (halfLength + oneInnerSep + oneOuterSep)
+                    (halfWidth + oneInnerSep + oneOuterSep)
                 self.bb[1] = self.cA.yPosn - \
                     (self.fullHeight + oneInnerSep + oneOuterSep)
                 self.bb[2] = self.cA.xPosn + \
-                    (halfLength + oneInnerSep + oneOuterSep)
+                    (halfWidth + oneInnerSep + oneOuterSep)
                 self.bb[3] = self.cA.yPosn + (oneInnerSep + oneOuterSep)
             else:
-                self.bb[0] = self.cA.xPosn - (halfLength + oneInnerSep + oneOuterSep)
+                self.bb[0] = self.cA.xPosn - (halfWidth + oneInnerSep + oneOuterSep)
                 self.bb[1] = self.cA.yPosn - (self.underhang + oneInnerSep + oneOuterSep)
-                self.bb[2] = self.cA.xPosn + (halfLength + oneInnerSep + oneOuterSep)
+                self.bb[2] = self.cA.xPosn + (halfWidth + oneInnerSep + oneOuterSep)
                 self.bb[3] = self.cA.yPosn + (self.rise + oneInnerSep + oneOuterSep)
 
         elif theAnch == 'center' or theAnch is None:
-            self.bb[0] = self.cA.xPosn - (halfLength + oneInnerSep + oneOuterSep)
+            self.bb[0] = self.cA.xPosn - (halfWidth + oneInnerSep + oneOuterSep)
             self.bb[1] = self.cA.yPosn - (halfHeight + oneInnerSep + oneOuterSep)
-            self.bb[2] = self.cA.xPosn + (halfLength + oneInnerSep + oneOuterSep)
+            self.bb[2] = self.cA.xPosn + (halfWidth + oneInnerSep + oneOuterSep)
             self.bb[3] = self.cA.yPosn + (halfHeight + oneInnerSep + oneOuterSep)
 
         # ====================================
@@ -4029,67 +4478,70 @@ class GramText(GramGraphic):
             if self.textWrapWidth:
                 # self.bb[0] = self.cA.xPosn
                 # self.bb[1] = self.cA.yPosn - (self.fullHeight + twoInnerSep + oneOuterSep)
-                # self.bb[2] = self.cA.xPosn + (self.length + twoInnerSep + twoOuterSep)
+                # self.bb[2] = self.cA.xPosn + (self.width + twoInnerSep + twoOuterSep)
                 # # + (self.fullHeight + oneInnerSep + oneOuterSep)
                 # self.bb[3] = self.cA.yPosn
-                
+
                 # Behaves like "west"
                 self.bb[0] = self.cA.xPosn
                 self.bb[1] = self.cA.yPosn - \
                     (halfHeight + oneInnerSep + oneOuterSep)
                 self.bb[2] = self.cA.xPosn + \
-                    (self.length + twoInnerSep + twoOuterSep)
+                    (self.width + twoInnerSep + twoOuterSep)
                 self.bb[3] = self.cA.yPosn + \
                     (halfHeight + oneInnerSep + oneOuterSep)
-                
+
             else:
                 self.bb[0] = self.cA.xPosn
                 self.bb[1] = self.cA.yPosn - (self.underhang + self.half_normal_x + oneInnerSep + oneOuterSep)
-                self.bb[2] = self.cA.xPosn + (self.length + twoInnerSep + twoOuterSep)
+                self.bb[2] = self.cA.xPosn + (self.width + twoInnerSep + twoOuterSep)
                 self.bb[3] = self.cA.yPosn + ((self.rise - self.half_normal_x) + oneInnerSep + oneOuterSep)
 
         elif theAnch == 'mid east':
             if self.textWrapWidth:
-                # self.bb[0] = self.cA.xPosn - (self.length + twoInnerSep + twoOuterSep)
+                # self.bb[0] = self.cA.xPosn - (self.width + twoInnerSep + twoOuterSep)
                 # self.bb[1] = self.cA.yPosn - (self.fullHeight + twoInnerSep + oneOuterSep)
                 # self.bb[2] = self.cA.xPosn
                 # # + (self.fullHeight + oneInnerSep + oneOuterSep)
                 # self.bb[3] = self.cA.yPosn
 
                 # This week it behaves like "east"
-                self.bb[0] = self.cA.xPosn - (self.length + twoInnerSep + twoOuterSep)
+                self.bb[0] = self.cA.xPosn - (self.width + twoInnerSep + twoOuterSep)
                 self.bb[1] = self.cA.yPosn - (halfHeight + oneInnerSep + oneOuterSep)
                 self.bb[2] = self.cA.xPosn
                 self.bb[3] = self.cA.yPosn + (halfHeight + oneInnerSep + oneOuterSep)
 
             else:
-                self.bb[0] = self.cA.xPosn - (self.length + twoInnerSep + twoOuterSep)
+                self.bb[0] = self.cA.xPosn - (self.width + twoInnerSep + twoOuterSep)
                 self.bb[1] = self.cA.yPosn - (self.underhang + self.half_normal_x + oneInnerSep + oneOuterSep)
                 self.bb[2] = self.cA.xPosn
                 self.bb[3] = self.cA.yPosn + ((self.rise - self.half_normal_x) + oneInnerSep + oneOuterSep)
 
         elif theAnch == 'mid':     # setBB
             if self.textWrapWidth:
-                # self.bb[0] = self.cA.xPosn - (halfLength + oneInnerSep + oneOuterSep)
+                # self.bb[0] = self.cA.xPosn - (halfWidth + oneInnerSep + oneOuterSep)
                 # self.bb[1] = self.cA.yPosn - (self.fullHeight + twoInnerSep + oneOuterSep)
-                # self.bb[2] = self.cA.xPosn + (halfLength + oneInnerSep + oneOuterSep)
+                # self.bb[2] = self.cA.xPosn + (halfWidth + oneInnerSep + oneOuterSep)
                 # self.bb[3] = self.cA.yPosn  # + (oneInnerSep + oneOuterSep)
 
                 # This week it behaves like "center"
-                self.bb[0] = self.cA.xPosn - (halfLength + oneInnerSep + oneOuterSep)
+                self.bb[0] = self.cA.xPosn - (halfWidth + oneInnerSep + oneOuterSep)
                 self.bb[1] = self.cA.yPosn - (halfHeight + oneInnerSep + oneOuterSep)
-                self.bb[2] = self.cA.xPosn + (halfLength + oneInnerSep + oneOuterSep)
+                self.bb[2] = self.cA.xPosn + (halfWidth + oneInnerSep + oneOuterSep)
                 self.bb[3] = self.cA.yPosn + (halfHeight + oneInnerSep + oneOuterSep)
             else:
-                self.bb[0] = self.cA.xPosn - (halfLength + oneInnerSep + oneOuterSep)
+                self.bb[0] = self.cA.xPosn - (halfWidth + oneInnerSep + oneOuterSep)
                 self.bb[1] = self.cA.yPosn - (self.underhang + self.half_normal_x + oneInnerSep + oneOuterSep)
-                self.bb[2] = self.cA.xPosn + (halfLength + oneInnerSep + oneOuterSep)
+                self.bb[2] = self.cA.xPosn + (halfWidth + oneInnerSep + oneOuterSep)
                 self.bb[3] = self.cA.yPosn + ((self.rise - self.half_normal_x) + oneInnerSep + oneOuterSep)
 
         else:
             raise GramError("anch '%s' not implemented." % theAnch)
 
-        #print("b GramText.setBB() for '%s';  self.length is %s, bb is %s" % (self.rawText, self.length, self.bb))
+        if 1:
+            if self.rawText == "20":
+                print("b GramText.setBB() for '%s';  self.width is %s, bb is %s" % (
+                    self.rawText, self.width, self.bb))
 
 
         # Get bb for rotated text  GramText.setBB
@@ -4150,6 +4602,15 @@ class GramText(GramGraphic):
             # self.rawText, self.bb[0], self.bb[1], self.bb[2], self.bb[3])
             self.corners = corners
 
+        # Blank text should have a zero-dimension bb
+        if not self.rawText:
+            self.bb[0] = self.cA.xPosn
+            self.bb[1] = self.cA.yPosn
+            self.bb[2] = self.cA.xPosn
+            self.bb[3] = self.cA.yPosn
+
+
+
         theXShift = self.getXShift()
         if theXShift:
             self.bb[0] += theXShift
@@ -4165,19 +4626,29 @@ class GramText(GramGraphic):
                 for cNum in range(4):
                     self.corners[cNum][1] += theYShift
 
-    def wrapRawInMinipage(self):
-        gm = ["GramText.wrapRawInMinipage()"]
+    def setMpTextTikz(self):
+        "maybe wrap self in a minipage or varwidth, setting self.mpText"
+
+        if self.mpText:    # a minipage, set during GramText.init
+            pass
+        else:
+            # decide
+            if self.textWrapWidth or r"\\" in self.rawText or r"\newline" in self.rawText:
+                print("GramText.setMpTextTikz().  Wrapping in minipage or varwidth.   %s" % self.rawText[:30])
+                self.wrapRawInMinipageOrVarwidth()
+
+
+    def wrapRawInMinipageOrVarwidth(self):
+        gm = ["GramText.wrapRawInMinipageOrVarwidth()"]
 
         if self.textWrapWidth:
             widStr = "%.3fcm" % self.textWrapWidth
         else:
-            gm.append("textWrapWidth needs to be set.")
-            raise GramError(gm)
+            widStr = None  # use varwidth
 
-        
         alig = self.textAlign
 
-        # Gram._goodTextAligns = [None, 'left', 'flush left', 'right', 'flush right', 
+        # Gram._goodTextAligns = [None, 'left', 'flush left', 'right', 'flush right',
         #                    'center', 'flush center', 'justify', 'none']
         mpAlig = None
         if alig in [None, 'left', 'flush left', 'none']:
@@ -4193,7 +4664,8 @@ class GramText(GramGraphic):
 
         # print(f"wrapRawInMinipage() widStr = {widStr}, mpAlig={mpAlig}")
 
-        cookedText = self.cookText(self.rawText)
+        # cookedText = self.cookText(self.rawText)
+        self.setCookedText()        # cooked text needs to be inside the minipage
 
         myCmds = ""
         for it in [mpAlig]:
@@ -4201,19 +4673,32 @@ class GramText(GramGraphic):
                 myCmds += r"\%s" % it
         # print(myCmds)
 
-        self.mpText = r"\begin{minipage}{%s}%s %s \end{minipage}" % (widStr, myCmds, cookedText)
+        if self.textWrapWidth:
+            self.mpText = r"\begin{minipage}{%s}%s %s \end{minipage}" % (widStr, myCmds, self.cookedText)
+        else:
+            self.mpText = r"\begin{varwidth}{%s}%s %s \end{varwidth}" % ("10cm", myCmds, self.cookedText)
+
 
     def setPositions(self):    # GramText
+        # print("GramText.setPositions() %s" % self.rawText[:30])
         if self.engine == "tikz":
-            self.setPositionsForTikz()
+            if self.latexTextMetricsUses == "pyx":
+                self.setCookedText()
+                self.setTextPartsTikz()
+                self.setMpTextTikz()
+            self.setBB()
+            # self.dump()
+
         elif self.engine == "svg":
-            self.setPositionsForSvg()
+            if not self.partsHaveBeenAdded:
+                self.setTextPartsSvg()
 
 
-    def setPositionsForTikz(self): 
-        gm = ['GramText.setPositionsForTikz() rawText=%s' % self.rawText]
+    def setTextPartsTikz(self):
+        gm = ['GramText.setTextPartsTikz() rawText=%s' % self.rawText]
 
-        assert self.engine == "tikz"
+        assert self.engine == "tikz", f"GramText.setTextPartsTikz(), self.engine is {self.engine}"
+
 
         if not self.partsHaveBeenAdded:
             for tp in self.parts:
@@ -4221,7 +4706,7 @@ class GramText(GramGraphic):
                     cs = tp.color.color  # cs is colourString
                     if tp.color.value:
                         cs = f"{cs}!{100 * float(tp.color.value):.0f}"
-                    theText = "\\textcolor{%s}{%s}" % (cs, tp.rawText)
+                    theText = r"\textcolor{%s}{%s}" % (cs, tp.rawText)
                 else:
                     theText = tp.rawText
 
@@ -4242,33 +4727,11 @@ class GramText(GramGraphic):
                 self.rawText += theText
             self.partsHaveBeenAdded = True
 
-        if self.latexTextMetricsUses == 'pyx':
-            if not self.haveStartedPyX:
-                self.startPyX()
 
-        if self.mpText:    # a minipage
-            pass
-        else:
-            # Is it to be wrapped, multi-line?
-            # If so, put it in a minipage
-            isWrapped = False
-            if self.textWrapWidth:
-                isWrapped = True
-            else:
-                if r"\\" in self.rawText:
-                    isWrapped = True
-                    self.textWrapWidth = self.getBiggestWidth()
+    def setTextPartsSvg(self):
+        gm = ['GramText.setTextPartsSvg() rawText=%s' % self.rawText]
 
-            if isWrapped:
-                self.wrapRawInMinipage()
-
-        self.setBB()
-
-
-    def setPositionsForSvg(self): 
-        gm = ['GramText.setPositionsForSvg() rawText=%s' % self.rawText]
-
-        assert self.engine == "svg"
+        assert self.engine == "svg", f"GramText.setTextPartsSvg(), self.engine is {self.engine}"
 
         if self.partsHaveBeenAdded:
             pass
@@ -4293,54 +4756,55 @@ class GramText(GramGraphic):
 
                 ss.append('<tspan ')
                 if myClass:
-                    ss.append('class="%s" ' % myClass)
-                ss.append('font-size="%s" ' % myTextSizeStr)
+                    ss.append('class="%s"' % myClass)
+                ss.append('font-size="%s"' % myTextSizeStr)
 
-                myTextShape = tp.getTextShape()  #  ['itshape', 'scshape', "upshape"]  # and slshape?
+                myTextShape = tp.getTextShape()  #  ['itshape', 'scshape', "upshape"]     # and slshape?
+                print(f"setTextPartsSvg, {tp.rawText} got myTextShape {myTextShape}, font {tp.font}")
                 if myTextShape == 'scshape':
-                    ss.append('font-variant="small-caps" ')
+                    # ss.append('font-variant="small-caps"')
+                    gm.append("Small caps is currently off for SVG.") # because inkscape cannot measure it
+                    raise GramError(gm)
                 if myTextShape == "upshape":
                     pass
                 if myTextShape == None:
                     pass
                 if myTextShape == 'itshape':
-                    if tp.font == 'helvetica':
-                        ss.append('font-style="oblique" ')
-                    elif tp.font == 'cm':
-                        if myTextShape == 'scshape':
-                            ss.append('font-style="oblique"')
-                        else:
-                            ss.append('font-style="italic" ')
-                    elif tp.font in ['palatino', 'times']:
-                        ss.append('font-style="italic" ')
+                    if tp.font in ['helvetica', 'lms']:
+                        ss.append('font-style="oblique"')
+                    elif tp.font in ['lmr', 'palatino', "times"]:
+                        ss.append('font-style="italic"')
+                    else:
+                        gm.append("itshape specified, but not for %s.  Fixme!" % tp.font)
+                        raise GramError(gm)
 
                 # Since font-weight is part of the style, I need to use "style=..."
                 myTextSeries = tp.getTextSeries()   # 'bfseries' or 'mdseries'
                 # print("myTextSeries: %s" % myTextSeries)
                 if myTextSeries == "bfseries":
-                    ss.append('style="font-weight:bold" ')   # or a number?
+                    ss.append('style="font-weight:bold"')   # or a number?
                 elif myTextSeries == "mdseries":
-                    ss.append('style="font-weight:normal" ')
+                    ss.append('style="font-weight:normal"')
 
                 myColor = tp.getColor()
                 if myColor:
-                    ss.append('fill="%s" ' % myColor.color)
+                    ss.append('fill="%s"' % myColor.color)
                     if myColor.transparent:
-                        ss.append('fill-opacity="%s" ' % myColor.value)
+                        ss.append('fill-opacity="%s"' % myColor.value)
 
                 ss.append(">%s</tspan>" % tp.rawText)
 
-            theText = "".join(ss)
+            theText = " ".join(ss)
             self.rawText += theText
             self.partsHaveBeenAdded = True
-
 
 
     def getTikz(self):   # GramText
         gm = ['GramText.getTikz() rawText=%s' % self.rawText]
         # print(gm[0])
 
-        self.setPositions()
+        if self.latexTextMetricsUses == 'pyx':
+            self.setPositions()
 
         if self.mpText:
             theText = self.mpText
@@ -4348,12 +4812,14 @@ class GramText(GramGraphic):
             # We don't want to use self.cookedText here, because we get tikz options, below.
             # However, we want to escape underscores and such.
             # But not in includegraphics filenames
-            if self.rawText.startswith(r"\includegraphics"):
-                theText = self.rawText
-            else:
-                theText = func.fixCharsForLatex(self.rawText)
 
-        
+            # Changed my mind.  It is now up to the user to escape underscores and set math mode
+            # if self.rawText.startswith(r"\includegraphics"):
+            #     theText = self.rawText
+            # else:
+            #     theText = func.fixCharsForLatex(self.rawText)
+            theText = self.rawText
+
         # print(f"GramText.getTikz()  self.rawText= {self.rawText}")
         # print(f"theText (after fixCharsForLatex(self.rawText))= {theText}")
 
@@ -4373,12 +4839,17 @@ class GramText(GramGraphic):
         ss.append(r'\node')
 
         options = self.getTikzOptions()
+        if 0:
+            print("tikz options for GramText: %s" % self.rawText)
+            for opti in options:
+                print(f"    {opti}")
+
         #print("%s, options %s" % (self.rawText, options))
         # If fill.value and fill.transparent, then fill-opacity is set to
         # fill.value (good) but the text gets that same opacity (bad).
         # Here is a hack fix.
-        if self.fill and self.fill.value and self.fill.transparent:
-            options.append("text opacity=1.0")
+        # if self.fill and self.fill.value and self.fill.transparent:
+        #     options.append("text opacity=1.0")
 
         if options:
             ss.append('[%s]' % ','.join(options))
@@ -4427,7 +4898,7 @@ class GramText(GramGraphic):
         print(f"{spacer} rawText: {self.rawText}")
         print(f"{spacer} cA: {self.cA.xPosn:.3f},{self.cA.yPosn:.3f}")
         print(f"{spacer} anchor: {self.getAnch()}")
-        print(f"{spacer} length: {self.length:.5f}")
+        print(f"{spacer} width: {self.width:.5f}")
         print(f"{spacer} fullHeight: {self.fullHeight:.5f}")
         print(f"{spacer} underhang (cm): {self.underhang}")
         print(f"{spacer} rise (cm): {self.rise}")
@@ -4456,7 +4927,7 @@ class GramText(GramGraphic):
         else:
             myTextSizeCm = self.fontSizeMultiplierDict[
                 myTextSizeStr] * self.svgTextNormalsize
-        
+
         #print(f"GramText.getSvg()  a myTextSizeStr is {myTextSizeStr}")
         #print(f"GramText.getSvg()  myTextSizeCm is {myTextSizeCm}")
         myTextSizeStr = "%.2f" % (myTextSizeCm * self.svgPxForCm)
@@ -4464,14 +4935,14 @@ class GramText(GramGraphic):
 
         myAnch = self.getAnch()
         # print "GramText.getSvg()  myAnch=%s" % myAnch
-        
+
         halfHeight = self.fullHeight / 2.
-        #self.length = (self.bb[2] - self.bb[0])  no workee for rotated!
-        halfLength = self.length/2.
-        # print(f"GramText.getSvg() '{self.rawText}' length {self.length:.2} cm, height is {self.fullHeight:.2} cm")
+        #self.width = (self.bb[2] - self.bb[0])  no workee for rotated!
+        halfWidth = self.width/2.
+        # print(f"GramText.getSvg() '{self.rawText}' width {self.width:.2} cm, height is {self.fullHeight:.2} cm")
 
         oneInnerSep = self.getInnerSep()
-        #print("GramText.getSvg() Got oneInnerSep %.2f" % oneInnerSep)
+        # print("GramText.getSvg() Got oneInnerSep %.2f for %s" % (oneInnerSep, self.rawText))
         twoInnerSep = 2 * oneInnerSep
 
         # Get outer sep
@@ -4484,19 +4955,18 @@ class GramText(GramGraphic):
         if Gram._svgNormalsize_x:
             self.svg_half_normal_x = Gram._svgNormalsize_x / 2.
         # print(f"{gm[0]} svg_half_normal_x is {self.svg_half_normal_x}")
-        
 
 
-        # dx and dy are fine-tuning args for svg text, that modify the x and y positions. 
-        # Eg <text id="text-1"  x="300.00" y="-300.00" font-size="108.00" dx="-93.29" dy="28.62" >acly</text> 
+        # dx and dy are fine-tuning args for svg text, that modify the x and y positions.
+        # Eg <text id="text-1"  x="300.00" y="-300.00" font-size="108.00" dx="-93.29" dy="28.62" >acly</text>
         # If they are zero, the text is placed at x,y as the start of the text, and the baseline
         # For a rect, the x,y is the top left corner, width goes right (as usual) and height goes down (unusual)
-        # Eg <rect x="300.0" y="-300.0"  width="186.57" height="100.62" stroke="red" fill="none" stroke-width="0.5" /> 
+        # Eg <rect x="300.0" y="-300.0"  width="186.57" height="100.62" stroke="red" fill="none" stroke-width="0.5" />
         myDx = 0.0
         myDy = 0.0
         myDrDx = 0.0   # for the box, ie the "draw"
         myDrDy = 0.0
-       
+
         if myAnch == 'west':
             myDx += oneInnerSep
             myDx += oneOuterSep
@@ -4515,44 +4985,44 @@ class GramText(GramGraphic):
             myDrDy += twoInnerSep
             myDrDy += twoOuterSep
         elif myAnch == 'north':
-            myDx += -halfLength
+            myDx += -halfWidth
             myDy += self.rise
             myDy += oneInnerSep
             myDy += oneOuterSep
-            myDrDx += -halfLength
+            myDrDx += -halfWidth
             myDrDx += -oneInnerSep
             myDrDx += -oneOuterSep
             myDrDy += self.fullHeight
             myDrDy += twoInnerSep
             myDrDy += twoOuterSep
         elif myAnch == 'north east':
-            myDx += -self.length
+            myDx += -self.width
             myDx += -oneInnerSep
             myDx += -oneOuterSep
             myDy += oneInnerSep
             myDy += oneOuterSep
             myDy += self.rise
-            myDrDx += -self.length
+            myDrDx += -self.width
             myDrDx += -twoInnerSep
             myDrDx += -twoOuterSep
             myDrDy += self.fullHeight
             myDrDy += twoInnerSep
             myDrDy += twoOuterSep
         elif myAnch == 'east':
-            myDx += -self.length
+            myDx += -self.width
             myDx += -oneInnerSep
             myDx += -oneOuterSep
             myDy -= self.underhang
             myDy += halfHeight
-            myDrDx += -self.length
+            myDrDx += -self.width
             myDrDx += -twoInnerSep
             myDrDx += -twoOuterSep
             myDrDy += oneInnerSep
             myDrDy += oneOuterSep
             myDrDy += halfHeight
         elif myAnch == 'base':
-            myDx += -halfLength
-            myDrDx += -halfLength
+            myDx += -halfWidth
+            myDrDx += -halfWidth
             myDrDx += -oneInnerSep
             myDrDx += -oneOuterSep
             myDrDy += oneInnerSep
@@ -4565,10 +5035,10 @@ class GramText(GramGraphic):
             myDrDy += oneOuterSep
             myDrDy += self.underhang
         elif myAnch == 'base east':
-            myDx += -self.length
+            myDx += -self.width
             myDx += -oneInnerSep
             myDx += -oneOuterSep
-            myDrDx += -self.length
+            myDrDx += -self.width
             myDrDx += -twoInnerSep
             myDrDx += -twoOuterSep
             myDrDy += oneInnerSep
@@ -4576,9 +5046,9 @@ class GramText(GramGraphic):
             myDrDy += self.underhang
         elif myAnch == 'mid':
             # print(f"mid: oneInnerSep: {oneInnerSep}, oneOuterSep {oneOuterSep}, underhang: {self.underhang}, svg_half_normal_x: {self.svg_half_normal_x}")
-            myDx += -halfLength
+            myDx += -halfWidth
             myDy  += self.svg_half_normal_x
-            myDrDx += -halfLength
+            myDrDx += -halfWidth
             myDrDx += -oneInnerSep
             myDrDx += -oneOuterSep
             myDrDy += oneInnerSep
@@ -4594,11 +5064,11 @@ class GramText(GramGraphic):
             # myDrDy += self.svg_half_normal_x
             myDrDy += self.underhang
         elif myAnch == 'mid east':
-            myDx += -self.length
+            myDx += -self.width
             myDx += -oneInnerSep
             myDx += -oneOuterSep
             myDy += self.svg_half_normal_x
-            myDrDx += -self.length
+            myDrDx += -self.width
             myDrDx += -twoInnerSep
             myDrDx += -twoOuterSep
             myDrDy += oneInnerSep
@@ -4614,28 +5084,28 @@ class GramText(GramGraphic):
             # myDx = 0.0
             # myDy = 0.0
         elif myAnch == 'south':
-            myDx += -halfLength
+            myDx += -halfWidth
             myDy += -oneInnerSep
             myDy += -oneOuterSep
             myDy += -self.underhang
-            myDrDx += -halfLength
+            myDrDx += -halfWidth
             myDrDx += -oneInnerSep
             myDrDx += -oneOuterSep
         elif myAnch == 'south east':
-            myDx += -self.length
+            myDx += -self.width
             myDx += -oneInnerSep
             myDx += -oneOuterSep
             myDy += -oneInnerSep
             myDy += -oneOuterSep
             myDy += -self.underhang
-            myDrDx += -self.length
+            myDrDx += -self.width
             myDrDx += -twoInnerSep
             myDrDx += -twoOuterSep
         elif myAnch == 'center' or myAnch is None:
-            myDx += -halfLength
+            myDx += -halfWidth
             myDy += -self.underhang
             myDy += halfHeight
-            myDrDx += -halfLength
+            myDrDx += -halfWidth
             myDrDx += -oneInnerSep
             myDrDx += -oneOuterSep
             myDrDy += oneInnerSep
@@ -4650,17 +5120,18 @@ class GramText(GramGraphic):
         # # rotatePointAroundPoint(pointToRotate, degrees, pivotPoint)
 
         # tbb is [llx, lly, urx, ury]
-        
+
         if myAnch in ["mid", "mid east", "mid west"]:
             self.tbb[0] = self.cA.xPosn + myDx
             self.tbb[1] = self.cA.yPosn - self.underhang
-            self.tbb[2] = self.tbb[0] + self.length
+            self.tbb[2] = self.tbb[0] + self.width
             self.tbb[3] = self.tbb[1] + self.fullHeight
         else:
             self.tbb[0] = self.cA.xPosn + myDx
             self.tbb[1] = self.cA.yPosn - self.underhang - myDy
-            self.tbb[2] = self.tbb[0] + self.length
+            self.tbb[2] = self.tbb[0] + self.width
             self.tbb[3] = self.tbb[1] + self.fullHeight
+
 
         #     myRotate = self.getRotate()
         #     if myRotate:
@@ -4679,6 +5150,18 @@ class GramText(GramGraphic):
         self.bb[1] = self.tbb[1] - oneInnerSep - oneOuterSep
         self.bb[2] = self.tbb[2] + oneInnerSep + oneOuterSep
         self.bb[3] = self.tbb[3] + oneInnerSep + oneOuterSep
+
+        if not self.rawText:   # Empty text
+            self.tbb[0] = self.cA.xPosn
+            self.tbb[1] = self.cA.yPosn
+            self.tbb[2] = self.cA.xPosn
+            self.tbb[3] = self.cA.yPosn
+
+            self.bb[0] = self.cA.xPosn
+            self.bb[1] = self.cA.yPosn
+            self.bb[2] = self.cA.xPosn
+            self.bb[3] = self.cA.yPosn
+
 
 
         theRotate = self.getRotate()
@@ -4750,7 +5233,6 @@ class GramText(GramGraphic):
             if self.corners:
                 for cNum in range(4):
                     self.corners[cNum][1] += theYShift
-        
 
 
         myDx *= self.svgPxForCm
@@ -4765,14 +5247,10 @@ class GramText(GramGraphic):
 
         # print "%20s  %+.2f  %+6.2f" % (myAnch, myDx, myDy)
 
-        #print("b GramText.getSvg() self.length is %s; svgHackDoRotate is %s" % (self.length, Gram._svgHackDoRotate))
+        #print("b GramText.getSvg() self.width is %s; svgHackDoRotate is %s" % (self.width, Gram._svgHackDoRotate))
 
- 
 
         ss = []  # GramText.getSvg()
-
-        # ss.append('\n<polygon points="FIXME"' % (
-        #    self.tbb[0], self.tbb]1], self.
 
         myDraw = self.getDraw()
         myFill = self.getFill()
@@ -4789,35 +5267,48 @@ class GramText(GramGraphic):
             if myYShift:
                 myDrDy -= myYShift * self.svgPxForCm
 
-            if myDraw is True:
-                myColor = self.getColor()    # rectangle outline is made to be the same color as the text color
-            elif isinstance(myDraw, GramColor):
-                myColor = myDraw
-            else:
-                myColor = None
 
             myDrHeight = ((self.fullHeight + twoInnerSep) * self.svgPxForCm)
             myDrX = ((self.cA.xPosn + oneOuterSep) * self.svgPxForCm)  + myDrDx
             myDrY = ((-self.cA.yPosn - oneOuterSep) * self.svgPxForCm) - myDrHeight + myDrDy
-            myDrWid = ((self.length + twoInnerSep) * self.svgPxForCm)
+            myDrWid = ((self.width + twoInnerSep) * self.svgPxForCm)
             ss.append('<rect x="%.2f" y="%.2f"  width="%.2f" height="%.2f"' % (
                 myDrX, myDrY, myDrWid, myDrHeight))
             # ss.append('stroke="black" fill="none" stroke-width="1" />\n')
-            if myColor:
-                ss.append('stroke="%s"' % myColor.color)
-                if myColor.transparent:
-                    ss.append('stroke-opacity="%s"' % myColor.value)
-            else:
+
+            if myDraw:
                 if myDraw is True:
                     ss.append('stroke="black"')
+                elif myDraw in [False, None]:
+                    pass
+
+                elif isinstance(myDraw, GramColor):
+                    myColor = myDraw
+                    colorOptions = myColor.getSvgOptions()
+                    # print(f"GramText.getSvg() myDraw B colorOptions:{colorOptions}")
+                    ss += colorOptions
+
                 else:
-                    ss.append('stroke="none"')
+                    gm.append(f"Programming error.  Bad myDraw value {myDraw}")
+                    raise GramError(gm)
+
+                # If myFill is None or False, it will be filled in black unless I do this
+                if myFill in [None, False]:
+                    ss.append('fill="none"')
+
+
             if myFill:
-                ss.append('fill="%s"' % myFill.color)
-                if myFill.transparent:
-                    ss.append('fill-opacity="%s"' % myFill.value)
-            else:
-                ss.append('fill="none"')
+                if myFill == True:
+                    ss.append('fill="black"')
+
+                elif isinstance(myFill, GramColor):
+                    colorOptions = myFill.getSvgOptions(stroke="fill")
+                    # print(f"GramText.getSvg() myFill A colorOptions:{colorOptions}")
+                    ss += colorOptions
+                else:
+                    gm.append(f"GramText.getSvg() Programming error.  Bad myFill value {myFill}")
+                    raise GramError(gm)
+
             if theLineThickness:
                 myLineThickness = cmForLineThickness(theLineThickness)
                 #print "b Got myLineThickness %s cm" % myLineThickness
@@ -4831,16 +5322,18 @@ class GramText(GramGraphic):
                     -myRotate, self.svgPxForCmF(self.cA.xPosn), -self.svgPxForCmF(self.cA.yPosn)))
 
             ss.append('/>\n')
-            
-        ss.append('<text id="%s"' % self.gId)
+
+        ss.append('<text id="%s"' % self.gId)  # GramText.getSvg()
         if myClass:
             ss.append('class="%s"' % myClass)
 
         # preserve spaces.  The default mucks with spaces
-        # This is deprecated, but it is still used by inkscape, so
-        # leave it.   When svg v 2 is more fully supported by inkscape, 
+        # This directive is deprecated, but it is still used by inkscape, so
+        # leave it.   When svg v 2 is more fully supported by inkscape,
         # then use style="white-space: pre" instead
-        ss.append('xml:space="preserve"')
+        # This has been put in Gram.svgWriteToOpenFile()
+        #if self.svgTextPreserveWhitespace:
+        #    ss.append('xml:space="preserve"')
 
         myX = (self.svgPxForCmF(self.cA.xPosn))
 
@@ -4855,22 +5348,23 @@ class GramText(GramGraphic):
             ss.append('dy="%.2f"' % myDy)
 
         myTextShape = self.getTextShape()  #  ['itshape', 'scshape', "upshape"]     # and slshape?
+        # print(f"{gm[0]}, got myTextShape {myTextShape}, font {self.font}")
         if myTextShape == 'scshape':
-            ss.append('font-variant="small-caps"')
+            # ss.append('font-variant="small-caps"')
+            gm.append("Small caps is currently off for SVG.") # because inkscape cannot measure it
+            raise GramError(gm)
         if myTextShape == "upshape":
             pass
         if myTextShape == None:
             pass
         if myTextShape == 'itshape':
-            if self.font == 'helvetica':
+            if self.font in ['helvetica', 'lms']:
                 ss.append('font-style="oblique"')
-            elif self.font == 'cm':
-                if myTextShape == 'scshape':
-                    ss.append('font-style="oblique"')
-                else:
-                    ss.append('font-style="italic"')
-            elif self.font in ['palatino', 'times']:
+            elif self.font in ['lmr', 'palatino', "times"]:
                 ss.append('font-style="italic"')
+            else:
+                gm.append("itshape specified, but not for %s.  Fixme!" % self.font)
+                raise GramError(gm)
 
         # Since font-weight is part of the style, I need to use "style=..."
         myTextSeries = self.getTextSeries()   # 'bfseries' or 'mdseries'
@@ -4880,10 +5374,17 @@ class GramText(GramGraphic):
             ss.append('style="font-weight:normal"')
 
         myColor = self.getColor()
+        # print(f"GramText.getSvg() after getColor(); myColor is {myColor};  {self.rawText}")
         if myColor:
-            ss.append('fill="%s"' % myColor.color)
-            if myColor.transparent:
-                ss.append('fill-opacity="%s"' % myColor.value)
+            if myColor == True:
+                pass  # in svg text, absence of fill means fill="black"
+            elif isinstance(myColor, GramColor):
+                colourOptions = myColor.getSvgOptions(stroke="fill")
+                # print(f"GramText.getSvg() got colourOptions {colourOptions}")
+                ss += colourOptions
+            else:
+                gm.append(f"unknown myColor {myColor}; programming error")
+                raise GramError(gm)
 
         # print(f"GramText.getSvg() Gram._svgHackDoRotate is  {Gram._svgHackDoRotate}")
         if Gram._svgHackDoRotate:
@@ -4896,41 +5397,46 @@ class GramText(GramGraphic):
         if Gram._svgHack_x_Only:
             ss.append('>x</text>')
         else:
-            ss.append('>%s</text>' % self.rawText)
+            # both rawText and titleAttribute at once, so no space between text and <title>
+            if self.titleAttribute:
+                ss.append(">%s<title>\n%s</title></text>" % (self.rawText, self.titleAttribute))
+            else:
+                ss.append(">%s</text>" % self.rawText)
 
         if self.showTextBB:
             # Tight bb first
-
-            if myAnch in ["mid", "mid east", "mid west"]:
-                ss.append('\n<rect x="%.2f" y="%.2f"  width="%.2f" height="%.2f"' % (
-                    self.svgPxForCmF(self.cA.xPosn) + myDx,
-                    -self.svgPxForCmF(self.cA.yPosn + self.fullHeight - self.underhang),
-                    self.svgPxForCmF(self.length),
-                    self.svgPxForCmF(self.fullHeight)))
-            else:
-                ss.append('\n<rect x="%.2f" y="%.2f"  width="%.2f" height="%.2f"' % (
-                    self.svgPxForCmF(self.cA.xPosn) + myDx,
-                    -self.svgPxForCmF(self.cA.yPosn + self.fullHeight - self.underhang) + myDy,
-                    self.svgPxForCmF(self.length),
-                    self.svgPxForCmF(self.fullHeight)))
-            myRotate = self.getRotate()
-            if myRotate:
-                ss.append('transform="rotate(%.2f, %.2f, %.2f)"' % (
-                    -myRotate, self.svgPxForCmF(self.cA.xPosn), -self.svgPxForCmF(self.cA.yPosn)))
-            ss.append('stroke="blue" fill="none" stroke-width="0.5" />')
+            if 1:
+                if myAnch in ["mid", "mid east", "mid west"]:
+                    ss.append('\n<rect x="%.2f" y="%.2f"  width="%.2f" height="%.2f"' % (
+                        self.svgPxForCmF(self.cA.xPosn) + myDx,
+                        -self.svgPxForCmF(self.cA.yPosn + self.fullHeight - self.underhang),
+                        self.svgPxForCmF(self.width),
+                        self.svgPxForCmF(self.fullHeight)))
+                else:
+                    ss.append('\n<rect x="%.2f" y="%.2f"  width="%.2f" height="%.2f"' % (
+                        self.svgPxForCmF(self.cA.xPosn) + myDx,
+                        -self.svgPxForCmF(self.cA.yPosn + self.fullHeight - self.underhang) + myDy,
+                        self.svgPxForCmF(self.width),
+                        self.svgPxForCmF(self.fullHeight)))
+                myRotate = self.getRotate()
+                if myRotate:
+                    ss.append('transform="rotate(%.2f, %.2f, %.2f)"' % (
+                        -myRotate, self.svgPxForCmF(self.cA.xPosn), -self.svgPxForCmF(self.cA.yPosn)))
+                ss.append('stroke="blue" fill="none" stroke-width="0.1" stroke-opacity="0.5"/>')
 
 
             # baseline
-            ss.append('\n<line x1="%.2f" y1="%.2f" x2="%.2f" y2="%.2f"' % (
-                self.svgPxForCmF(self.cA.xPosn) + myDx,
-                -self.svgPxForCmF(self.cA.yPosn) + myDy,
-                self.svgPxForCmF(self.cA.xPosn + self.length) + myDx,
-                -self.svgPxForCmF(self.cA.yPosn) + myDy))
-            myRotate = self.getRotate()
-            if myRotate:
-                ss.append('transform="rotate(%.2f, %.2f, %.2f)"' % (
-                    -myRotate, self.svgPxForCmF(self.cA.xPosn), -self.svgPxForCmF(self.cA.yPosn)))
-            ss.append('stroke="red" fill="none" stroke-width="0.5" />')
+            if 1:
+                ss.append('\n<line x1="%.2f" y1="%.2f" x2="%.2f" y2="%.2f"' % (
+                    self.svgPxForCmF(self.cA.xPosn) + myDx,
+                    -self.svgPxForCmF(self.cA.yPosn) + myDy,
+                    self.svgPxForCmF(self.cA.xPosn + self.width) + myDx,
+                    -self.svgPxForCmF(self.cA.yPosn) + myDy))
+                myRotate = self.getRotate()
+                if myRotate:
+                    ss.append('transform="rotate(%.2f, %.2f, %.2f)"' % (
+                        -myRotate, self.svgPxForCmF(self.cA.xPosn), -self.svgPxForCmF(self.cA.yPosn)))
+                ss.append('stroke="red" fill="none" stroke-width="0.1" stroke-opacity="0.5"/>')
 
             # ss.append('\n<rect x="%.2f" y="%.2f"  width="%.2f" height="%.2f"' % (
             #     self.bb[0] * self.svgPxForCm, -self.bb[3] * self.svgPxForCm,
@@ -4940,14 +5446,14 @@ class GramText(GramGraphic):
             # bb
             ss.append("\n\n<!-- bb -->\n")
             ss.append('\n<rect x="%.2f" y="%.2f"  width="%.2f" height="%.2f"' % (
-                self.svgPxForCmF(self.bb[0]), 
-                -self.svgPxForCmF(self.bb[3]), 
-                self.svgPxForCmF(self.bb[2] - self.bb[0]), 
+                self.svgPxForCmF(self.bb[0]),
+                -self.svgPxForCmF(self.bb[3]),
+                self.svgPxForCmF(self.bb[2] - self.bb[0]),
                 self.svgPxForCmF(self.bb[3] - self.bb[1])))
-            ss.append('stroke="red" fill="none" stroke-width="0.8" />')
+            ss.append('stroke="red" fill="none" fill-opacity="0.5" stroke-width="0.2" stroke-opacity="0.5"/>')
 
         if self.showTextAnchor:
-            ss.append('\n<circle cx="%.2f" cy="%.2f" r="2" stroke="none" fill="red"/>' % (
+            ss.append('\n<circle cx="%.2f" cy="%.2f" r="2" stroke="none" fill="red" opacity="0.5"/>' % (
                 self.svgPxForCmF(self.cA.xPosn), -self.svgPxForCmF(self.cA.yPosn)))
         ret = ' '.join(ss)
         # print ret
@@ -4960,12 +5466,12 @@ class GramLine(GramGraphic):
         GramGraphic.__init__(self)
         self.cA = cA
         self.cB = cB
-        self.color = 'black'
+        self._color = True
 
     def getTikz(self):
         #gm = ['GramLine.getTikz()']
         ss = []
-        ss.append('\draw')
+        ss.append('\\draw')
 
         options = self.getTikzOptions()
         if options:
@@ -4988,7 +5494,7 @@ class GramLine(GramGraphic):
         return ' '.join(ss)
 
 
-    def getSvg(self):
+    def getSvg(self):   # GramLine
         gm = ['GramLine.getSvg()']
         ss = []
         ss.append('<line')
@@ -4999,6 +5505,7 @@ class GramLine(GramGraphic):
             self.svgPxForCmF(self.cB.xPosn), -self.svgPxForCmF(self.cB.yPosn)))
 
         options = self.getSvgOptions()
+        #print(f"GramLine.getSvg() getSvgOptions {options}")
         ss += options
 
         if self.titleAttribute:
@@ -5030,17 +5537,18 @@ class GramRect(GramLine):
 
     def __init__(self, cA, cB):
         GramLine.__init__(self, cA, cB)
-        self.color = None
-        self.draw = True
+        self._color = None    # This week, color is not used by GramRect; just use draw and fill.
+        self._draw = True
         self.setGIdAndAddToDict('rect')
+        # print(f"GramRect.__init__()  self.color = {self.color} self.draw = {self.draw}  self.fill = {self.fill}")
 
-    def getTikz(self):
+    def getTikz(self):  # GramRect
         ss = []
 
         #ss.append(r"\draw[gray,very thin] (0,0) grid (4,4);")
 
-        #ss.append('\draw')
-        ss.append('\path')
+        #ss.append('\\draw')
+        ss.append('\\path')
 
         options = self.getTikzOptions()
         if options:
@@ -5059,7 +5567,7 @@ class GramRect(GramLine):
         if 0:
             self.setBB()
             bbLine = '\n'
-            bbLine += r"\draw [red,ultra thin] (%.3f,%.3f) rectangle (%.3f,%.3f);" % (
+            bbLine += "\\draw [red,ultra thin] (%.3f,%.3f) rectangle (%.3f,%.3f);" % (
                 self.bb[0], self.bb[1],
                 self.bb[2], self.bb[3])
             ss.append(bbLine)
@@ -5071,9 +5579,9 @@ class GramRect(GramLine):
 
         return ' '.join(ss)
 
-    def getSvg(self):
-        gm = ['GramRect.getSvg()']
-        # print gm[0], self.gId
+    def getSvg(self):  # GramRect
+        gm = [f'GramRect.getSvg(), color {self.color}, draw {self.draw}, fill {self.fill}']
+        # print(gm[0], self.gId, self.color)
 
         ss = []
         ss.append('<rect id="%s" ' % self.gId)
@@ -5082,51 +5590,19 @@ class GramRect(GramLine):
         ss.append('width="%.2f" height="%.2f"' % (
             self.svgPxForCmF(self.cB.xPosn - self.cA.xPosn),
             self.svgPxForCmF(self.cB.yPosn - self.cA.yPosn)))
-        
 
-        if 1:
-            options = self.getSvgOptions()
-            if 0:
-                print("SVG options")
-                for opti in options:
-                    print("            %s" % opti)
-            ss += options
-            
+        options = self.getSvgOptions()
+        if 0:
+            print("GramRect.getSvg()  SVG options")
+            print(gm[0])
+            for opti in options:
+                print("            %s" % opti)
+        ss += options
 
+        if self.titleAttribute:
+            ss.append("><title>\n%s</title></rect>" % self.titleAttribute)
         else:
-            myLineThickness = self.getLineThickness()
-            # print "GramLine.getSvg()  myLineThickness %s" % myLineThickness
-            myLineThickness = cmForLineThickness(myLineThickness)
-            myLineThickness = self.svgPxForCmF(myLineThickness)
-            ss.append('stroke-width="%.1f"' % (myLineThickness))
-
-            # cId is color object, fId is the fill object
-            # Both are GramColor objects
-            cId = self.getColor()
-            if cId is None:
-                pass
-            else:
-                assert isinstance(cId, GramColor), "Got %s, should be a GramColor instance." % cId
-
-            fId = self.getFill()
-            if fId is None:
-                pass
-            else:
-                assert isinstance(fId, GramColor), "Got %s, should be a GramColor instance." % fId
-
-            if cId and cId.color:
-                ss.append('stroke="%s"' % cId.color)
-                if cId.transparent:
-                    ss.append('stroke-opacity="%s"' % cId.value)
-
-            if fId is None:
-                ss.append('fill="none"')
-            elif fId and fId.color:
-                ss.append('fill="%s"' % fId.color)
-                if fId.transparent:
-                    ss.append('fill-opacity="%s"' % fId.value)
-
-        ss.append('/>')
+            ss.append('/>')
         #print(' '.join(ss))
         return ' '.join(ss)
 
@@ -5455,7 +5931,7 @@ class GramJpeg(GramGraphic):
         if 1:
 
             halfHeight = self.jpegHeight_cm / 2.0
-            halfLength = self.jpegWid_cm / 2.0
+            halfWidth = self.jpegWid_cm / 2.0
 
             theAnch = self.getAnch()
 
@@ -5466,9 +5942,9 @@ class GramJpeg(GramGraphic):
                 self.bb[3] = self.cA.yPosn + self.jpegHeight_cm
 
             elif theAnch == 'south':
-                self.bb[0] = self.cA.xPosn - halfLength
+                self.bb[0] = self.cA.xPosn - halfWidth
                 self.bb[1] = self.cA.yPosn
-                self.bb[2] = self.cA.xPosn + halfLength
+                self.bb[2] = self.cA.xPosn + halfWidth
                 self.bb[3] = self.cA.yPosn + self.jpegHeight_cm
 
             elif theAnch == 'south east':
@@ -5490,9 +5966,9 @@ class GramJpeg(GramGraphic):
                 self.bb[3] = self.cA.yPosn
 
             elif theAnch == 'north':
-                self.bb[0] = self.cA.xPosn - halfLength
+                self.bb[0] = self.cA.xPosn - halfWidth
                 self.bb[1] = self.cA.yPosn - self.jpegHeight_cm
-                self.bb[2] = self.cA.xPosn + halfLength
+                self.bb[2] = self.cA.xPosn + halfWidth
                 self.bb[3] = self.cA.yPosn
 
             elif theAnch == 'north west':
@@ -5508,9 +5984,9 @@ class GramJpeg(GramGraphic):
                 self.bb[3] = self.cA.yPosn + halfHeight
 
             elif theAnch == 'center' or theAnch is None:
-                self.bb[0] = self.cA.xPosn - halfLength
+                self.bb[0] = self.cA.xPosn - halfWidth
                 self.bb[1] = self.cA.yPosn - halfHeight
-                self.bb[2] = self.cA.xPosn + halfLength
+                self.bb[2] = self.cA.xPosn + halfWidth
                 self.bb[3] = self.cA.yPosn + halfHeight
 
             else:
@@ -5692,29 +6168,29 @@ makeStuff_2 = """
 
 # For debugging, remove the '> /dev/null' bit, so you can see the error messages!
 pdf: $(TEXFILEROOT).tex
-\tpdflatex $(TEXFILEROOT).tex > /dev/null
-\t$(PDFVIEWER) $(TEXFILEROOT).pdf &
+\t$(LATEXPROGRAM) $(TEXFILEROOT).tex > /dev/null
+\t$(PDFVIEWER) $(TEXFILEROOT).pdf
 
 pdfPage: $(TEXFILEROOT).tex
-\tpdflatex $(TEXFILEROOT).tex > /dev/null
+\t$(LATEXPROGRM) $(TEXFILEROOT).tex > /dev/null
 \t$(PDFVIEWER) $(TEXFILEROOT).pdf
 """
 
 makeStuff_2b = """
 
 pdf: $(TEXFILEROOT).tex
-\tpdflatex $(TEXFILEROOT).tex
-\t$(PDFVIEWER) $(TEXFILEROOT).pdf &
+\t$(LATEXPROGRAM) $(TEXFILEROOT).tex
+\t$(PDFVIEWER) $(TEXFILEROOT).pdf
 
 pdfPage: $(TEXFILEROOT).tex
-\tpdflatex $(TEXFILEROOT).tex
+\t$(LATEXPROGRAM) $(TEXFILEROOT).tex
 \t$(PDFVIEWER) $(TEXFILEROOT).pdf
 """
 
 makeStuff_3 = """
 composite:$(COMPOSITEROOT).tex
 \trm -f $(COMPOSITEOUTFILEROOT).pdf
-\tpdflatex $(COMPOSITEROOT).tex
+\t$(LATEXPROGRAM) $(COMPOSITEROOT).tex
 \tmv $(COMPOSITEROOT).pdf $(COMPOSITEOUTFILEROOT).pdf
 \t$(PDFVIEWER) $(COMPOSITEOUTFILEROOT).pdf
 """
@@ -5807,13 +6283,12 @@ text.ttfamily {
 svgCss2 = """
 text,tspan {
     font-family: %s;
-    font-weight: %i;
+    font-weight: %s;
 }
 text.sffamily,tspan.sffamily {
-    font-family: "Latin Modern Sans", Helvetica, sans-serif;
+    font-family: %s;
 }
 text.ttfamily,tspan.ttfamily {
-    font-family: "Latin Modern Mono", "Courier New", Courier, monospace;
+    font-family: %s;
 }
 """
-

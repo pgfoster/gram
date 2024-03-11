@@ -8,8 +8,8 @@ class XYPoint(object):
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.xPosn = None
-        self.yPosn = None
+        self.xPosn = 0.0
+        self.yPosn = 0.0
 
     def getString(self):
         try:
@@ -163,7 +163,7 @@ class PlotLine(PlotXYContent):
         ss.append("\n<!-- line plot -->")
         ss.append('\n<polyline points="')
         ss.append(' '.join(["%.2f,%.2f" % (xyp.xPosn * self.svgPxForCm, 
-                -xyp.yPosn * self.svgPxForCm) for xyp in self.xYPoints]))
+                                           -xyp.yPosn * self.svgPxForCm) for xyp in self.xYPoints]))
         ss.append('"')
         options = self.getSvgOptions()
         #if options:
@@ -505,7 +505,7 @@ class PlotScatter(PlotXYContent):
         ss.append("\n<!-- PlotScatter.getSvg() -->")
         ss.append('\n<polyline points="')
         ss.append(' '.join(["%.2f,%.2f" % (xyp.xPosn * self.svgPxForCm, 
-                -xyp.yPosn * self.svgPxForCm) for xyp in self.xYPoints]))
+                                           -xyp.yPosn * self.svgPxForCm) for xyp in self.xYPoints]))
         ss.append('"')
         ss.append('stroke="none" fill="none"')
         ss.append('marker-start="url(#%s)"' % self.marker.markerId)

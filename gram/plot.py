@@ -96,6 +96,22 @@ class Plot(Gram):
                               'darkgray', 
                               'lightgray']
 
+        # style dict
+
+        # tickLabel
+        g = GramText('Xxy', addToGIdDict=False)
+        g.name = 'tickLabel'
+        g.textSize = self.tickLabelSize
+        # g.draw = "Blue"
+        self.styleDict[g.name] = g
+
+        # axisLabel
+        g = GramText('Xxy', addToGIdDict=False)
+        g.name = 'axisLabel'
+        g.textSize = self.axisLabelSize
+        self.styleDict[g.name] = g
+
+
     # ========================================================================
 
     def _getContentPosnX(self):
@@ -436,38 +452,16 @@ class Plot(Gram):
 #==================================================================
 #==================================================================
 
-    def setBuiltInStyles(self):
 
-        g = GramText('Xxy')
-        g.cA = GramCoord(0, 0)
-        g.name = 'tickLabel'
-        g.textSize = self.tickLabelSize
-        if g.defaultTextFamily:
-            g.textFamily = g.defaultTextFamily
-        if self.engine == 'tikz':
-            g.setBB()
-        else:
-            g.getSvg()
-        Gram._styleDict[g.name] = g
-
-        g = GramText('Xxy')
-        g.cA = GramCoord(0, 0)
-        g.name = 'axisLabel'
-        g.textSize = self.axisLabelSize
-        if g.defaultTextFamily:
-            g.textFamily = g.defaultTextFamily
-        if self.engine == 'tikz':
-            g.setBB()
-        else:
-            g.getSvg()
-        Gram._styleDict[g.name] = g
-
-    def render(self):
-        gm = ["Plot.render()"]
+    def setPositionsBeforeTextMetrics(self):
+        gm = ["Plot.setPositionsBeforeTextMetrics()"]
         
-        # print(gm[0])
+        print(f"{gm[0]} here.  engine is {self.engine}")
+
         self.tikzPictureDefaults.lineThickness = self.plotDefaultLineThickness
-        self.tikzPictureDefaults.innerSep = self.defaultInnerSep
+        if self._defaultInnerSep is not None:  # it has been set by the user, maybe to zero
+            self.tikzPictureDefaults.innerSep = self.defaultInnerSep
+
 
         if self.minXToShow is not None and self.maxXToShow is not None:
             self.xYScaleX = self.contentSizeX / \
@@ -480,12 +474,10 @@ class Plot(Gram):
             self.barValScale = self.contentSizeY / \
                 (self.maxBarValToShow - self.minBarValToShow)
 
-        # print("Plot.render() calling Gram.render()")
-        Gram.render(self)
         if 0:
-            print(f"Plot.render()  Gram._svgNormalsize_x is {Gram._svgNormalsize_x}")
-            print(f"Plot.render()  Gram._svgHackDoRotate is {Gram._svgHackDoRotate}")
-            print(f"Plot.render()  Gram._svgHack_x_Only is {Gram._svgHack_x_Only}")
+            print(f"Plot.setPositionsBeforeTextMetrics()  Gram._svgNormalsize_x is {Gram._svgNormalsize_x}")
+            print(f"Plot.setPositionsBeforeTextMetrics()  Gram._svgHackDoRotate is {Gram._svgHackDoRotate}")
+            print(f"Plot.setPositionsBeforeTextMetrics()  Gram._svgHack_x_Only is {Gram._svgHack_x_Only}")
 
         doThisPrint = True
         if Gram._svgNormalsize_x == None:
@@ -495,7 +487,8 @@ class Plot(Gram):
         elif Gram._svgHack_x_Only == True:
             doThisPrint = False
 
-        if doThisPrint:
+        #if doThisPrint:
+        if 1:
             spacer1 = ' ' * 10
             spacer2 = '    --    '
             print("%s %20s  %s" % (spacer1, 'minXInData', self.minXInData))
@@ -516,6 +509,48 @@ class Plot(Gram):
             print("%s %20s  %s" % (spacer1, 'maxBarValToShow', self.maxBarValToShow))
             print("%s %20s  %s" % (spacer2, 'barValScale', self.barValScale))
             print()
+
+
+        if self.xAxis:
+            self.xAxis.setPositionsBeforeTextMetrics()
+        if self.yAxis:
+            self.yAxis.setPositionsBeforeTextMetrics()
+        if self.barNameAxis:
+            self.barNameAxis.setPositionsBeforeTextMetrics()
+        if self.barValAxis:
+            self.barValAxis.setPositionsBeforeTextMetrics()
+        # if self.frameB:
+        #     self.frameB.setPositionsBeforeTextMetrics()
+        # if self.frameT:
+        #     self.frameT.setPositionsBeforeTextMetrics()
+        # if self.frameL:
+        #     self.frameL.setPositionsBeforeTextMetrics()
+        # if self.frameR:
+        #     self.frameR.setPositionsBeforeTextMetrics()
+
+        # if self.lines:
+        #     for g in self.lines:
+        #         g.setPositionsBeforeTextMetrics()
+
+        # if self.scatters:
+        #     for g in self.scatters:
+        #         g.setPositionsBeforeTextMetrics()
+
+        # if self.barsList:
+        #     for g in self.barsList:
+        #         g.setPositionsBeforeTextMetrics()
+
+        if self.graphics:
+            for g in self.graphics:
+                g.setPositionsBeforeTextMetrics()
+
+        for gr in self.grams:
+            gr.setPositionsBeforeTextMetrics()
+
+
+    def setPositions(self):
+        gm = ["Plot.setPositions()"]
+
 
         if self.xAxis:
             self.xAxis.setPositions()
@@ -549,6 +584,10 @@ class Plot(Gram):
         if self.graphics:
             for g in self.graphics:
                 g.setPositions()
+
+        if self.grams:
+            for gr in self.grams:
+                gr.setPositions()
 
     def line(self, xx, yy, smooth=False):
         c = PlotLine(self, xx, yy, smooth)
@@ -715,13 +754,13 @@ class Plot(Gram):
         ss.append('')
         return '\n'.join(ss)
 
-    def setTextMetrics(self):
-        if self.engine == 'tikz':
-            print("Plot.tikzCalcBigBoundingBox() is turned off.")
-            #self.tikzCalcBigBoundingBox()
-        else:
-            assert self.engine == 'svg'
-            self.svgSetTextMetrics()
+    # def setTextMetrics(self):
+    #     if self.engine == 'tikz':
+    #         print("Plot.tikzCalcBigBoundingBox() is turned off.")
+    #         #self.tikzCalcBigBoundingBox()
+    #     else:
+    #         assert self.engine == 'svg'
+    #         self.svgSetTextMetrics()
 
     # def svg(self):       
     #     Gram.svg(self)

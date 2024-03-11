@@ -24,13 +24,13 @@ class TreeGramRadial(TreeGram):
 
     """Make a radial-style tree
 
-    By default this makes a simple radial tree where the 
+    By default this makes a simple radial tree where the
     leaf branch angles increase monotonically.
 
-    By turning on the arg equalDaylight, it will alternatively 
-    use the phylip drawtree program to make an equal daylight 
-    tree.  Equal daylight trees often look better for small trees, 
-    but might give poor results for bigger trees. 
+    By turning on the arg equalDaylight, it will alternatively
+    use the phylip drawtree program to make an equal daylight
+    tree.  Equal daylight trees often look better for small trees,
+    but might give poor results for bigger trees.
 
     maxLinesDim is the size that you want to end up with, in cm,
                 of the biggest x or y dimension of the lines
@@ -421,8 +421,8 @@ class TreeGramRadial(TreeGram):
                     # That is good for TreeGram, but not for TreeGramRadial
                     # Now I want the cA's to be independent,
                     # so make a new one, with a new name, cL%i
-                    n.label.cA = GramCoord(xPosn=n.cA.xPosn, 
-                                           yPosn=n.cA.yPosn, 
+                    n.label.cA = GramCoord(xPosn=n.cA.xPosn,
+                                           yPosn=n.cA.yPosn,
                                            name="cL%i" % n.nodeNum)
                     if n == self.tree.root:
                         n.label.style = 'tgr root'
@@ -553,7 +553,7 @@ class TreeGramRadial(TreeGram):
                     else:
                         # print "node %2i " % n.nodeNum,
                         if n.angle >= 170./180. * math.pi:
-                            tb.anchor = 'north'                       
+                            tb.anchor = 'north'
                         elif n.angle >= x3piOver4:
                             # print "angle a"
                             tb.anchor = 'north east'
@@ -584,6 +584,38 @@ class TreeGramRadial(TreeGram):
                         elif n.angle < 0:
                             # print "angle h"
                             tb.anchor = 'north'
+        # styleDict
+
+        # tgr leaf
+        g = GramText('Xxy', addToGIdDict=False)
+        g.name = 'tgr leaf'
+        g.anchor = 'center'
+        g.innerSep = 0.0
+        g.textSize = self.leafLabelSize
+        self.styleDict[g.name] = g
+
+        g = GramText('Xxy', addToGIdDict=False)
+        g.name = 'tgr internal'
+        #g.anchor = 'west'
+        g.innerSep = 0.07
+        g.fill = 'white'
+        g.textSize = self.internalNodeLabelSize
+        self.styleDict[g.name] = g
+
+        g = GramText('Xxy', addToGIdDict=False)
+        g.name = 'tgr root'
+        #g.anchor = 'west'
+        g.innerSep = 0.07
+        g.fill = 'white'
+        g.textSize = self.internalNodeLabelSize
+        self.styleDict[g.name] = g
+
+        g = GramText('Xxy', addToGIdDict=False)
+        g.name = 'tgr branch'
+        g.textSize = self.branchLabelSize
+        g.innerSep = 0.05
+        self.styleDict[g.name] = g
+
 
             # print "-" * 25
             # for n in self.tree.iterLeavesNoRoot():
@@ -592,68 +624,8 @@ class TreeGramRadial(TreeGram):
             # print "-" * 25
             # sys.exit()
 
-    def setBuiltInStyles(self):
 
-
-        g = GramText('Xxy')
-        g.cA = GramCoord(0, 0)
-        g.name = 'tgr leaf'
-        g.anchor = 'center'
-        g.innerSep = 0.0
-        g.textSize = self.leafLabelSize
-        if g.defaultTextFamily:
-            g.textFamily = g.defaultTextFamily
-        #g.textShape = 'itshape'
-        if self.engine == 'tikz':
-            g.setBB()
-        else:
-            g.getSvg()
-        Gram._styleDict[g.name] = g
-
-        g = GramText('Xxy')
-        g.cA = GramCoord(0, 0)
-        g.name = 'tgr internal'
-        #g.anchor = 'west'
-        g.innerSep = 0.07
-        g.fill = 'white'
-        g.textSize = self.internalNodeLabelSize
-        if g.defaultTextFamily:
-            g.textFamily = g.defaultTextFamily
-        if self.engine == 'tikz':
-            g.setBB()
-        else:
-            g.getSvg()
-        Gram._styleDict[g.name] = g
-
-        g = GramText('Xxy')
-        g.cA = GramCoord(0, 0)
-        g.name = 'tgr root'
-        #g.anchor = 'west'
-        g.innerSep = 0.07
-        g.fill = 'white'
-        g.textSize = self.internalNodeLabelSize
-        if g.defaultTextFamily:
-            g.textFamily = g.defaultTextFamily
-        if self.engine == 'tikz':
-            g.setBB()
-        else:
-            g.getSvg()
-        Gram._styleDict[g.name] = g
-
-        g = GramText('Xxy')
-        g.cA = GramCoord(0, 0)
-        g.name = 'tgr branch'
-        g.textSize = self.branchLabelSize
-        if g.defaultTextFamily:
-            g.textFamily = g.defaultTextFamily
-        g.innerSep = 0.05
-        if self.engine == 'tikz':
-            g.setBB()
-        else:
-            g.getSvg()
-        Gram._styleDict[g.name] = g
-
-    def setPositions(self):
+    def setPositions(self):  # TreeGramRadial
         # return
         Gram.setPositions(self)
         self.tikzPictureDefaults.lineThickness = self.tgDefaultLineThickness
@@ -672,20 +644,18 @@ class TreeGramRadial(TreeGram):
                 n.cB.yPosn = n.parent.yPosn0 * self.scale
 
             if n.label:
-                if self.engine == 'tikz':
-                    n.label.setBB()
-                    
+
                 if 0:
-                    
                     print("TreeGramRadial.setPositions()  angle=%s, anchor=%s  rawText=%s, fullHeight=%s exWid=%s" % (
                         n.angle, n.label.getAnch(), n.label.rawText, n.label.fullHeight, n.label.exWid))
+
                 n.label.cA.xPosn = n.cA.xPosn
                 n.label.cA.yPosn = n.cA.yPosn
 
                 if n.isLeaf:
 
                     if 1:
-                        # Move the label coordinate label.cA a small amount outwards, 
+                        # Move the label coordinate label.cA a small amount outwards,
                         # along the line of the leaf branch
 
                         sqCoords = func.polar2square([n.angle, (n.label.fullHeight)])
@@ -693,44 +663,44 @@ class TreeGramRadial(TreeGram):
                         n.label.cA.yPosn += sqCoords[1]
 
                     if 1:
-                        # We do not want the n.label to be at the same yPosn as the n.cA.yPosn; 
-                        # if it does the label could over-write the line 
+                        # We do not want the n.label to be at the same yPosn as the n.cA.yPosn;
+                        # if it does the label could over-write the line
                         diff = n.label.cA.yPosn - n.cA.yPosn
                         halfHeight = n.label.fullHeight / 2.
                         if diff > 0.0:
                             # label.cA is above n.cA
                             if diff < halfHeight:
                                 diff2 = halfHeight - diff
-                                n.label.cA.yPosn 
+                                n.label.cA.yPosn
 
                     if 1:
 
                         # If the branch points to the left, move the label left
                         if n.angle > (piOver2 + slop) or n.angle < -(piOver2 + slop):
                             # if the label is short, don't do anything
-                            if n.label.length < 0.4:
+                            if n.label.width < 0.4:
                                 pass
                             else:
-                                # We do not want the n.label to be at the same yPosn as the n.cA.yPosn; 
+                                # We do not want the n.label to be at the same yPosn as the n.cA.yPosn;
                                 # if it does the label could over-write the line.
                                 diff = math.fabs(n.label.cA.yPosn - n.cA.yPosn)
                                 halfHeight = n.label.fullHeight / 2.
                                 if diff < halfHeight:  # potential collision
-                                    n.label.cA.xPosn -= (n.label.length * 0.5) 
+                                    n.label.cA.xPosn -= (n.label.width * 0.5)
                                 else:
-                                    n.label.cA.xPosn -= n.label.length * 0.4
+                                    n.label.cA.xPosn -= n.label.width * 0.4
 
                         # If the branch points to the right
                         elif n.angle < (piOver2 - slop) and n.angle > -(piOver2 - slop):
-                            if n.label.length < 0.4:
+                            if n.label.width < 0.4:
                                 pass
                             else:
                                 diff = math.fabs(n.label.cA.yPosn - n.cA.yPosn)
                                 halfHeight = n.label.fullHeight / 2.
                                 if diff < halfHeight:    # potential collision
-                                    n.label.cA.xPosn += (n.label.length * 0.5) 
+                                    n.label.cA.xPosn += (n.label.width * 0.5)
                                 else:
-                                    n.label.cA.xPosn += n.label.length * 0.4
+                                    n.label.cA.xPosn += n.label.width * 0.4
 
                     if 0:
                         # Lower the Labels on downward-pointing branches
@@ -754,6 +724,22 @@ class TreeGramRadial(TreeGram):
                     (n.cA.xPosn - n.cB.xPosn) / 2.
                 n.br.uLabel.cA.yPosn = n.cB.yPosn + \
                     (n.cA.yPosn - n.cB.yPosn) / 2.
+
+        if self.engine == 'tikz':
+            for n in self.tree.iterNodes():
+                if n.label:
+                    n.label.setBB()
+                if n.br and hasattr(n.br, "label") and n.br.label:
+                    n.br.label.setBB()
+                if n.br and hasattr(n.br, "uLabel") and n.br.uLabel:
+                    n.br.uLabel.setBB()
+
+        for g in self.graphics:
+            g.setPositions()
+
+        for gr in self.grams:
+            gr.setPositions()
+
 
 
     def setScaleBarPosition(self):

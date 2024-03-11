@@ -12,7 +12,7 @@ class TreeGram(Gram):
         self.bracketsLineUp = True
         self._doSmartLabels = True
         self._rootLabelLeft = True
-        self.wrapLeafLabelsAt = None
+        # self.wrapLeafLabelsAt = None
         #self.fixOverlaps = True
         #self.haveFixedOverlaps = False
         self.doVLines = doVLines
@@ -135,7 +135,7 @@ class TreeGram(Gram):
                 theHeight = self.tree.nTax * self.yScale
                 self.scale = (self.widthToHeight * theHeight) / \
                     longestTipToRoot
-                print("widthToHeight %.2f, scale set to %f" % (self.widthToHeight, self.scale))
+                print("TreeGram init() widthToHeight %.2f, scale set to %f" % (self.widthToHeight, self.scale))
             else:
                 print("scale specified %.2f" % self.scale)
 
@@ -155,6 +155,7 @@ class TreeGram(Gram):
                     n.label = GramText(n.name)
                     n.label.cA = n.cA    # switcheroo of cA in TreeGramRadial
                     #n.label.draw = True
+                    # self.graphics.append(n.label)
                     if n == self.tree.root:
                         if self.rootLabelLeft:
                             n.label.style = 'root'
@@ -174,6 +175,7 @@ class TreeGram(Gram):
                     if not n.isLeaf:
                         n.vLine = GramLine(
                             n.leftChild.cB, n.rightmostChild().cB)
+                        # self.graphics.append(n.vLine)
                         n.vLine.cap = 'rect'
                     else:
                         n.vLine = None
@@ -188,6 +190,7 @@ class TreeGram(Gram):
                 if hasattr(n.br, 'name') and n.br.name:
                     n.br.label = GramText(n.br.name)
                     n.br.label.cA = GramCoord()
+                    # self.graphics.append(n.br.label)
                     n.br.label.cA.xPosn = n.cB.xPosn + \
                         (n.cA.xPosn - n.cB.xPosn) / 2.
                     n.br.label.cA.yPosn = n.cB.yPosn + \
@@ -199,6 +202,7 @@ class TreeGram(Gram):
                 if hasattr(n.br, 'uName') and n.br.uName:
                     n.br.uLabel = GramText(n.br.uName)
                     n.br.uLabel.cA = GramCoord()
+                    # self.graphics.append(n.br.uLabel)
                     n.br.uLabel.cA.xPosn = n.cB.xPosn + \
                         (n.cA.xPosn - n.cB.xPosn) / 2.
                     n.br.uLabel.cA.yPosn = n.cB.yPosn + \
@@ -230,12 +234,125 @@ class TreeGram(Gram):
                 for n in self.tree.iterNodes():
                     n.nodeNumLabel = GramText('%i' % n.nodeNum)
                     n.nodeNumLabel.cA = n.cA
+                    # not put in self.graphics
                     n.nodeNumLabel.textSize = 'tiny'
                     n.nodeNumLabel.color = 'red'
                     n.nodeNumLabel.fill = 'white'
                     n.nodeNumLabel.innerSep = 0.02
 
+        # styleDict
+        # leaf
+        g = GramText('Xxy', addToGIdDict=False)
+        g.name = 'leaf'
+        g.anchor = 'mid west' # vertically unbalanced if "mid west" and the textSize is not normalsize
+        g.textSize = self.leafLabelSize
+        # if g.defaultTextFamily:
+        #     g.textFamily = g.defaultTextFamily
+        g.innerSep = 0.13
+        self.styleDict[g.name] = g
 
+        # root
+        g = GramText('Xxy', addToGIdDict=False)
+        g.name = 'root'
+        g.anchor = 'mid east'
+        g.textSize = self.leafLabelSize
+        # if g.defaultTextFamily:
+        #     g.textFamily = g.defaultTextFamily
+        self.styleDict[g.name] = g
+
+        # node right
+        g = GramText('Xxy', addToGIdDict=False)
+        g.name = 'node right'
+        # g.anchor = 'mid west'
+        g.anchor = 'west'    # Try this march 2024
+        g.textSize = self.internalNodeLabelSize
+        # if g.defaultTextFamily:
+        #     g.textFamily = g.defaultTextFamily
+        g.innerSep = 0.03
+        self.styleDict[g.name] = g
+
+        # node upper right
+        g = GramText('Xxy', addToGIdDict=False)
+        g.name = 'node upper right'
+        g.anchor = 'south west'
+        g.textSize = self.internalNodeLabelSize
+        # if g.defaultTextFamily:
+        #     g.textFamily = g.defaultTextFamily
+        g.innerSep = 0.03
+        self.styleDict[g.name] = g
+
+        # node lower right
+        g = GramText('Xxy', addToGIdDict=False)
+        g.name = 'node lower right'
+        g.anchor = 'north west'
+        g.textSize = self.internalNodeLabelSize
+        # if g.defaultTextFamily:
+        #     g.textFamily = g.defaultTextFamily
+        g.innerSep = 0.03
+        self.styleDict[g.name] = g
+
+        # node upper left
+        g = GramText('Xxy', addToGIdDict=False)
+        g.name = 'node upper left'
+        g.anchor = 'south east'
+        g.textSize = self.internalNodeLabelSize
+        # if g.defaultTextFamily:
+        #     g.textFamily = g.defaultTextFamily
+        g.innerSep = 0.03
+        self.styleDict[g.name] = g
+
+        # node lower left
+        g = GramText('Xxy', addToGIdDict=False)
+        g.name = 'node lower left'
+        g.anchor = 'north east'
+        g.textSize = self.internalNodeLabelSize
+        # if g.defaultTextFamily:
+        #     g.textFamily = g.defaultTextFamily
+        g.innerSep = 0.03
+        self.styleDict[g.name] = g
+
+        # branch
+        g = GramText('Xxy', addToGIdDict=False)
+        g.name = 'branch'
+        g.textSize = self.branchLabelSize
+        # if g.defaultTextFamily:
+        #     g.textFamily = g.defaultTextFamily
+        g.innerSep = 0.025
+        #g.anchor = 'south'
+        self.styleDict[g.name] = g
+
+        # bracket label
+        g = GramText('Xxy', addToGIdDict=False)
+        g.name = 'bracket label'
+        g.anchor = 'west'
+        g.textSize = self.leafLabelSize
+        # if g.defaultTextFamily:
+        #     g.textFamily = g.defaultTextFamily
+        g.innerSep = 0.2
+        #g.rotate = 90
+        self.styleDict[g.name] = g
+
+        # Don't use this, as it does not work with tweaking.  Rotate must be after xShift or yShift.
+        #g = GramText('Xxy', addToGIdDict=False)
+        #g.name = 'bracket label rotated'
+        #g.anchor = 'north'
+        #g.textSize = self.leafLabelSize
+        #g.innerSep = 0.1
+        #g.rotate = 90
+        # g.setBB()
+        #self.styleDict[g.name] = g
+
+        #g = GramLine(GramCoord(0,0), GramCoord(1,1))
+        #g.name = 'vline'
+        #g.lineThickness = self.tgDefaultLineThickness
+        #g.cap = 'rect'
+        #self.styleDict[g.name] = g
+
+        kk = self.gForGIdDict.keys()
+        for k in kk:
+            g = self.gForGIdDict.get(k)
+            assert g.gId == k
+            # print(f"TreeGram.init() {g.gId:8} {g.rawText[:30]}")
 
     def _getScaleBar(self):
         return self._scaleBar
@@ -306,24 +423,24 @@ class TreeGram(Gram):
         self._rootLabelLeft = newVal
     rootLabelLeft = property(_getRootLabelLeft, _setRootLabelLeft)
 
-    def _getWrapLeafLabelsAt(self):
-        return self._wrapLeafLabelsAt
+    # def _getWrapLeafLabelsAt(self):
+    #     return self._wrapLeafLabelsAt
 
-    def _setWrapLeafLabelsAt(self, newVal):
-        if newVal is None:
-            self._wrapLeafLabelsAt = newVal
-        elif newVal == 'commas':
-            self._wrapLeafLabelsAt = newVal
-        elif newVal == 'comma':                 # forgiving
-            self._wrapLeafLabelsAt = 'commas'
-        else:
-            try:
-                nV = float(newVal)
-                self._wrapLeafLabelsAt = nV
-            except ValueError:
-                raise GramError(
-                    "_setWrapLeafLabelAt(), should be None, 'commas', or a number.  Got %s" % newVal)
-    wrapLeafLabelsAt = property(_getWrapLeafLabelsAt, _setWrapLeafLabelsAt)
+    # def _setWrapLeafLabelsAt(self, newVal):
+    #     if newVal is None:
+    #         self._wrapLeafLabelsAt = newVal
+    #     elif newVal == 'commas':
+    #         self._wrapLeafLabelsAt = newVal
+    #     elif newVal == 'comma':                 # forgiving
+    #         self._wrapLeafLabelsAt = 'commas'
+    #     else:
+    #         try:
+    #             nV = float(newVal)
+    #             self._wrapLeafLabelsAt = nV
+    #         except ValueError:
+    #             raise GramError(
+    #                 "_setWrapLeafLabelAt(), should be None, 'commas', or a number.  Got %s" % newVal)
+    # wrapLeafLabelsAt = property(_getWrapLeafLabelsAt, _setWrapLeafLabelsAt)
 
     def setBranchLabel(self, theNode, theText):
         n = theNode
@@ -335,6 +452,7 @@ class TreeGram(Gram):
 
         n.br.label = GramText(theText)
         n.br.label.cA = GramCoord()
+        # self.graphics.append(n.br.label)
         n.br.label.cA.xPosn = n.cB.xPosn + (n.cA.xPosn - n.cB.xPosn) / 2.
         n.br.label.cA.yPosn = n.cB.yPosn + (n.cA.yPosn - n.cB.yPosn) / 2.
         n.br.label.style = 'branch'
@@ -350,6 +468,7 @@ class TreeGram(Gram):
 
         n.br.uLabel = GramText(theText)
         n.br.uLabel.cA = GramCoord()
+        # self.graphics.append(n.br.uLabel)
         n.br.uLabel.cA.xPosn = n.cB.xPosn + (n.cA.xPosn - n.cB.xPosn) / 2.
         n.br.uLabel.cA.yPosn = n.cB.yPosn + (n.cA.yPosn - n.cB.yPosn) / 2.
         n.br.uLabel.style = 'branch'
@@ -416,7 +535,7 @@ class TreeGram(Gram):
     #     theNode = self.tree.node(nodeSpecifier)
     #     self.branchBars.append(TreeGramBranchBar(self, theNode, height, fill, title))
 
-    def extraYSpaceAtNode(self, nodeSpecifier, extra):
+    def addExtraYSpaceAtNode(self, nodeSpecifier, extra):
         theNode = self.tree.node(nodeSpecifier)
         extr = float(extra) / self.yScale
 
@@ -451,6 +570,7 @@ class TreeGram(Gram):
             n.cA.yPosn = n.yPosn0 * self.yScale
             if n.parent:
                 n.cB.yPosn = n.yPosn0 * self.yScale
+
 
     def setBracket(self, upperNodeSpecifier, lowerNodeSpecifier, text=None, leftNode=None, rotated=False):
         uN = self.tree.node(upperNodeSpecifier)
@@ -491,165 +611,28 @@ class TreeGram(Gram):
         theNode.cBox = TreeGramNodeConfidenceBox(self, theNode, down, up)
         self.cBoxes.append(theNode.cBox)
 
-    def setBuiltInStyles(self):
-
-        g = GramText('Xxy')
-        g.cA = GramCoord(0, 0)
-        g.name = 'leaf'
-        g.anchor = 'mid west'    # vertically unbalanced if "mid west" and the textSize is not normalsize
-        g.textSize = self.leafLabelSize
-        if g.defaultTextFamily:
-            g.textFamily = g.defaultTextFamily
-        g.innerSep = 0.13
-        if self.engine in ['tikz']:
-            g.setBB()
-        else:
-            g.getSvg()
-        Gram._styleDict[g.name] = g
-
-        g = GramText('Xxy')
-        g.cA = GramCoord(0, 0)
-        g.name = 'root'
-        g.anchor = 'mid east'
-        g.textSize = self.leafLabelSize
-        if g.defaultTextFamily:
-            g.textFamily = g.defaultTextFamily
-        if self.engine in ['tikz']:
-            g.setBB()
-        else:
-            g.getSvg()
-        Gram._styleDict[g.name] = g
-
-        g = GramText('Xxy')
-        g.cA = GramCoord(0, 0)
-        g.name = 'node right'
-        g.anchor = 'mid west'
-        g.textSize = self.internalNodeLabelSize
-        if g.defaultTextFamily:
-            g.textFamily = g.defaultTextFamily
-        g.innerSep = 0.03
-        if self.engine in ['tikz']:
-            g.setBB()
-        else:
-            g.getSvg()
-        Gram._styleDict[g.name] = g
-
-        g = GramText('Xxy')
-        g.cA = GramCoord(0, 0)
-        g.name = 'node upper right'
-        g.anchor = 'south west'
-        g.textSize = self.internalNodeLabelSize
-        if g.defaultTextFamily:
-            g.textFamily = g.defaultTextFamily
-        g.innerSep = 0.03
-        if self.engine in ['tikz']:
-            g.setBB()
-        else:
-            g.getSvg()
-        Gram._styleDict[g.name] = g
-
-        g = GramText('Xxy')
-        g.cA = GramCoord(0, 0)
-        g.name = 'node lower right'
-        g.anchor = 'north west'
-        g.textSize = self.internalNodeLabelSize
-        if g.defaultTextFamily:
-            g.textFamily = g.defaultTextFamily
-        g.innerSep = 0.03
-        if self.engine in ['tikz']:
-            g.setBB()
-        else:
-            g.getSvg()
-        Gram._styleDict[g.name] = g
-
-        g = GramText('Xxy')
-        g.cA = GramCoord(0, 0)
-        g.name = 'node upper left'
-        g.anchor = 'south east'
-        g.textSize = self.internalNodeLabelSize
-        if g.defaultTextFamily:
-            g.textFamily = g.defaultTextFamily
-        g.innerSep = 0.03
-        if self.engine in ['tikz']:
-            g.setBB()
-        else:
-            g.getSvg()
-        Gram._styleDict[g.name] = g
-
-        g = GramText('Xxy')
-        g.cA = GramCoord(0, 0)
-        g.name = 'node lower left'
-        g.anchor = 'north east'
-        g.textSize = self.internalNodeLabelSize
-        if g.defaultTextFamily:
-            g.textFamily = g.defaultTextFamily
-        g.innerSep = 0.03
-        if self.engine in ['tikz']:
-            g.setBB()
-        else:
-            g.getSvg()
-        Gram._styleDict[g.name] = g
-
-        g = GramText('Xxy')
-        g.cA = GramCoord(0, 0)
-        g.name = 'branch'
-        g.textSize = self.branchLabelSize
-        if g.defaultTextFamily:
-            g.textFamily = g.defaultTextFamily
-        g.innerSep = 0.025
-        #g.anchor = 'south'
-        if self.engine in ['tikz']:
-            g.setBB()
-        else:
-            g.getSvg()
-        Gram._styleDict[g.name] = g
-
-        g = GramText('Xxy')
-        g.cA = GramCoord(0, 0)
-        g.name = 'bracket label'
-        g.anchor = 'west'
-        g.textSize = self.leafLabelSize
-        if g.defaultTextFamily:
-            g.textFamily = g.defaultTextFamily
-        g.innerSep = 0.2
-        if self.engine in ['tikz']:
-            g.setBB()
-        else:
-            g.getSvg()
-        #g.rotate = 90
-        Gram._styleDict[g.name] = g
-
-        # Don't use this, as it does not work with tweaking.  Rotate must be after xShift or yShift.
-        #g = GramText('Xxy')
-        #g.cA = GramCoord(0,0)
-        #g.name = 'bracket label rotated'
-        #g.anchor = 'north'
-        #g.textSize = self.leafLabelSize
-        #g.innerSep = 0.1
-        #g.rotate = 90
-        # g.setBB()
-        #Gram._styleDict[g.name] = g
-
-        #g = GramLine(GramCoord(0,0), GramCoord(1,1))
-        #g.name = 'vline'
-        #g.lineThickness = self.tgDefaultLineThickness
-        #g.cap = 'rect'
-        #Gram._styleDict[g.name] = g
-
-        del(g)
         ######################################################################
         ######################################################################
         ######################################################################
 
-    def setPositions(self):
+    def setPositionsBeforeTextMetrics(self):
+        gm = ["TreeGram.setPositionsBeforeTextMetrics()"]
+        # print(f"{gm[0]} engine is {self.engine}")
+        # raise GramError(gm)
 
-        
-        if self.engine == 'tikz' and not self.haveStartedPyX:
-            self.startPyX()
+    def setPositions(self):    # TreeGram
 
-        Gram.setPositions(self)
+        gm = ["TreeGram.setPositions()"]
+        # print(f"{gm[0]} engine is {self.engine}")
+        # raise GramError(gm)
+        # print("TreeGram.setPositions().   self.latexTextMetricsUses is %s" % self.latexTextMetricsUses)
+        if self.latexTextMetricsUses == "pyx":
+            if self.engine == 'tikz' and not self.haveStartedPyX:
+                self.startPyX()
+
         self.tikzPictureDefaults.lineThickness = self.tgDefaultLineThickness
-        #self.tikzPictureDefaults.innerSep = self.defaultInnerSep
+        if self._defaultInnerSep is not None:  # it has been set by the user, maybe to zero
+            self.tikzPictureDefaults.innerSep = self.defaultInnerSep
 
         # In case the scale has been re-set by the user ...
         for n in self.tree.iterNodes():
@@ -660,43 +643,75 @@ class TreeGram(Gram):
                 n.cB.yPosn = n.yPosn0 * self.yScale
 
         if self.engine == 'tikz':
-            if self.wrapLeafLabelsAt:
-                #print(f"wrapLeafLabelsAt is {self.wrapLeafLabelsAt}")
-                if self.wrapLeafLabelsAt == 'commas':
+            # if self.latexTextMetricsUses == 'pyx':
+                # if self.wrapLeafLabelsAt:
+                #     #print(f"wrapLeafLabelsAt is {self.wrapLeafLabelsAt}")
+                #     if self.wrapLeafLabelsAt == 'commas':
+                #         for n in self.tree.iterLeavesNoRoot():
+                #             if ',' in n.label.rawText:
+                #                 print("TreeGram.setPositions() wrap", n.label.rawText)
+
+                #                 # We do not have a bounding box yet, or a textWrapWidth
+                #                 # Get the old height, for a "usual" node label, with no wrapping
+                #                 n.label.setBB()
+                #                 oldHeight = n.label.bb[3] - n.label.bb[1]
+                #                 n.label.rawText = n.label.rawText.replace(",", r",\\")
+                #                 n.label.getTikz()
+                #                 newHeight = n.label.bb[3] - n.label.bb[1]
+                #                 theExtra = newHeight - oldHeight
+                #                 print("TreeGram.setPositions() if self.wrapLeafLabelsAt: comma")
+                #                 print(f"    oldHeight={oldHeight}, newHeight={newHeight}, theExtra={theExtra}")
+                #                 self.addExtraYSpaceAtNode(n, extra=theExtra)
+
+
+                #     else:      # wrapLeafLabelsAt is not comma
+                #         assert isinstance(self.wrapLeafLabelsAt, float)
+                #         for n in self.tree.iterLeavesNoRoot():
+
+                #             # We do not have a bounding box yet, or a textWrapWidth
+                #             # Get the bounding box for unwrapped text, and unwrappedHeight and theLen
+                #             n.label.setBB()
+                #             unwrappedHeight = n.label.bb[3] - n.label.bb[1]
+                #             theLen = n.label.bb[2] - n.label.bb[0]
+                #             if theLen > self.wrapLeafLabelsAt:
+                #                 n.label.textWrapWidth = self.wrapLeafLabelsAt
+                #                 n.label.textAlign = 'flush left'
+                #                 n.label.getTikz()
+                #                 wrappedHeight = n.label.bb[3] - n.label.bb[1]
+                #                 print(f"bb is {n.label.bb}, unwrappedHeight ", end="")
+                #                 print(f"is {unwrappedHeight}, wrappedHeight is {wrappedHeight}")
+                #                 theExtra = wrappedHeight - unwrappedHeight
+                #                 self.addExtraYSpaceAtNode(n, extra=theExtra)
+
+            if self.latexTextMetricsUses == 'latex':
+                myMax = 0.6
+                myPadding = 0.4
+                needsRecalcBB = False
+
+                for n in self.tree.iterLeavesNoRoot():
+                    if n.label.mpText or n.label.rawText.startswith(r"\includegraphics"):
+                        n.label.anchor = "west"
+                        needsRecalcBB = True
+
+
+                # If the node takes up more than myMax x yScale, then increase the space.
+                # Here myMax and myPadding (ie 1.0 - myMax, the minimum "padding" wanted) are hard-wired,
+                # may need to be adjustable?
+                for n in self.tree.iterLeavesNoRoot():
+                    #print(f"node label fullHeight is {n.label.fullHeight} for {n.label.rawText[:30]}")
+                    if n.label.fullHeight >= myMax * self.yScale:
+                        print("    -> needs more vertical space")
+                        # add extra ySpace.  fullHeight
+                        newSpaceWanted = n.label.fullHeight + (myPadding * self.yScale)
+                        extraSpaceNeeded = newSpaceWanted - self.yScale
+                        assert extraSpaceNeeded > 0.0
+                        print(f"    -> adding {extraSpaceNeeded}")
+                        self.addExtraYSpaceAtNode(n, extra=extraSpaceNeeded)
+                        needsRecalcBB = True
+
+                if needsRecalcBB:
                     for n in self.tree.iterLeavesNoRoot():
-                        if ',' in n.label.rawText:
-                            print("TreeGram.setPositions() wrap", n.label.rawText)
-
-                            # We do not have a bounding box yet, or a textWrapWidth
-                            # Get the old height, for a "usual" node label, with no wrapping
-                            n.label.setBB()
-                            oldHeight = n.label.bb[3] - n.label.bb[1]
-                            n.label.rawText = n.label.rawText.replace(",", r",\\")
-                            n.label.getTikz()
-                            newHeight = n.label.bb[3] - n.label.bb[1]
-                            theExtra = newHeight - oldHeight
-                            print("TreeGram.setPositions() if self.wrapLeafLabelsAt: comma")
-                            print(f"    oldHeight={oldHeight}, newHeight={newHeight}, theExtra={theExtra}")
-                            self.extraYSpaceAtNode(n, extra=theExtra)
-
-
-                else:      # wrapLeafLabelsAt is not comma
-                    assert isinstance(self.wrapLeafLabelsAt, float)
-                    for n in self.tree.iterLeavesNoRoot():
-
-                        # We do not have a bounding box yet, or a textWrapWidth
-                        # Get the bounding box for unwrapped text, and unwrappedHeight and theLen
                         n.label.setBB()
-                        unwrappedHeight = n.label.bb[3] - n.label.bb[1]
-                        theLen = n.label.bb[2] - n.label.bb[0]
-                        if theLen > self.wrapLeafLabelsAt:
-                            n.label.textWrapWidth = self.wrapLeafLabelsAt
-                            n.label.textAlign = 'flush left'
-                            n.label.getTikz()
-                            wrappedHeight = n.label.bb[3] - n.label.bb[1]
-                            print(f"bb is {n.label.bb}, unwrappedHeight is {unwrappedHeight}, wrappedHeight is {wrappedHeight}")
-                            theExtra = wrappedHeight - unwrappedHeight
-                            self.extraYSpaceAtNode(n, extra=theExtra)
 
         # Node.br.label and Node.br.uLabel
         for n in self.tree.iterNodes():
@@ -705,14 +720,16 @@ class TreeGram(Gram):
                     (n.cA.xPosn - n.cB.xPosn) / 2.
                 n.br.label.cA.yPosn = n.cB.yPosn + \
                     (n.cA.yPosn - n.cB.yPosn) / 2.
+                # n.br.label.setBB()
             if n.br and hasattr(n.br, "uLabel") and n.br.uLabel:
                 n.br.uLabel.cA.xPosn = n.cB.xPosn + \
                     (n.cA.xPosn - n.cB.xPosn) / 2.
                 n.br.uLabel.cA.yPosn = n.cB.yPosn + \
                     (n.cA.yPosn - n.cB.yPosn) / 2.
+                # n.br.uLabel.setBB()
 
         if self.doSmartLabels:  # Either True or 'semi'
-            # print("TreeGram.setPositions().  doSmartLabels is %s" % self.doSmartLabels)
+            print("TreeGram.setPositions().  doSmartLabels is %s" % self.doSmartLabels)
             for n in self.tree.iterInternalsNoRoot():
                 if n.label:
 
@@ -785,10 +802,10 @@ class TreeGram(Gram):
                             nChildren = n.getNChildren()
                             if (nChildren % 2) == 1:
                                 n.label.style = 'node upper right'
-
-        # if self.fixOverlaps and not self.haveFixedOverlaps:
-        #    self.doFixOverlaps()
-        #    self.haveFixedOverlaps = True
+            for n in self.tree.iterInternalsNoRoot():
+                if n.label:
+                    if self.engine == 'tikz':
+                        n.label.setBB()
 
         if self.brackets:
             for b in self.brackets:
@@ -827,14 +844,19 @@ class TreeGram(Gram):
             self.setScaleBarPosition()
             #self.scaleBar.cA.xPosn = self.scaleBar.xOffset
             #self.scaleBar.cA.yPosn = (0.5 * self.yScale) + self.scaleBar.yOffset
-            self.scaleBar.setPositions()            
-                
+            self.scaleBar.setPositions()
+
+        for g in self.graphics:
+            g.setPositions()
+
+        for gr in self.grams:
+            gr.setPositions()
+
         # print("Finished TreeGram.setPositions()")
-        
-    def getAllGramTexts(self):
+
+    def getAllGramTexts(self, tbb):
         # to feed into fixTextOverlaps()
 
-        tbb = []
         for n in self.tree.iterNodes():
             if n.label:
                 tbb.append(n.label)
@@ -871,12 +893,12 @@ class TreeGram(Gram):
 
         for n in self.tree.iterNodes():
             ss.append(n.cA.getTikz())
-            
+
             # A trick to accommodate TreeGramRadial trees, where n.label.cA is
             # not the same as n.cA.
             if n.label and n.label.cA != n.cA:
                 ss.append(n.label.cA.getTikz())
-                
+
             if n.cB:
                 ss.append(n.cB.getTikz())
             if not n.isLeaf and n.name:
@@ -919,7 +941,7 @@ class TreeGram(Gram):
                             n.line.color = n.emphasizedBranch.color
                             #print("set n.line.color.")
                             #n.line.color.dump()
-                        
+
                     ss.append(n.line.getTikz())
 
             ss.append('')
@@ -1020,10 +1042,14 @@ class TreeGram(Gram):
         hasInternalNodeNames = False
         hasBranchNames = False
 
-        #print "TreeGram.getSvg() here"
+        # Additional graphics; in self.graphics.
+        # These are not "assigned"; eg node.label is "assigned" and so would not be here.
+        if self.graphics:
+            ss.append('')
+            ss.append("<!--  additional graphics -->")
+            for g in self.graphics:
+                ss.append(g.getSvg())
 
-        for gr in self.graphics:
-            ss.append(gr.getSvg())
 
         for n in self.tree.iterNodes():
             # ss.append(n.cA.getSvg())
@@ -1153,75 +1179,13 @@ class TreeGram(Gram):
         return '\n'.join(ss)
 
 
-    def setTextMetrics(self):
-        if self.engine == 'tikz':
-            print("TreeGram.tikzCalcBigBoundingBox() is turned off.")
-            #self.tikzCalcBigBoundingBox()
-        else:
-            assert self.engine == 'svg'
-            self.svgSetTextMetrics()
-
-    # def tikzCalcBigBoundingBox(self):
-    #     # print "TreeGram.calcBigBoundingBox().  self is %s" % self
-    #     n = self.tree.root
-    #     self.bbb[0] = n.cA.xPosn - 0.1
-    #     self.bbb[1] = n.cA.yPosn - 0.1
-    #     self.bbb[2] = n.cA.xPosn + 0.1
-    #     self.bbb[3] = n.cA.yPosn + 0.1
-
-    #     for n in self.tree.iterNodes():
-    #         if n.name:
-    #             g = n.label
-    #             g.setBB()
-    #             self.adjustBBBFromGraphicBB(g)
-
-    #         if n.br and hasattr(n.br, 'textBox') and n.br.textBox:
-    #             g = n.br.textBox
-    #             g.setBB()
-    #             self.adjustBBBFromGraphicBB(g)
-
-    #     if self.brackets:
-    #         for b in self.brackets:
-    #             g = b.label
-    #             g.setBB()
-    #             self.adjustBBBFromGraphicBB(g)
-
-    #     if self.cBoxes:
-    #         for g in self.cBoxes:
-    #             g.setBB()
-    #             self.adjustBBBFromGraphicBB(g)
-
-    #     if self.scaleBar:
-    #         g = self.scaleBar
-    #         g.setBB()
-    #         self.adjustBBBFromGraphicBB(g)
-
-    #     if self.showNodeNums:
-    #         for n in self.tree.iterNodes():
-    #             g = n.nodeNumLabel
-    #             self.adjustBBBFromGraphicBB(g)
-
-    #     for g in self.graphics:
-    #         if isinstance(g, GramCoord):
-    #             pass
-    #         elif isinstance(g, GramCode):
-    #             pass
-    #         else:
-    #             g.setBB()
-    #             self.adjustBBBFromGraphicBB(g)
-
-    #     for g in self.grams:
-    #         # print  g
-    #         g.calcBigBoundingBox()
-    #         if (g.bbb[0] + g.gX) < self.bbb[0]:
-    #             self.bbb[0] = (g.bbb[0] + g.gX)
-    #         if (g.bbb[1] + g.gY) < self.bbb[1]:
-    #             self.bbb[1] = (g.bbb[1] + g.gY)
-    #         if (g.bbb[2] + g.gX) > self.bbb[2]:
-    #             self.bbb[2] = (g.bbb[2] + g.gX)
-    #         if (g.bbb[3] + g.gY) > self.bbb[3]:
-    #             self.bbb[3] = (g.bbb[3] + g.gY)
-
+    # def setTextMetrics(self):
+    #     if self.engine == 'tikz':
+    #         print("TreeGram.tikzCalcBigBoundingBox() is turned off.")
+    #         #self.tikzCalcBigBoundingBox()
+    #     else:
+    #         assert self.engine == 'svg'
+    #         self.svgSetTextMetrics()
 
 
 
@@ -1258,8 +1222,8 @@ class TreeGramScaleBar(TreeGramGraphic):
         self.label.cA = GramCoord(self.cB.xPosn + ((self.cC.xPosn - self.cB.xPosn) / 2.), yOffset, 'sb_A')
         self.label.anchor = 'south'
         self.label.textSize = 'small'
-        if self.label.defaultTextFamily:
-            self.label.textFamily = self.label.defaultTextFamily
+        # if self.label.defaultTextFamily:
+        #     self.label.textFamily = self.label.defaultTextFamily
 
 
     def setPositions(self):
@@ -1323,6 +1287,7 @@ class TreeGramBracket(TreeGramGraphic):
         TreeGramGraphic.__init__(self)
         self.tg = treeGram
         self.label = GramText(text)
+        # self.graphics.append(self.label)
         self.label.cA = GramCoord(upperNode.cA.xPosn, upperNode.cA.yPosn, 'bx')
         #self.rotated = rotated
         if rotated:
@@ -1337,7 +1302,7 @@ class TreeGramBracket(TreeGramGraphic):
         # self.fill = 'Black!5'
         #self.svgFill = 'Black'
         #self.svgFillOpacity = 0.05
-        
+
         self.bottom = None
         self.top = None
         self.left = None
@@ -1375,23 +1340,29 @@ class TreeGramBracket(TreeGramGraphic):
                     self.right = n.label.bb[2]
         assert self.right or self.right == 0.0
             #self.right += 6
-        print("got self.right = %f" % self.right)
+        # print("got self.right = %f" % self.right)
 
     def setPositions(self):    # TreeGramBracket
 
         theInnerSep = self.upperNode.label.getInnerSep()
-        print("TreeGramBracket.setPositions().  got theInnerSep %f" % theInnerSep)
+        # print("TreeGramBracket.setPositions().  got theInnerSep %f" % theInnerSep)
         if self.topOverRide:
             self.top = self.topOverRide
         else:
-            self.top = self.upperNode.label.bb[3]  - theInnerSep
+            if self.upperNode.label.rawText:
+                self.top = self.upperNode.label.bb[3]  - theInnerSep
+            elif not self.upperNode.label.rawText:  # blank node name
+                self.top = self.upperNode.label.bb[3]
 
         if self.bottomOverRide:
             self.bottom = self.bottomOverRide
         else:
-            print(f"TreeGramBracket.setPositions() lowerNode.label.bb {self.lowerNode.label.bb}")
-            self.bottom = self.lowerNode.label.bb[1] + theInnerSep
-            
+            # print(f"TreeGramBracket.setPositions() lowerNode.label.bb {self.lowerNode.label.bb}")
+            if self.lowerNode.label.rawText:
+                self.bottom = self.lowerNode.label.bb[1] + theInnerSep
+            elif not self.lowerNode.label.rawText:  # blank node name
+                self.bottom = self.lowerNode.label.bb[1]
+
         if self.leftNode:
             self.left = self.leftNode.cA.xPosn
 
@@ -1431,7 +1402,7 @@ class TreeGramBracket(TreeGramGraphic):
         if self.rightExtra:
             theRight += self.rightExtra
 
-        # Add 0.1 to make it a bit less tight agains the text
+        # Add 0.1 to make it a bit less tight against the text
         theRight += 0.1
 
         if self.leftNode:
@@ -1447,56 +1418,57 @@ class TreeGramBracket(TreeGramGraphic):
         if self.doLine:
             ss.append(r"\draw [%s,line cap=round] (%.3f,%.3f) -- (%.3f,%.3f) -- (%.3f,%.3f) -- (%.3f,%.3f);" % (
                 self.lineThickness,
-                theRight - 0.1, 
-                self.top, 
-                theRight, 
-                self.top, 
-                theRight, 
-                self.bottom, 
-                theRight - 0.1, 
+                theRight - 0.1,
+                self.top,
+                theRight,
+                self.top,
+                theRight,
+                self.bottom,
+                theRight - 0.1,
                 self.bottom))
         if self.label:
             ss.append(self.label.cA.getTikz())
             ss.append(self.label.getTikz())
         return '\n'.join(ss)
 
-    def getSvg(self):
+    def getSvg(self):   # TreeGramBracket
         ss = []
-        if self.tg.bracketsLineUp:
-            theRight = self.alignedRight
-        else:
-            theRight = self.right
-        if self.rightExtra:
-            theRight += self.rightExtra
-        # Hack alert.  Compensate for svg tight bounding box.
-        # Add 0.1 to make it a bit less tight agains the text
-        theRight += 0.1
+        if self.right:
+            if self.tg.bracketsLineUp:
+                theRight = self.alignedRight
+            else:
+                theRight = self.right
+            if self.rightExtra:
+                theRight += self.rightExtra
+            # Hack alert.  Compensate for svg tight bounding box.
+            # Add 0.1 to make it a bit less tight agains the text
+            theRight += 0.1
 
-        if self.leftNode:
-            theFill = self.getFill()
-            if theFill:
-                cA = GramCoord(xPosn=self.left, yPosn=self.bottom)
-                cB = GramCoord(xPosn=theRight, yPosn=self.top)
-                aRect = GramRect(cA, cB)
-                aRect.draw = None
-                aRect.fill = theFill
-                ssB = aRect.getSvg()
-                ss.append(ssB)
-        if self.doLine:
-            # From getSvgOptions()
-            myLineThickness = cmForLineThickness(self.lineThickness)
-            myLineThickness = self.svgPxForCmF(myLineThickness)
+            if self.leftNode:
+                theFill = self.getFill()
+                if theFill:
+                    cA = GramCoord(xPosn=self.left, yPosn=self.bottom)
+                    cB = GramCoord(xPosn=theRight, yPosn=self.top)
+                    aRect = GramRect(cA, cB)
+                    aRect.draw = None
+                    aRect.fill = theFill
+                    ssB = aRect.getSvg()
+                    ss.append(ssB)
+            if self.doLine:
+                # From getSvgOptions()
+                myLineThickness = cmForLineThickness(self.lineThickness)
+                myLineThickness = self.svgPxForCmF(myLineThickness)
 
-            ss.append('<path d="M%.2f,%.2f L%.2f,%.2f L%.2f,%.2f L%.2f,%.2f" stroke-width="%.2f" fill="none" stroke="black"/>' % (
-                (theRight - 0.1) * self.svgPxForCm, 
-                -self.top * self.svgPxForCm,
-                theRight * self.svgPxForCm, 
-                -self.top * self.svgPxForCm,
-                theRight * self.svgPxForCm, 
-                -self.bottom * self.svgPxForCm,
-                (theRight - 0.1) * self.svgPxForCm, 
-                -self.bottom * self.svgPxForCm,
-                myLineThickness ))
+                ss.append('<path d="M%.2f,%.2f L%.2f,%.2f L%.2f,%.2f L%.2f,%.2f" stroke-width="%.2f" fill="none" stroke="black"/>' % (
+                    (theRight - 0.1) * self.svgPxForCm,
+                    -self.top * self.svgPxForCm,
+                    theRight * self.svgPxForCm,
+                    -self.top * self.svgPxForCm,
+                    theRight * self.svgPxForCm,
+                    -self.bottom * self.svgPxForCm,
+                    (theRight - 0.1) * self.svgPxForCm,
+                    -self.bottom * self.svgPxForCm,
+                    myLineThickness ))
         if self.label:
             ss.append(self.label.getSvg())
         return '\n'.join(ss)
@@ -1509,7 +1481,7 @@ class TreeGramEmphasizedBranch(TreeGramGraphic):
 
     def __init__(self, thickness, colour):
         TreeGramGraphic.__init__(self)
-        
+
         self.thickness = thickness
         self.color = colour
 
@@ -1521,7 +1493,7 @@ class TreeGramEmphasizedBranch(TreeGramGraphic):
         else:
             print(f"color={self.color} is not a GramColor object")
 
-            
+
 
 
 
@@ -1544,7 +1516,7 @@ class TreeGramNodeConfidenceBox(TreeGramGraphic):
             self.cBox.draw = 'black!50'
             self.cBox.fill = 'black!10'
             self.cBox.fill.transparent = True
-            
+
 
     def setPositions(self):
         self.cA.xPosn = self.node.cA.xPosn - (self.down * self.tg.scale)
@@ -1642,7 +1614,7 @@ class TreeGramBrokenBranch(TreeGramGraphic):
 
 class TreeGramBranchPin(TreeGramGraphic):
     # here we need treeGram to access the scale
-    def __init__(self, treeGram, theNode, lenFromNode, title, color, size, pinLen, pinLenScale):   
+    def __init__(self, treeGram, theNode, lenFromNode, title, color, size, pinLen, pinLenScale):
         TreeGramGraphic.__init__(self)
         self.tg = treeGram
         self.node = theNode
@@ -1678,7 +1650,7 @@ class TreeGramBranchPin(TreeGramGraphic):
         self.vLine.cB.xPosn = self.vLine.cA.xPosn   # vertical line, so cB.xPosn is cA.xPosn
 
         # random height might be wanted sometimes ---
-        # self.line.cB.yPosn = self.line.cA.yPosn  + (0.4 * self.tg.yScale * random.random()) 
+        # self.line.cB.yPosn = self.line.cA.yPosn  + (0.4 * self.tg.yScale * random.random())
 
         # Height of self.vLine.
         # The closer it is to the node, the lower it will be, but with a non-zero minimum, and a max of 0.45 yScale
@@ -1687,7 +1659,7 @@ class TreeGramBranchPin(TreeGramGraphic):
         self.vLine.cB.yPosn = self.vLine.cA.yPosn  + thisMin + (
             ((self.lenFromNode * self.tg.scale) / brLineLen)  * 0.4 * self.tg.yScale)
         # self.vLine.cB.yPosn = self.vLine.cA.yPosn  + thisMin
-        
+
         # hLine
         self.hLine.cA.xPosn = self.vLine.cB.xPosn
         self.hLine.cA.yPosn = self.vLine.cB.yPosn
@@ -1702,7 +1674,7 @@ class TreeGramBranchPin(TreeGramGraphic):
         self.box.cA.yPosn = self.hLine.cB.yPosn - halfSize
         self.box.cB.xPosn = self.hLine.cB.xPosn + halfSize
         self.box.cB.yPosn = self.hLine.cB.yPosn + halfSize
-        
+
 
     def getTikz(self):
         pass
@@ -1720,7 +1692,7 @@ class TreeGramBranchPin(TreeGramGraphic):
 
         ss.append(self.vLine.getSvg())
         ss.append(self.hLine.getSvg())
-        
+
         return '\n'.join(ss)
 
 # class TreeGramBranchBar(TreeGramGraphic):
