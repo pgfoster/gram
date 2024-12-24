@@ -3456,6 +3456,16 @@ class GramGraphic(GramTikzStyle):
             ret = st.textShape
         return ret
 
+    def getTextAlign(self):
+        ret = self.textAlign
+        if ret is None and self.myStyle:
+            st = self.styleDict[self.myStyle]
+            ret = st.textAlign
+        if ret is None and self.style:
+            st = self.styleDict[self.style]
+            ret = st.textAlign
+        return ret
+
     def getColor(self):
         ret = self.color
         if ret is None and self.myStyle:
@@ -4646,7 +4656,7 @@ class GramText(GramGraphic):
         else:
             widStr = None  # use varwidth
 
-        alig = self.textAlign
+        alig = self.getTextAlign()
 
         # Gram._goodTextAligns = [None, 'left', 'flush left', 'right', 'flush right',
         #                    'center', 'flush center', 'justify', 'none']
@@ -4662,7 +4672,7 @@ class GramText(GramGraphic):
         assert mpAlig
 
 
-        # print(f"wrapRawInMinipage() widStr = {widStr}, mpAlig={mpAlig}")
+        # print(f"wrapRawInMinipageOrVarwidth() widStr = {widStr}, mpAlig={mpAlig}")
 
         # cookedText = self.cookText(self.rawText)
         self.setCookedText()        # cooked text needs to be inside the minipage

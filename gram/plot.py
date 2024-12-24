@@ -102,6 +102,7 @@ class Plot(Gram):
         g = GramText('Xxy', addToGIdDict=False)
         g.name = 'tickLabel'
         g.textSize = self.tickLabelSize
+        g.textAlign = "center"
         # g.draw = "Blue"
         self.styleDict[g.name] = g
 
@@ -109,6 +110,7 @@ class Plot(Gram):
         g = GramText('Xxy', addToGIdDict=False)
         g.name = 'axisLabel'
         g.textSize = self.axisLabelSize
+        g.textAlign = "center"
         self.styleDict[g.name] = g
 
 
