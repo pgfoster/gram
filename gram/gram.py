@@ -1661,14 +1661,23 @@ class Gram(object):
                 flob.write('</g>\n')
 
     def cat(self):
-        assert self.dirName
-        if 0:
-            print("=========== %s/%s.tex =============" % (self.dirName, self.baseName))
-            os.system('cat %s/%s.tex' % (self.dirName, self.baseName))
-        if 1:
-            if os.path.isfile("%s/%s.tikz.tex" % (self.dirName, self.baseName)):
-                print("=========== %s.tikz.tex =============" % self.baseName)
-                os.system('cat %s/%s.tikz.tex' % (self.dirName, self.baseName))
+        if self.engine == "tikz":
+            assert self.dirName
+            if 1:
+                print("=========== %s/%s.tex =============" % (self.dirName, self.baseName))
+                os.system('cat %s/%s.tex' % (self.dirName, self.baseName))
+            if 0:
+                print("=========== %s/foo.tex =============" % (self.dirName))
+                os.system('cat %s/foo.tex' % (self.dirName))
+            if 1:
+                if os.path.isfile("%s/%s.tikz.tex" % (self.dirName, self.baseName)):
+                    print("=========== %s.tikz.tex =============" % self.baseName)
+                    os.system('cat %s/%s.tikz.tex' % (self.dirName, self.baseName))
+        elif self.engine == "svg":
+            if 1:
+                print("=========== %s.svg =============" % self.baseName)
+                os.system('cat %s.svg' % self.baseName)
+
 
     def adjustBBBFromGraphicBB(self, g):
         if g.bb[0] < self.bbb[0]:
