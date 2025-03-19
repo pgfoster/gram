@@ -766,13 +766,29 @@ class Gram(object):
 
     ##################################
 
+    def setPositionsBeforeTextMetrics(self):
+        # print(f"Gram.setPositionsBeforeTextMetrics() engine {self.engine}, self {self}")
+        if self.engine == 'tikz':
+            if self.latexTextMetricsUses == 'pyx':
+                if not self.haveStartedPyX:
+                    self.startPyX()
+        elif self.engine == 'svg':
+            pass
+
+        for g in self.graphics:
+            g.setPositionsBeforeTextMetrics()
+        for gr in self.grams:
+            gr.setPositionsBeforeTextMetrics()
+
     def setPositions(self):
         if self._defaultInnerSep is not None:  # it has been set by the user, maybe to zero
             self.tikzPictureDefaults.innerSep = self.defaultInnerSep
         # if self.defaultTextFamily:
         #     self.tikzPictureDefaults.textFamily = self.defaultTextFamily
 
-        for gr in self.graphics:
+        for g in self.graphics:
+            g.setPositions()
+        for gr in self.grams:
             gr.setPositions()
 
     def getTikz(self):
@@ -829,17 +845,6 @@ class Gram(object):
 
     ###############################################################
 
-    def setPositionsBeforeTextMetrics(self):
-        # print(f"Gram.setPositionsBeforeTextMetrics() engine {self.engine}")
-        if self.engine == 'tikz':
-            if self.latexTextMetricsUses == 'pyx':
-                if not self.haveStartedPyX:
-                    self.startPyX()
-        elif self.engine == 'svg':
-            pass
-
-        for gr in self.grams:
-            gr.setPositionsBeforeTextMetrics()
 
     def startPyX(self):
         if self.haveStartedPyX:
