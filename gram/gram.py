@@ -1438,8 +1438,7 @@ class Gram(object):
         assert myHt > 0.0, f"Got BBB ht {myHt}"
         # print(f"wid {myWid:.3f}  Ht {myHt:.3f}")
 
-        #flob.write('<?xml-stylesheet type="text/css" href="/Users/peter/Write/Html/psvn1.css" ?>\n')
-        flob.write('<svg ')
+        flob.write('<svg\n')
         hackExtraX = doHackExtra
         hackExtraY = doHackExtra
         if doHackExtra:
@@ -1467,24 +1466,49 @@ class Gram(object):
         flob.write('  viewBox="%.2f %.2f %.2f %.2f"\n' % (vb1, vb2, vb3, vb4))
         # See https://developer.mozilla.org/en-US/docs/Web/SVG/Namespaces_Crash_Course
         flob.write('  xmlns="http://www.w3.org/2000/svg"\n')
-        flob.write('  xmlns:xlink="http://www.w3.org/1999/xlink"\n')
-        if self.svgTextPreserveWhitespace:
-            flob.write('  xml:space="preserve">\n\n')
-        else:
-            flob.write('>\n\n')
 
+        if self.svgTextPreserveWhitespace:
+            # xml:space is deprecated; use the white-space CSS property.
+            # https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/xml:space
+            # https://developer.mozilla.org/en-US/docs/Web/CSS/white-space
+            # However, I think it is needed for inkscape
+            flob.write('  xmlns:xlink="http://www.w3.org/1999/xlink"\n')
+            flob.write('  xml:space="preserve"\n')
+        # else:
+
+        # flob.write('  xmlns:xlink="http://www.w3.org/1999/xlink">\n')
+        flob.write('>\n')
+
+        # it looks like inkscape does not do external style sheets.  Dang.
+        if 0:
+            # link css file (s) containing font-face defs
+            flob.write('    <link\n')
+            flob.write('      xmlns="http://www.w3.org/1999/xhtml"\n')
+            flob.write('      rel="stylesheet"\n')
+            flob.write('      href="/Volumes/Vork/H/GitLab/g23/public/css11/peter11lmodern.css"\n')
+            flob.write('      type="text/css" />\n')
+
+
+        # a temporary default
+        mySCTextFontStack = None
         if self.font == "lmr":
             myTextFontStack = '"Latin Modern Roman", serif'
+            myRmFontStack = '"Latin Modern Roman", serif'
             mySFTextFontStack = '"Latin Modern Sans", sans-serif'
             myTTTextFontStack = '"Latin Modern Mono", monospace';
+            mySCTextFontStack = '"Latin Modern Roman Caps", serif'
         elif self.font == "lms":
             myTextFontStack = '"Latin Modern Sans", sans-serif'
+            myRmFontStack = '"Latin Modern Roman", serif'
             mySFTextFontStack = '"Latin Modern Sans", sans-serif'
-            myTTTextFontStack = '"Latin Modern Mono", monospace';
+            myTTTextFontStack = '"Latin Modern Mono", monospace'
+            mySCTextFontStack = '"Latin Modern Roman Caps", serif'
         elif self.font == "helvetica":
             myTextFontStack = 'Helvetica, sans-serif'
+            myRmFontStack = '"Latin Modern Roman", serif'
             mySFTextFontStack = 'Helvetica, sans-serif'
             myTTTextFontStack = '"Lucida Console", monospace';
+            mySCTextFontStack = '"Helvetica", serif'
         elif self.font == "palatino":
             myTextFontStack = 'Palatino, serif'
             mySFTextFontStack = 'Helvetica, sans-serif'
@@ -1929,10 +1953,11 @@ class Gram(object):
             f = open(fNm, "w")
             self.svgWriteToOpenFile(f, theBBB=[0., 0., 1., 1.])
             f.close()
+            #sys.exit()
 
         if 0:
             if Gram._svgHackDoRotate:
-                if Gram._svgHack_x_Only:
+                #if Gram._svgHack_x_Only:
                     print("=+" * 20, "result of svgWriteToOpenFile()")
                     splRet = thisRet.split(b"\n")
                     for aLine in splRet:
@@ -1977,7 +2002,11 @@ class Gram(object):
             print()
             print("-" * 50, "svgSetTextMetrics().  lines returned from inkscape")
             for l in ll:
-                print(l)
+                #print(l)
+                sl = l.split(b",")
+                for i in range(5):
+                    print("%10s" % sl[i], end=" ")
+                print()
             print("-" * 50)
             print()
 
@@ -3308,8 +3337,9 @@ class GramTikzStyle(Gram):
         if self.yShift:
             options.append('yshift=%.3fcm' % self.yShift)
 
-        # if self.rotate:
-        #     options.append('rotate=%.1f' % self.rotate)
+        if self.rotate:
+            negRot = -self.rotate
+            options.append('transform="rotate(%.1f)"' % negRot)
         # if self.shape:
         #     options.append('shape=%s' % self.shape)
 
@@ -4192,6 +4222,7 @@ class GramText(GramGraphic):
         spacer = " " * 8
         print(f"{spacer} rawText: {self.rawText}")
         print(f"{spacer} cookedText: {self.cookedText}")
+        print(f"{spacer} gId: {self.gId}")
         # print(f"{spacer} name: {self.name}")
         if self.cA:
             print(f"{spacer} cA: {self.cA.xPosn:.3f},{self.cA.yPosn:.3f}")
@@ -4858,6 +4889,12 @@ class GramText(GramGraphic):
         else:
             self.mpText = r"\begin{varwidth}{%s}%s %s \end{varwidth}" % ("10cm", myCmds, self.cookedText)
 
+    def setPositionsBeforeTextMetrics(self):
+        # print("GramText.setPositionsBeforeTextMetrics()")
+        if self.engine == "svg":
+            if not self.partsHaveBeenAdded:
+                self.setTextPartsSvg()
+
 
     def setPositions(self):    # GramText
         # print("GramText.setPositions() %s" % self.rawText[:30])
@@ -4870,9 +4907,7 @@ class GramText(GramGraphic):
             # self.dump()
 
         elif self.engine == "svg":
-            if not self.partsHaveBeenAdded:
-                self.setTextPartsSvg()
-
+            pass
 
     def setTextPartsTikz(self):
         gm = ['GramText.setTextPartsTikz() rawText=%s' % self.rawText]
@@ -4882,6 +4917,7 @@ class GramText(GramGraphic):
 
         if not self.partsHaveBeenAdded:
             for tp in self.parts:
+                tp.rawText = fixUnderscores(tp.rawText)
                 if tp.color:
                     cs = tp.color.color  # cs is colourString
                     if tp.color.value:
@@ -4897,6 +4933,9 @@ class GramText(GramGraphic):
 
                 if theTextShape:
                     theText = r"\%s %s" % (theTextShape, theText)
+                else: 
+                    if theText:
+                        theText = r"\%s %s" % ("upshape", theText)
                 if theTextSeries:
                     theText = r"\%s %s" % (theTextSeries, theText)
                 if theTextFamily:
@@ -4918,7 +4957,7 @@ class GramText(GramGraphic):
         else:
             ss = []
             for tp in self.parts:
-
+                sss = []
                 myClass = None
                 myTextFamilyString = tp.getTextFamily()
                 if myTextFamilyString == 'ttfamily':
@@ -4934,26 +4973,26 @@ class GramText(GramGraphic):
                         myTextSizeStr] * self.svgTextNormalsize
                 myTextSizeStr = "%.2f" % (myTextSizeCm * self.svgPxForCm)
 
-                ss.append('<tspan ')
+                sss.append('<tspan ')
                 if myClass:
-                    ss.append('class="%s"' % myClass)
-                ss.append('font-size="%s"' % myTextSizeStr)
+                    sss.append('class="%s"' % myClass)
+                sss.append('font-size="%s"' % myTextSizeStr)
 
                 myTextShape = tp.getTextShape()  #  ['itshape', 'scshape', "upshape"]     # and slshape?
-                print(f"setTextPartsSvg, {tp.rawText} got myTextShape {myTextShape}, font {tp.font}")
+                #print(f"setTextPartsSvg, {tp.rawText} got myTextShape {myTextShape}, font {tp.font}")
                 if myTextShape == 'scshape':
-                    # ss.append('font-variant="small-caps"')
-                    gm.append("Small caps is currently off for SVG.") # because inkscape cannot measure it
-                    raise GramError(gm)
+                    sss.append('font-variant="small-caps"')
+                #     gm.append("Small caps is currently off for SVG.") # because inkscape cannot measure it
+                #     raise GramError(gm)
                 if myTextShape == "upshape":
-                    pass
+                    sss.append('font-style="normal"')
                 if myTextShape == None:
-                    pass
+                    sss.append('font-style="normal"')
                 if myTextShape == 'itshape':
                     if tp.font in ['helvetica', 'lms']:
-                        ss.append('font-style="oblique"')
+                        sss.append('font-style="oblique"')
                     elif tp.font in ['lmr', 'palatino', "times"]:
-                        ss.append('font-style="italic"')
+                        sss.append('font-style="italic"')
                     else:
                         gm.append("itshape specified, but not for %s.  Fixme!" % tp.font)
                         raise GramError(gm)
@@ -4962,19 +5001,20 @@ class GramText(GramGraphic):
                 myTextSeries = tp.getTextSeries()   # 'bfseries' or 'mdseries'
                 # print("myTextSeries: %s" % myTextSeries)
                 if myTextSeries == "bfseries":
-                    ss.append('style="font-weight:bold"')   # or a number?
+                    sss.append('style="font-weight:bold"')   # or a number?
                 elif myTextSeries == "mdseries":
-                    ss.append('style="font-weight:normal"')
+                    sss.append('style="font-weight:normal"')
 
                 myColor = tp.getColor()
                 if myColor:
-                    ss.append('fill="%s"' % myColor.color)
+                    sss.append('fill="%s"' % myColor.color)
                     if myColor.transparent:
-                        ss.append('fill-opacity="%s"' % myColor.value)
+                        sss.append('fill-opacity="%s"' % myColor.value)
 
-                ss.append(">%s</tspan>" % tp.rawText)
-
-            theText = " ".join(ss)
+                sss.append(">%s</tspan>" % tp.rawText)
+                theText = " ".join(sss)
+                ss.append(theText)
+            theText = "".join(ss)
             self.rawText += theText
             self.partsHaveBeenAdded = True
 
@@ -5087,7 +5127,7 @@ class GramText(GramGraphic):
 
 
     def getSvg(self):    # GramText
-        gm = ['GramText.getSvg() rawText=%s' % self.rawText]
+        gm = [f"GramText.getSvg() rawText={self.rawText}, gId={self.gId}"]
         # print(gm[0])
         if not self.cA:
             self.cA = GramCoord()
@@ -5099,6 +5139,14 @@ class GramText(GramGraphic):
             myClass = 'ttfamily'
         elif myTextFamilyString == "sffamily":
             myClass = "sffamily"
+        elif myTextFamilyString == "rmfamily":
+            myClass = "rmfamily"
+
+        # Deal with small caps -- it becomes a class
+        myTextShapeString = self.getTextShape()
+        if myTextShapeString == "scshape":
+            myClass = "scshape"
+            # print(f"GramText.getSvg()  setting myClass to {myClass}")
 
         myTextSizeStr = self.getTextSize()
         #print(f"GramText.getSvg()  myTextSizeStr is {myTextSizeStr}")
@@ -5526,33 +5574,58 @@ class GramText(GramGraphic):
         if myDx:
             ss.append('dx="%.2f"' % myDx)
         if myDy:
+            if self.rawText.startswith("in order"):
+                print(f"{gm[0]} dy {myDy:.2f}")
             ss.append('dy="%.2f"' % myDy)
 
-        myTextShape = self.getTextShape()  #  ['itshape', 'scshape', "upshape"]     # and slshape?
-        # print(f"{gm[0]}, got myTextShape {myTextShape}, font {self.font}")
-        if myTextShape == 'scshape':
-            # ss.append('font-variant="small-caps"')
-            gm.append("Small caps is currently off for SVG.") # because inkscape cannot measure it
-            raise GramError(gm)
-        if myTextShape == "upshape":
-            pass
-        if myTextShape == None:
-            pass
-        if myTextShape == 'itshape':
-            if self.font in ['helvetica', 'lms']:
-                ss.append('font-style="oblique"')
-            elif self.font in ['lmr', 'palatino', "times"]:
-                ss.append('font-style="italic"')
-            else:
-                gm.append("itshape specified, but not for %s.  Fixme!" % self.font)
-                raise GramError(gm)
 
-        # Since font-weight is part of the style, I need to use "style=..."
+        myTextShape = self.getTextShape()  #  ['itshape', 'scshape', "upshape"]     # and slshape?
+        # # print(f"{gm[0]}, got myTextShape {myTextShape}, font {self.font}")
+        # # if myTextShape == 'scshape':
+        # #     ss.append('font-variant="small-caps"')
+        # #     #gm.append("Small caps is currently off for SVG.") # because inkscape cannot measure it
+        # #     #raise GramError(gm)
+        # if myTextShape == "upshape":
+        #     pass
+        # if myTextShape == None:
+        #     pass
+        # if myTextShape == 'itshape':
+        #     if self.font in ['helvetica', 'lms']:
+        #         ss.append('font-style="oblique"')
+        #     elif self.font in ['lmr', 'palatino', "times"]:
+        #         ss.append('font-style="italic"')
+        #     else:
+        #         gm.append("itshape specified, but not for %s.  Fixme!" % self.font)
+        #         raise GramError(gm)
+
+        # # Since font-weight is part of the style, I need to use "style=..."
         myTextSeries = self.getTextSeries()   # 'bfseries' or 'mdseries'
+        # if myTextSeries == "bfseries":
+        #     ss.append('style="font-weight:bold"')   # or a number?
+        # elif myTextSeries == "mdseries":
+        #     ss.append('style="font-weight:normal"')
+
+        textStyles=[]
+
+        if myTextShape == "itshape":
+            textStyles.append("font-style:italic")
+        else:
+            if myTextShape != "scshape":
+                textStyles.append("font-style:normal")
+
+        if myTextShape == "scshape":
+            # For lmr, it should have a class that defines font-variant: normal
+            if self.font in ["lmr"]:
+            #    textStyles.append("font-variant: small-caps")
+                pass
         if myTextSeries == "bfseries":
-            ss.append('style="font-weight:bold"')   # or a number?
-        elif myTextSeries == "mdseries":
-            ss.append('style="font-weight:normal"')
+            textStyles.append("font-weight:bold")
+        else:
+            textStyles.append("font-weight:normal")
+        if textStyles:
+            textStyles = ";".join(textStyles)
+            textStyles = f'style="{textStyles}"'
+            ss.append(textStyles)
 
         myColor = self.getColor()
         # print(f"GramText.getSvg() after getColor(); myColor is {myColor};  {self.rawText}")
