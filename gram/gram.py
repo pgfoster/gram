@@ -235,6 +235,8 @@ def fixUnderscores(theText):
     """Check and fix underscores.
 
     Semi-smart in knowing math mode.  It can distinguish "x_y" from "$x_y$".
+
+    It is too stupid to know other kinds of math mode.
     """
 
     #raise GramError
@@ -456,7 +458,7 @@ class Gram(object):
         gm = ['Gram._setFont()']
         assert isinstance(theFont, str)
         lowFont = theFont.lower()
-        goodFonts = ['lmr', 'lms', 'helvetica', 'palatino', "fira"]   # times?
+        goodFonts = ['lmr', 'lms', 'helvetica', 'palatino', 'times', "fira"]
         if lowFont not in goodFonts:
             gm.append("You can only set property 'font' to one of")
             gm.append("%s" % goodFonts)
@@ -1972,6 +1974,10 @@ class Gram(object):
                 for l in ll:
                     print(l)
                 print()
+                for k,v in self.gForGIdDict.items():
+                    print(k,v)
+
+                    # print(k,v.rawText)
             for l in ll[1:]:
                 if l.startswith(b'text'):
                     splL = l.split(b',')
@@ -3136,7 +3142,7 @@ class GramTikzStyle(Gram):
                 options += self.color.getSvgOptions()
         elif self.color in [False, None]:
             if isinstance(self, GramRect):
-                pass
+                pass                           # <----- ??????  Should be error?
             else:
                 options.append('stroke="black"')
 
@@ -3643,6 +3649,18 @@ class GramGraphic(GramTikzStyle):
             raise GramError(gm)
         return ret
 
+    def pdf(self):
+        gm = ["GramGraphic.pdf() is turned off"]
+        gm.append("pdf() should be called by Gram or a subclass, not called by GramGraphic")
+        gm.append(f"self is {self}")
+        raise GramError(gm)
+
+    def svg(self, extraMarginHack=1.0, writeWidthHeight=False, fixTextOverlaps=False):
+        gm = ["GramGraphic.svg() is turned off"]
+        gm.append("svg() should be called by Gram or a subclass, not called by GramGraphic")
+        gm.append(f"self is {self}")
+        raise GramError(gm)
+
 class GramSvgMarker(GramGraphic):
 
     _counter = 0
@@ -4055,8 +4073,17 @@ class GramText(GramGraphic):
         self.gX = 0.0
         self.gY = 0.0
 
+    # def dupe(self, gIdMod):
+    #     assert gIdMod
+    #     assert isinstance(gIdMod, str)
+
+    #     c = copy.deepcopy(self)
+    #     c.gId += gIdMod
+    #     return c
+
+
     def append(self, aText):
-        tp = GramText(aText)
+        tp = GramText(aText, addToGIdDict=False)
         self.parts.append(tp)
         return tp
 
@@ -4687,7 +4714,7 @@ class GramText(GramGraphic):
         else:
             # decide
             if self.textWrapWidth or r"\\" in self.rawText or r"\newline" in self.rawText:
-                print("GramText.setMpTextTikz().  Wrapping in minipage or varwidth.   %s" % self.rawText[:30])
+                # print("GramText.setMpTextTikz().  Wrapping in minipage or varwidth.   %s" % self.rawText[:30])
                 self.wrapRawInMinipageOrVarwidth()
 
 
@@ -5377,6 +5404,7 @@ class GramText(GramGraphic):
             ss.append('/>\n')
 
         ss.append('<text id="%s"' % self.gId)  # GramText.getSvg()
+        # print(f"GramText.getSvg()  myClass is {myClass}")
         if myClass:
             ss.append('class="%s"' % myClass)
 
