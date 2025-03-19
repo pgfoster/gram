@@ -1497,12 +1497,107 @@ class Gram(object):
             raise GramError(gm)
 
 
-        flob.write("<style>\n")
-        flob.write(svgCss2 % (myTextFontStack,
-                              self.svgTextNormalWeight,
-                              mySFTextFontStack,
-                              myTTTextFontStack))
-        flob.write("</style>\n")
+        # LMS with font-variant: small-caps does not work well with inkscape
+        if self.font in ["lms"]:  
+            svgCss = """
+                text,tspan {
+                    font-family: %s;
+                    font-size: %s;
+                }
+                text.rmfamily,tspan.rmfamily {
+                    font-family: %s;
+                }
+                text.sffamily,tspan.sffamily {
+                    font-family: %s;
+                }
+                text.ttfamily,tspan.ttfamily {
+                    font-family: %s;
+                }
+                text.scshape,tspan.scshape {
+                    font-family: %s;
+                }
+                """ % (myTextFontStack, "30px", 
+                       myRmFontStack, mySFTextFontStack, myTTTextFontStack, mySCTextFontStack)
+
+        elif self.font in ["helvetica"]:
+            svgCss = """
+                text,tspan {
+                    font-family: %s;
+                    font-size: %s;
+                }
+                text.rmfamily,tspan.rmfamily {
+                    font-family: %s;
+                }
+                text.sffamily,tspan.sffamily {
+                    font-family: %s;
+                }
+                text.ttfamily,tspan.ttfamily {
+                    font-family: %s;
+                }
+                text.scshape,tspan.scshape {
+                    font-family: %s;
+                    font-variant: small-caps;
+                } """ % (myTextFontStack, "30px", 
+                       myRmFontStack, mySFTextFontStack, myTTTextFontStack, mySCTextFontStack)
+
+
+        elif self.font in ["lmr"]:
+            svgCss = """
+                text,tspan {
+                    font-family: %s;
+                    font-size: %s;
+                }
+                text.rmfamily,tspan.rmfamily {
+                    font-family: %s;
+                }
+                text.sffamily,tspan.sffamily {
+                    font-family: %s;
+                }
+                text.ttfamily,tspan.ttfamily {
+                    font-family: %s;
+                }
+                text.scshape,tspan.scshape {
+                    font-family: %s;
+                    font-variant: normal;
+                } """ % (myTextFontStack, "30px", 
+                       myRmFontStack, mySFTextFontStack, myTTTextFontStack, mySCTextFontStack)
+        styleStuff = None
+        if self.font == "lms":
+            myTextFontStack = '"Latin Modern Sans", sans-serif'
+            styleStuff = svgLMStyleFF % myTextFontStack
+        elif self.font == "lmr":
+            myTextFontStack = '"Latin Modern Roman", serif'
+            styleStuff = svgLMStyleFF % myTextFontStack
+        elif self.font == "helvetica":
+            styleStuff = svgHelveticaStyle
+        elif self.font == "palatino":
+            styleStuff = svgPalatinoStyle
+        elif self.font == "times":
+            styleStuff = svgTimesStyle
+        elif self.font == "fira":
+            styleStuff = svgFiraStyle
+        assert styleStuff
+
+        flob.write("\n<style>")
+        flob.write(styleStuff)
+        flob.write("\n</style>\n\n")
+
+ 
+
+        if 0:
+            # external style does not work with inkscape?!?  True, it does not
+            flob.write("<style>\n")
+
+
+            # link css file (s) containing defs for text,tspan, and classes 
+            # text.rmfamily, text.sffamily, text.scshape, etc
+            flob.write('    <link\n')
+            flob.write('      xmlns="http://www.w3.org/1999/xhtml"\n')
+            flob.write('      rel="stylesheet"\n')
+            flob.write('      href="/Volumes/Vork/H/GitLab/g23/public/css11/peter11svglms.css"\n')
+            flob.write('      type="text/css" />\n')
+
+            flob.write("</style>\n")
 
         # Write markers in a <defs> </defs>  section.
         markersToWrite = []
@@ -6345,31 +6440,238 @@ tTexStuff_5 = r"""\documentclass[%ipt,a4paper]{scrartcl}
 \thispagestyle{empty}
 """
 
-# line {
-#     stroke: black;
-# }
 
-svgCss1 = """text {
-    font-family: %s;
-    font-weight: %i;
-}
-text.sffamily {
-    font-family: Helvetica, Arial, sans-serif;
-}
-text.ttfamily {
-    font-family: "Courier New", Courier, monospace;
-}
+svgLMStyleFF = """
+
+    @font-face {
+        font-family: 'Latin Modern Roman';
+        src: url('https://pgfoster.gitlab.io/css10/fonts/lmroman10-regular-webfont.woff') format('woff');
+        font-weight: normal;
+        font-style: normal;
+
+    }
+
+    @font-face {
+        font-family: 'Latin Modern Roman';
+        src: url('https://pgfoster.gitlab.io/css10/fonts/lmroman10-bold-webfont.woff') format('woff');
+        font-weight: bold;
+        font-style: normal;
+
+    }
+
+    @font-face {
+        font-family: 'Latin Modern Roman';
+        src: url('https://pgfoster.gitlab.io/css10/fonts/lmroman10-italic-webfont.woff') format('woff');
+        font-weight: normal;
+        font-style: italic;
+
+    }
+
+    @font-face {
+        font-family: 'Latin Modern Roman';
+        src: url('https://pgfoster.gitlab.io/css10/fonts/lmroman10-bolditalic-webfont.woff') format('woff');
+        font-weight: bold;
+        font-style: italic;
+
+    }
+
+    @font-face {
+        font-family: 'Latin Modern Roman Caps';
+        src: url('https://pgfoster.gitlab.io/css10/fonts/lmromancaps10-regular-webfont.woff') format('woff');
+        font-weight: normal;
+        font-style: normal;
+    }
+
+    @font-face {
+        font-family: 'Latin Modern Roman Caps';
+        src: url('https://pgfoster.gitlab.io/css10/fonts/lmromancaps10-oblique-webfont.woff') format('woff');
+        font-weight: normal;
+        font-style: italic;
+    }
+
+    @font-face {
+        font-family: 'Latin Modern Sans';
+        src: url('https://pgfoster.gitlab.io/css10/fonts/lmsans10-regular-webfont.woff') format('woff');
+        font-weight: normal;
+        font-style: normal;
+    }
+
+    @font-face {
+        font-family: 'Latin Modern Sans';
+        src: url('https://pgfoster.gitlab.io/css10/fonts/lmsans10-bold-webfont.woff') format('woff');
+        font-weight: bold;
+        font-style: normal;
+    }
+
+    @font-face {
+        font-family: 'Latin Modern Sans';
+        src: url('https://pgfoster.gitlab.io/css10/fonts/lmsans10-oblique-webfont.woff') format('woff');
+        font-weight: normal;
+        font-style: oblique;
+    }
+
+    @font-face {
+        font-family: 'Latin Modern Sans';
+        src: url('https://pgfoster.gitlab.io/css10/fonts/lmsans10-boldoblique-webfont.woff') format('woff');
+        font-weight: bold;
+        font-style: oblique;
+    }
+
+    @font-face {
+        font-family: 'Latin Modern Mono';
+        src: url('https://pgfoster.gitlab.io/css10/fonts/lmmono10-regular-webfont.woff') format('woff');
+        font-weight: normal;
+        font-style: normal;
+    }
+
+    @font-face {
+        font-family: 'Latin Modern Mono';
+        src: url('https://pgfoster.gitlab.io/css10/fonts/lmmono10-italic-webfont.woff') format('woff');
+        font-weight: normal;
+        font-style: italic;
+    }
+
+    text,tspan {
+        font-family: %s;
+    }
+    text.rmfamily,tspan.rmfamily {
+        font-family: "Latin Modern Roman", serif;
+    }
+    text.sffamily,tspan.sffamily {
+        font-family: "Latin Modern Sans", sans-serif;
+    }
+    text.ttfamily,tspan.ttfamily {
+        font-family: "Latin Modern Mono", monospace;
+    }
+    text.scshape,tspan.scshape {
+        font-family: "Latin Modern Roman Caps", serif;
+    }
 """
 
-svgCss2 = """
-text,tspan {
-    font-family: %s;
-    font-weight: %s;
-}
-text.sffamily,tspan.sffamily {
-    font-family: %s;
-}
-text.ttfamily,tspan.ttfamily {
-    font-family: %s;
-}
+
+svgHelveticaStyle = """
+    text,tspan {
+        font-family: Helvetica, sans-serif;
+    }
+    .rmfamily {
+        font-family: Georgia, serif;
+    }
+    .sffamily {
+        font-family: Helvetica, sans-serif;
+    }
+    .ttfamily {
+        font-family: "Lucida Console", Courier, monospace;
+    }
+    .scshape {
+        /* font-variant: small-caps;  BAD!  */
+        /* font-variant-caps: small-caps;  nope! */
+        font-family: "Helvetica", sans-serif;
+    }
+"""
+
+svgPalatinoStyle = """
+    text,tspan {
+        font-family: Palatino, serif;
+    }
+    text.rmfamily,tspan.rmfamily {
+        font-family: "Palatino", serif;
+    }
+    text.sffamily,tspan.sffamily {
+        font-family: "Helvetica", sans-serif;
+    }
+    text.ttfamily,tspan.ttfamily {
+        font-family: "Lucida Console", monospace;
+    }
+    text.scshape,tspan.scshape {
+        font-variant: small-caps;        /* bad in inkscape */
+        font-family: "Palatino", serif;
+    }
+"""
+
+svgTimesStyle = """
+    text,tspan {
+        font-family: Times Roman, serif;
+    }
+    .rmfamily {
+        font-family: "Times Roman", serif;
+    }
+    .sffamily {
+        font-family: "Helvetica", sans-serif;
+    }
+    .ttfamily {
+        font-family: "Lucida Console", monospace;
+    }
+    .scshape {
+        font-variant: small-caps;           /* bad in inkscape */
+        font-family: "Times Roman", serif;
+    }
+"""
+
+svgFiraStyle = """
+
+    @font-face {
+        font-family: "Fira Sans";
+        src: url("https://fonts.cdnfonts.com/s/15889/FiraSans-Regular.woff") format("woff");
+        font-weight: normal;
+        font-style: normal;
+    
+    }
+    
+    @font-face {
+        font-family: "Fira Sans";
+        src: url("https://fonts.cdnfonts.com/s/15889/FiraSans-Italic.woff") format("woff");
+        font-weight: normal;
+        font-style: italic;
+    
+    }
+    
+
+    @font-face {
+        font-family: "Fira Sans";
+        src: url("https://fonts.cdnfonts.com/s/15889/FiraSans-Bold.woff") format("woff");
+        font-weight: bold;
+        font-style: normal;
+    
+    }
+    
+    @font-face {
+        font-family: "Fira Sans";
+        src: url("https://fonts.cdnfonts.com/s/15889/FiraSans-BoldItalic.woff") format("woff");
+        font-weight: bold;
+        font-style: italic;
+    
+    }
+    
+
+    @font-face {
+        font-family: "Fira Mono";
+        font-style: normal;
+        font-weight: normal;
+        src: url("https://fonts.cdnfonts.com/s/15657/FiraMono-Regular.woff") format("woff");
+    }
+    @font-face {
+        font-family: "Fira Mono";
+        font-style: normal;
+        font-weight: bold;
+        src: url("https://fonts.cdnfonts.com/s/15657/FiraMono-Bold.woff") format("woff");
+    }
+
+
+
+    text,tspan {
+        font-family: Fira Sans, sans-serif;
+    }
+    .rmfamily {
+        font-family: "Georgia", serif;
+    }
+    .sffamily {
+        font-family: "Fira Sans", sans-serif;
+    }
+    .ttfamily {
+        font-family: "Fira Mono", monospace;
+    }
+    .scshape {
+        font-variant: small-caps;
+        font-family: "Fira Sans", sans-serif;
+    }
 """
