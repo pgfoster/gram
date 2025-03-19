@@ -243,6 +243,7 @@ def fixUnderscores(theText):
     inMaths = False
 
     for c in theText:
+        #print(f"fixUnderscores --- theText={theText} |{c}|")
         if c == "$":
             if isEscaped:
                 pass
@@ -258,7 +259,7 @@ def fixUnderscores(theText):
             elif isEscaped:
                 fixed.append(c)
             else:
-                writeInColour("fixUnderscores() Underscore not escaped -- adding backslash\n", colour="CYAN")
+                writeInColour(f"fixUnderscores({theText}) Underscore not escaped -- adding backslash\n", colour="CYAN")
                 fixed.append("\\" + c)
         elif c.startswith("\\"):
             if isEscaped:           # ie \\
@@ -1167,14 +1168,14 @@ class Gram(object):
 
     def pdfPage(self, maxWidth=19, maxHeight=27.7):
         #    a4 is 20.99 by 29.70 cm
-        gm = ['Gram.pdf()']
+        gm = ['Gram.pdfPage()']
         self.setPostionsBeforeTextMetrics()
         theKeys = self.styleDict.keys()
         if theKeys:
             for k in theKeys:
                 self.styleDict[k].setBB()
         self.tikzCalcBigBoundingBox()
-        print("Gram.pdf(), bbb is now %s" % self.bbb)
+        print("Gram.pdfPage(), bbb is now %s" % self.bbb)
 
         if maxWidth > 19:
             gm.append(
@@ -1212,7 +1213,7 @@ class Gram(object):
             assert myScale < 1.0
 
         if 1:
-            gm = ["Gram.pdf()"]
+            gm = ["Gram.pdfPage()"]
             self.writeTikz()
             assert self.dirName
             if os.path.isdir(self.dirName) and os.path.isfile("%s/%s.tikz.tex" % (self.dirName, self.baseName)):
@@ -1341,9 +1342,10 @@ class Gram(object):
         os.system("%s %s" % (self.pngViewer, pngFileName))
 
     def svgRender(self):
+        gm = ["Gram.svgRender()"]
         verbose = False
         if verbose:
-            print("Gram.svg() start")
+            print(f"{gm[0]} start")
         assert self.engine == 'svg'
 
         # Leftover stuff from a previous call to this method causes
@@ -1363,32 +1365,35 @@ class Gram(object):
         Gram._svgHack_x_Only = True
 
         if verbose:
-            print("Gram.svg() first go, about to setPositionsBeforeTextMetrics")
+            print(f"{gm[0]} first go, about to setPositionsBeforeTextMetrics")
         self.setPositionsBeforeTextMetrics()
         if verbose:
-            print("Gram.svg() first go, about to setTextMetrics")
+            print(f"{gm[0]} first go, about to setTextMetrics")
 
         self.setTextMetrics()
+        # Do I need setPositions() here?
+        # self.setPositions()
         if verbose:
-            print("Gram.svg() finished first go")
+            print(f"{gm[0]} finished first go")
 
         Gram._svgHackDoRotate = False
         Gram._svgHack_x_Only = False
         self.setPositionsBeforeTextMetrics()
         if verbose:
-            print("Gram.svg() second go, about to setTextMetrics")
+            print(f"{gm[0]} second go, about to setTextMetrics")
         self.setTextMetrics()
         self.setPositions()
         if verbose:
-            print("Gram.svg() finished second go")
+            print(f"{gm[0]} finished second go")
 
         Gram._svgHackDoRotate = True
         self.setPositionsBeforeTextMetrics()
         if verbose:
-            print("Gram.svg() third go, about to setTextMetrics")
+            print(f"{gm[0]} third go, about to setTextMetrics")
         self.setTextMetrics()
 
         self.setPositions()
+
 
     def svg(self, extraMarginHack=1.0, writeWidthHeight=False, fixTextOverlaps=False):
         self.engine = 'svg'
@@ -1438,7 +1443,8 @@ class Gram(object):
             ht = myHt * self.svgPxForCm
 
         if writeWidthHeight:
-            flob.write('  width="%.2f" height="%.2f"\n' % (wd, ht))
+            flob.write('  width="%.2f"\n' % wd)
+            flob.write('  height="%.2f"\n' % ht)
 
         if doHackExtra:
             vb1 = (theBBB[0] * self.svgPxForCm) - hackExtraX
@@ -1549,6 +1555,8 @@ class Gram(object):
             self.bbb[3] = g.bb[3]
 
     def inkscape(self):
+        """Not used.  Only for testing."""
+
         gm = ["Gram.inkscape()"]
         print(gm[0], "Gram._svgHackDoRotate is %s, Gram._svgHack_x_Only is %s" % (
             Gram._svgHackDoRotate, Gram._svgHack_x_Only))
@@ -1722,14 +1730,17 @@ class Gram(object):
             fout = open("foo.tex", "w")
             fout.write("\n".join(texLines))
             fout.close()
-            #sys.exit()
+            sys.exit()
 
         # run it in memory
         flob = io.BytesIO()
         for prt in texLines:
             flob.write(str.encode(prt))
         flob.seek(0, 0)  # Go to the beginning of the flob
-        p = Popen(["lualatex", "-jobname=foo", "-draftmode"], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        
+        # Here below it writes foo.aux, foo.log, foo.pdf (always empty?) and grOut.txt
+        # How do I prevent that writing?  It should be all in memory.
+        p = Popen(["lualatex", "--jobname=foo", "--draftmode"], stdin=PIPE, stdout=PIPE, stderr=PIPE)
         ret = p.communicate(input=flob.getvalue())
 
         isBad = False
@@ -1745,6 +1756,7 @@ class Gram(object):
             gm.append("There was a problem with lualatex used for getting text sizes.")
             gm.append(r"It may be an underscore that needs escaping eg xx_yy -> xx\_yy ?")
             gm.append(r"or missing math mode with something like \alpha -> $\alpha$ ?")
+            gm.append(r'To escape use literal =r"single\_backslash"= or ="double\\_backslash"=') 
             raise GramError(gm)
 
         assert os.path.isfile(self.latexMetricsFileName)  # grOut.txt
@@ -1829,7 +1841,9 @@ class Gram(object):
                     flob.seek(0)
                     print("-." * 20)
 
-        # For inkscape version 1.0
+        # For inkscape version 1.3
+        #   -S, --query-all       Print bounding boxes of all objects
+        #   -p, --pipe            Read input file from standard input (stdin)
         p = Popen(['inkscape', '-S', '-p'],
                   stdout=PIPE, stdin=PIPE, stderr=PIPE)
 
@@ -1876,7 +1890,7 @@ class Gram(object):
         self.bbb[2] = self.bbb[0] + float(splL[3]) / self.svgPxForCm
         self.bbb[3] = self.bbb[1] + float(splL[4]) / self.svgPxForCm
 
-        # print("svgSetTextMetrics() got bbb:", self.bbb[0], self.bbb[1], self.bbb[2], self.bbb[3])
+        #print("svgSetTextMetrics() got bbb:", self.bbb[0], self.bbb[1], self.bbb[2], self.bbb[3])
 
         # print("gForGIdDict is now", self.gForGIdDict)
 
@@ -1918,6 +1932,9 @@ class Gram(object):
                         g.underhang = g.svgBaseline_cm - y1  # can be zero
                         g.rise = top - g.svgBaseline_cm
 
+                        if 0:
+                            print(f"svgSetTextMetrics: {g.rawText} width:{g.width:.2f}cm")
+
 
         # Get Gram._svgNormalsize_x.  Need a new temporary text.
         # Then run inkscape again.  Then remove the temporary text.
@@ -1926,11 +1943,26 @@ class Gram(object):
         # Add a text object of a single "x", and remove it when finished
         if  Gram._svgNormalsize_x == None:
             gx = self.text("x", 0,0)
+            #print(f"{gm[0]} made gx, gId {gx.gId}")
             flob = io.StringIO()
             self.svgWriteToOpenFile(flob, theBBB=[0., 0., 1., 1.])
             flob.seek(0)
             thisRet = flob.read().encode('utf-8')
-            # print(thisRet)
+            if 0:
+                print()
+                print("self is", self)
+                print("graphics")
+                for g in self.graphics:
+                    if isinstance(g, GramText):
+                        print(f"GramText {g.rawText} {g.gId}")
+                print()
+                print("gForGIdDict")
+                for k,v in self.gForGIdDict.items():
+                    print(k,v.rawText)
+                print()
+                print("send to inkscape:")
+                print(thisRet)
+                sys.exit()
             p = Popen(['inkscape', '-S', '-p'], stdout=PIPE, stdin=PIPE, stderr=PIPE)
             ret = p.communicate(input=thisRet)
             flob.close()
@@ -3006,6 +3038,13 @@ class GramTikzStyle(Gram):
             # if self.fill.transparent and self.fill.value:
             #     options.append("fill opacity=%s" % self.fill.value)
 
+            # Note that GramRect is a subclass of GramLine
+            if isinstance(self, GramRect):
+                pass
+            elif isinstance(self, GramLine):
+                gm.append('This week, "fill" does not make sense for GramLine objects')
+                raise GramError(gm)
+
             if self.fill is True:
                 options.append("fill")
             else:
@@ -3134,6 +3173,10 @@ class GramTikzStyle(Gram):
                 pass
             elif isinstance(self, GramSvgMarker):
                 pass
+            elif isinstance(self, GramLine):
+                gm.append('This week, "fill" does not make sense for GramLine objects')
+                gm.append(f"self is {self}")
+                raise GramError(gm)
 
 
             # if not isinstance(self, GramRect):
