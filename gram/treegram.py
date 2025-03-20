@@ -1344,8 +1344,10 @@ class TreeGramBracket(TreeGramGraphic):
 
     def setPositions(self):    # TreeGramBracket
 
+        gm = ["TreeGramBracket.setPositions()"]
+        print(f"{gm[0]}")
         theInnerSep = self.upperNode.label.getInnerSep()
-        # print("TreeGramBracket.setPositions().  got theInnerSep %f" % theInnerSep)
+        # print(f"{gm[0]}, got theInnerSep {theInnderSep}"
         if self.topOverRide:
             self.top = self.topOverRide
         else:
@@ -1382,6 +1384,7 @@ class TreeGramBracket(TreeGramGraphic):
 
         self.label.cA.xPosn = theRight
         self.label.cA.yPosn = self.bottom + (0.5 * (self.top - self.bottom))
+        print(f"{gm[0]} setting bracket label cA.yPosn to {self.label.cA.yPosn}")
         if self.engine == 'tikz':
             self.label.setBB()
         elif self.engine == "svg":
@@ -1470,6 +1473,7 @@ class TreeGramBracket(TreeGramGraphic):
                     -self.bottom * self.svgPxForCm,
                     myLineThickness ))
         if self.label:
+            print(f"TreeGramBracket.getSvg()  self.label.cA.yPos {self.label.cA.yPosn:.3f}")
             ss.append(self.label.getSvg())
         return '\n'.join(ss)
 
