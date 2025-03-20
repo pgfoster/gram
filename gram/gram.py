@@ -1,6 +1,5 @@
 # I need p4 for p4.Tree, and for a few functions in p4.func
 from p4 import func
-# import pyx
 import os
 import math
 import string
@@ -334,8 +333,7 @@ class Gram(object):
     _styleDict = {}
     _tikzPictureDefaults = None
     _htmlColorDict = {}
-    _haveStartedPyX = False
-    _latexTextMetricsUses = "latex"  # pyx or latex
+    _latexTextMetricsUses = "latex"  # only latex; no more pyx
     _svgTextMetricsUses = "inkscape"  # inkscape or "rsvg"
 
 
@@ -585,25 +583,14 @@ class Gram(object):
         raise GramError("Don't set htmlColorDict, just modify it.")
     htmlColorDict = property(_getHtmlColorDict, _setHtmlColorDict)
 
-    def _getHaveStartedPyX(self):
-        return Gram._haveStartedPyX
-
-    def _setHaveStartedPyX(self, newVal):
-        if newVal in [True, False]:
-            Gram._haveStartedPyX = newVal
-        else:
-            raise GramError(
-                "Set haveStartedPyX to True or False, only (got %s)" % newVal)
-    haveStartedPyX = property(_getHaveStartedPyX, _setHaveStartedPyX)
-
     def _getLatexTextMetricsUses(self):
         return Gram._latexTextMetricsUses
 
     def _setLatexTextMetricsUses(self, newVal):
-        if newVal in ["pyx", "latex"]:
+        if newVal in ["latex"]:
             Gram._latexTextMetricsUses = newVal
         else:
-            raise GramError("Set latexTextMetricsUses to pyx or latex, only (got %s)" % newVal)
+            raise GramError("Set latexTextMetricsUses latex, only (got %s)" % newVal)
 
     latexTextMetricsUses = property(_getLatexTextMetricsUses, _setLatexTextMetricsUses)
 
@@ -755,7 +742,6 @@ class Gram(object):
 
     def _set_svgTextPreserveWhitespace(self, newVal):
         if newVal in [True, False]:
-            Gram._haveStartedPyX = newVal
             Gram._svgTextPreserveWhitespace = newVal
         else:
             raise GramError(
@@ -767,14 +753,6 @@ class Gram(object):
     ##################################
 
     def setPositionsBeforeTextMetrics(self):
-        # print(f"Gram.setPositionsBeforeTextMetrics() engine {self.engine}, self {self}")
-        if self.engine == 'tikz':
-            if self.latexTextMetricsUses == 'pyx':
-                if not self.haveStartedPyX:
-                    self.startPyX()
-        elif self.engine == 'svg':
-            pass
-
         for g in self.graphics:
             g.setPositionsBeforeTextMetrics()
         for gr in self.grams:
@@ -783,8 +761,6 @@ class Gram(object):
     def setPositions(self):
         if self._defaultInnerSep is not None:  # it has been set by the user, maybe to zero
             self.tikzPictureDefaults.innerSep = self.defaultInnerSep
-        # if self.defaultTextFamily:
-        #     self.tikzPictureDefaults.textFamily = self.defaultTextFamily
 
         for g in self.graphics:
             g.setPositions()
@@ -795,9 +771,6 @@ class Gram(object):
         gm = ['Gram.getTikz()']
         ss = []
 
-        if self.latexTextMetricsUses == 'pyx':
-            if not self.haveStartedPyX:
-                self.startPyX()
         for gr in self.graphics:
             try:
                 #print(gr)
@@ -846,150 +819,71 @@ class Gram(object):
     ###############################################################
 
 
-    def startPyX(self):
-        if self.haveStartedPyX:
-            return
-        gm = ['Gram.startPyX()']
-        print(f"{gm[0]} starting")
-
-        pyx.unit.set(defaultunit='pt')  # 'bp' no workee
-
-        pyx.text.set(engine=pyx.text.LatexEngine, docclass="article",
-            docopt='%ipt' % self.documentFontSize)
-
-        # construct pyxTextPreambleString, with latexUsePackages
-        pyxTextPreambleString = self.getLatexFontDefString()
-        if pyxTextPreambleString:
-            pyxTextPreambleString += "\n"
-
-        #pyxTextPreambleString += "\\usepackage{tikz}\n"
-        pyxTextPreambleString += "\\usepackage[svgnames]{xcolor}\n"
-        pyxTextPreambleString += "\\usepackage{varwidth}\n"
-        #if self.useTikzPlotMarkLib:
-        #    pyxTextPreambleString += r"\usetikzlibrary{plotmarks}"
-        #    pyxTextPreambleString += "\n"
-
-        pkgString = self._parseLatexUsePackages()
-        pyxTextPreambleString += pkgString
-        if pkgString:
-            pyxTextPreambleString += "\n"
-
-        for lopc in self.latexOtherPreambleCommands:
-            pyxTextPreambleString += lopc
-
-        print("Gram.startPyX() pyxTextPreambleString is ---")
-        print(f"{pyxTextPreambleString}\n(end of pyxTextPreambleString)")
-
-        pyx.text.preamble(pyxTextPreambleString)
-
-        self.haveStartedPyX = True
-        print(f"{gm[0]} finished")
-
-
     def getLatexFontDefString(self):
         gm = ["Gram.getLatexFontDefString()"]
         assert self.engine == 'tikz'
-        if self.latexTextMetricsUses == 'pyx':
-            gm.append("Using pyx")
-            ss = []
-            if self.font == 'cm':
-                pass
-            elif self.font == "lmr":
-                pass
 
-            elif self.font == "lms":
-                ss.append(r"\renewcommand{\familydefault}{\sfdefault}")
+        ss = []
+        if self.font == "lmr":
+            #self.defaultTextFamily = "rmfamily"
+            ss.append(r"\usepackage{fontspec}")
+            ss.append(r"\usepackage{unicode-math}")
+            ss.append(r"\setmainfont[SmallCapsFont={Latin Modern Roman Caps}]{Latin Modern Roman}")
+            ss.append(r"\setsansfont{Latin Modern Sans}")
+            ss.append(r"\setmonofont{Latin Modern Mono}")
+            ss.append(r"\setmathfont{Latin Modern Math}")  # OldStyle figures does not work here.
+            # not mathastext
 
-            elif self.font == 'helvetica':
-                #self.defaultTextFamily = "sffamily"
-                # texStuffFontLine = r"\usepackage[scaled=.90]{helvet}"
-                ss.append("\\usepackage{helvet}")
-                ss.append(r"\usepackage{courier}")
-                ss.append(r"\renewcommand{\familydefault}{\sfdefault}")
-            elif self.font == 'palatino':
-                #self.defaultTextFamily = "rmfamily"
-                ss.append(r"\usepackage[osf]{mathpazo}")    # this uses osf, old style figures
-                ss.append(r"\usepackage[scaled=.95]{helvet}")
-                ss.append(r"\usepackage{courier}")
-            elif self.font == 'times':
-                #self.defaultTextFamily = "rmfamily"
-                ss.append(r"\usepackage{mathptmx}")  # osf no workee
-                ss.append(r"\usepackage[scaled=.95]{helvet}")
-                ss.append(r"\usepackage{courier}")
-            else:
-                gm.append("got %s, not implemented" % self.font)
-                raise GramError(gm)
+        elif self.font == "lms":
+            # Latin modern sans
+            ss.append(r"\usepackage[no-math]{fontspec}")
+            ss.append(r"\usepackage{unicode-math}")
+            ss.append(r"\setmainfont{Latin Modern Sans}")  # no small caps
+            ss.append(r"\setsansfont{Latin Modern Sans}")
+            ss.append(r"\setmonofont{Latin Modern Mono}")
+            ss.append(r"%\setmathfont{Latin Modern Math}")
+            ss.append(r"\setmathfont{Fira Math Regular}")
+            ss.append(r"\usepackage[italic]{mathastext}")
 
-            # if self.defaultTextFamily == "sffamily":
-            #     if self.useSfMathIfSffamily:
-            #         ss.append("\\usepackage{sfmath}")
-            #     if self.font != "helvetica":  # helvetica already done, above
-            #         ss.append(r"\renewcommand{\familydefault}{\sfdefault}")
-            return '\n'.join(ss)
+        elif self.font == 'helvetica':
+            # Helvetica.  No good maths font; use Fira math
+            ss.append(r"\usepackage[no-math]{fontspec}")
+            ss.append(r"\usepackage{unicode-math}")
+            # ss.append(r"\setmainfont{Helvetica}")
+            # ss.append(r"\setsansfont{Helvetica}")
+            ss.append(r"\setmainfont{Tex Gyre Heros}")
+            ss.append(r"\setsansfont{Tex Gyre Heros}")
+            ss.append(r"\setmathfont{Fira Math Regular}")
+            ss.append(r"\usepackage{mathastext}")
 
-        elif self.latexTextMetricsUses == 'latex':
-            gm.append("Using latex for metrics")
-            ss = []
-            if self.font == "lmr":
-                #self.defaultTextFamily = "rmfamily"
-                ss.append(r"\usepackage{fontspec}")
-                ss.append(r"\usepackage{unicode-math}")
-                ss.append(r"\setmainfont[SmallCapsFont={Latin Modern Roman Caps}]{Latin Modern Roman}")
-                ss.append(r"\setsansfont{Latin Modern Sans}")
-                ss.append(r"\setmonofont{Latin Modern Mono}")
-                ss.append(r"\setmathfont{Latin Modern Math}")  # OldStyle figures does not work here.
-                # not mathastext
+        elif self.font == 'palatino':
+            # Palatino
+            ss.append(r"\usepackage{fontspec}")
+            ss.append(r"\usepackage{unicode-math}")
+            ss.append(r"\setmainfont{TeX Gyre Pagella}")
+            ss.append(r"\setsansfont{Optima Regular}")
+            ss.append(r"\setmathfont{TeX Gyre Pagella Math}")
+            # ss.append(r"%\setmathfont{Euler Math}")
 
-            elif self.font == "lms":
-                # Latin modern sans
-                ss.append(r"\usepackage[no-math]{fontspec}")
-                ss.append(r"\usepackage{unicode-math}")
-                ss.append(r"\setmainfont{Latin Modern Sans}")  # no small caps
-                ss.append(r"\setsansfont{Latin Modern Sans}")
-                ss.append(r"\setmonofont{Latin Modern Mono}")
-                ss.append(r"%\setmathfont{Latin Modern Math}")
-                ss.append(r"\setmathfont{Fira Math Regular}")
-                ss.append(r"\usepackage[italic]{mathastext}")
-
-            elif self.font == 'helvetica':
-                # Helvetica.  No good maths font; use Fira math
-                ss.append(r"\usepackage[no-math]{fontspec}")
-                ss.append(r"\usepackage{unicode-math}")
-                # ss.append(r"\setmainfont{Helvetica}")
-                # ss.append(r"\setsansfont{Helvetica}")
-                ss.append(r"\setmainfont{Tex Gyre Heros}")
-                ss.append(r"\setsansfont{Tex Gyre Heros}")
-                ss.append(r"\setmathfont{Fira Math Regular}")
-                ss.append(r"\usepackage{mathastext}")
-
-            elif self.font == 'palatino':
-                # Palatino
-                ss.append(r"\usepackage{fontspec}")
-                ss.append(r"\usepackage{unicode-math}")
-                ss.append(r"\setmainfont{TeX Gyre Pagella}")
-                ss.append(r"\setsansfont{Optima Regular}")
-                ss.append(r"\setmathfont{TeX Gyre Pagella Math}")
-                # ss.append(r"%\setmathfont{Euler Math}")
-
-            elif self.font == "fira":
-                ss.append(r"\usepackage{fontspec}")
-                ss.append(r"\usepackage{unicode-math}")
-                ss.append(r"\setmainfont[BoldFont={Fira Sans Bold}, ItalicFont={Fira Sans Italic}, BoldItalicFont={Fira Sans Bold Italic}]{Fira Sans Regular}")
-                ss.append(r"\setsansfont{Fira Sans Regular}")
-                ss.append(r"\setmathfont{Fira Math Regular}")
+        elif self.font == "fira":
+            ss.append(r"\usepackage{fontspec}")
+            ss.append(r"\usepackage{unicode-math}")
+            ss.append(r"\setmainfont[BoldFont={Fira Sans Bold}, ItalicFont={Fira Sans Italic}, BoldItalicFont={Fira Sans Bold Italic}]{Fira Sans Regular}")
+            ss.append(r"\setsansfont{Fira Sans Regular}")
+            ss.append(r"\setmathfont{Fira Math Regular}")
 
 
 
-            else:
-                gm.append("got %s, not implemented" % self.font)
-                raise GramError(gm)
+        else:
+            gm.append("got %s, not implemented" % self.font)
+            raise GramError(gm)
 
-            # if self.defaultTextFamily == "sffamily":
-            #     if self.useSfMathIfSffamily:
-            #         ss.append("\\usepackage{sfmath}")
-            #     if self.font != "helvetica":  # helvetica already done, above
-            #         ss.append(r"\renewcommand{\familydefault}{\sfdefault}")
-            return '\n'.join(ss)
+        # if self.defaultTextFamily == "sffamily":
+        #     if self.useSfMathIfSffamily:
+        #         ss.append("\\usepackage{sfmath}")
+        #     if self.font != "helvetica":  # helvetica already done, above
+        #         ss.append(r"\renewcommand{\familydefault}{\sfdefault}")
+        return '\n'.join(ss)
 
     def _parseLatexUsePackages(self):
         """returns a multi-line string"""
@@ -1249,49 +1143,7 @@ class Gram(object):
         assert self.documentFontSize in [10, 11, 12]
         assert self.dirName
         self.engine = "tikz"
-
-        if self.latexTextMetricsUses == "pyx":
-            self.pdfUsingPyX()
-        elif self.latexTextMetricsUses == "latex":
-            self.pdfUsingLatex(fixTextOverlaps=fixTextOverlaps)
-
-    def pdfUsingPyX(self):
-        if not self.haveStartedPyX:
-            for k,v in self.htmlColorDict.items():
-                print(k,v)
-                myColorDef = r"\definecolor{%s}{HTML}{%s}" % (k, v)
-                self.latexOtherPreambleCommands.append(myColorDef)
-
-        print("Gram.pdfUsingPyX() about to do setPositionsBeforeTextMetrics()")
-        self.setPositionsBeforeTextMetrics()
-        theKeys = self.styleDict.keys()
-        if theKeys:
-            for k in theKeys:
-                self.styleDict[k].setBB()
-
-        print("Gram.pdfUsingPyX() about to do writeTikz()")
-        self.writeTikz()
-        print("Gram.pdfUsingPyX() finished writeTikz()")
-
-        if os.path.isdir(self.dirName) and os.path.isfile("%s/%s.tikz.tex" % (self.dirName, self.baseName)):
-            #inputTikzLine = '\\input{%s.tikz}' % self.baseName
-            #geometryLine  = '\\usepackage[width=%.1fcm, height=%.1fcm,noheadfoot]{geometry}' % (myWid+2, myHt+2)
-            thisDir = os.getcwd()
-            os.chdir(self.dirName)
-            inputTikzLine = '\\input{%s.tikz}\n' % self.baseName
-            self._writeTexStuff('pdf', inputTikzLine)
-            if 1:
-                oldFName = "%s.pdf" % self.baseName
-                if os.path.isfile(oldFName):
-                    os.remove(oldFName)
-            if self.theGpdf and 1:
-                oldFName = "composite_%s.pdf" % self.baseName
-                if os.path.isfile(oldFName):
-                    os.remove(oldFName)
-            os.system('make pdf')
-            if self.theGpdf and os.path.isfile("%s.pdf" % self.baseName):
-                os.system('make composite')
-            os.chdir(thisDir)
+        self.pdfUsingLatex(fixTextOverlaps=fixTextOverlaps)
 
     def render(self):
         if self.engine == "tikz":
@@ -1302,7 +1154,7 @@ class Gram(object):
             self.svgRender()
 
     def pdfUsingLatex(self, fixTextOverlaps=False):
-        # TODO Need to deal with self.htmlColorDict, as in pdfUsingPyX
+        # TODO Need to deal with self.htmlColorDict
 
         self.render()
         if fixTextOverlaps:
@@ -4188,7 +4040,7 @@ class GramText(GramGraphic):
         self.fullHeight = 0.0    # Note we also have self.textHeight, inherited, which is different
         self.tbb = [0.0] * 4
 
-        # more text measurements for tikz/pyx
+        # more text measurements for tikz
         # inner sep is initially 0.3333em
         # em is the point size; it is not the width of an M (although maybe in history it was ...)
         # default inner sep is 0.3333em for normalsize text, regardless of text size
@@ -4321,107 +4173,6 @@ class GramText(GramGraphic):
 
 
 
-    def setLatexTextMetricsUsingPyx(self):
-        """This runs pyx on the cookedText, gets width and height
-
-        and X, x, yuh measurements
-        """
-
-        # 1 PostScript point = 0.35277138 mm
-        ptToCm = 0.035277138
-
-        try:
-            # print("just before pyx, cookedText is", self.cookedText)
-            t = pyx.text.text(0.0, 0.0, self.cookedText)
-        except:
-            raise GramError("pyx gagged on '%s', which was cooked to '%s'" % (
-                self.rawText, self.cookedText))
-
-        tbb = t.bbox()
-        self.tbb = [tbb.llx_pt * ptToCm, tbb.lly_pt * ptToCm, tbb.urx_pt * ptToCm, tbb.ury_pt * ptToCm]
-        # print(f"GramText.setLatexTextMetricsUsingPyx().  self.tbb is {self.tbb} ")
-
-        self.width = (tbb.urx_pt - tbb.llx_pt) * ptToCm
-
-        # Width for wrapping, or None
-        theTextWrapWidth = self.getTextWrapWidth()
-        if 0 and theTextWrapWidth:
-            theInnerSep = self.getInnerSep()
-            # print("theTextWrapWidth", theTextWrapWidth, " theInnerSep", theInnerSep)
-            if theInnerSep:
-                self.width += theInnerSep
-
-        self.fullHeight = (tbb.ury_pt - tbb.lly_pt) * ptToCm
-        self.underhang = -tbb.lly_pt * ptToCm    # might be zero
-        self.rise = tbb.ury_pt * ptToCm
-        # print("setLatexTextMetricsUsingPyx() The text '%s' is %.3f cm long, and %.3f cm  high" % (self.cookedText, self.width, self.fullHeight))
-        # sys.exit()
-
-        #self.width = 3.
-        #self.fullHeight = 2.
-        #self.underhang = 0.1
-        #self.rise = 0.2
-
-        # cooked = self.cookText('X')
-        # t = pyx.text.text(0.0, 0.0, cooked)
-        # tbb = t.bbox()
-        # self.bigX = tbb.ury_pt * ptToCm
-
-        # cooked = self.cookText('x')
-        # t = pyx.text.text(0.0, 0.0, cooked)
-        # tbb = t.bbox()
-        # self.ex = tbb.ury_pt * ptToCm
-        # self.exWid = tbb.urx_pt * ptToCm
-
-        # cooked = self.cookText('y')
-        # t = pyx.text.text(0.0, 0.0, cooked)
-        # tbb = t.bbox()
-        # self.yuh = -tbb.lly_pt * ptToCm
-
-        #cooked = 'M'
-        #t = pyx.text.text(0.0, 0.0, cooked)
-        #tbb = t.bbox()
-        #self.normal_em = tbb.urx_pt * ptToCm
-
-        cooked = 'x'
-        t = pyx.text.text(0.0, 0.0, cooked)
-        tbb = t.bbox()
-        self.half_normal_x = 0.5 * tbb.ury_pt * ptToCm
-
-    def getBiggestWidth(self):
-        """This assumes a multi-line rawText, with newlines '\\' """
-        # savedRawText = self.rawText
-        #    1 PostScript point = 0.35277138 mm
-        ptToCm = 0.035277138
-        bits = self.rawText.split(r'\\')
-        bits = [b.strip() for b in bits if b]
-        #print(f"The bits are {bits}")
-        #sys.exit()
-        biggestWidth = 0.0
-        for bit in bits:
-            cookedText = self.cookText(bit)
-
-            try:
-                t = pyx.text.text(0.0, 0.0, cookedText)
-            except IOError:
-                raise GramError("pyx gagged on '%s', which was cooked to '%s'" % (
-                    b, cookedText))
-
-            tbb = t.bbox()
-            thisWidth = (tbb.urx_pt - tbb.llx_pt) * ptToCm
-            # print(f"getBiggestWidth() bit cookedText: {cookedText}, got width {thisWidth}")
-            if thisWidth > biggestWidth:
-                biggestWidth = thisWidth
-        # print("getBiggestWidth: %.3fcm" % biggestWidth)
-
-        if 1:
-            # But note that we are using tbb, or tight bounding box.  This
-            # seems to cause wrapping of the longest line.  So grow it.
-
-            innerSep = self.getInnerSep()
-            biggestWidth += (1 * innerSep)
-
-        return biggestWidth
 
     def setBogusBB(self):
 
@@ -4535,31 +4286,11 @@ class GramText(GramGraphic):
 
         assert self.engine == 'tikz'
 
-        if self.latexTextMetricsUses == 'pyx':
-            boogers = [r'\includegraphics', r'\parbox']
-            hasBooger = False
-            for booger in boogers:
-                if booger in self.rawText:
-                    hasBooger = True
-                    break
-            if hasBooger:
-                self.setBogusBB()
-                return
-
-
-        #if self.font == 'helvetica':
-        #    # This should not be needed, but it is!  Is it still?
-        #    # self.textFamily = 'sffamily'
-        #    pass
-
-        if self.latexTextMetricsUses == 'pyx':
-            self.setLatexTextMetricsUsingPyx()
-
-        if 1:
-            if self.rawText == "20":
-                print("a GramText.setBB() for '%s';" % self.rawText)
-                print("    self.width is %s, self.fullHeight is %s" % (self.width, self.fullHeight))
-                print("    bb is %s" % self.bb)
+        # if 1:
+        #     if self.rawText == "20":
+        #         print("a GramText.setBB() for '%s';" % self.rawText)
+        #         print("    self.width is %s, self.fullHeight is %s" % (self.width, self.fullHeight))
+        #         print("    bb is %s" % self.bb)
 
         halfHeight = self.fullHeight / 2.0
         halfWidth = self.width / 2.0
@@ -4923,10 +4654,6 @@ class GramText(GramGraphic):
     def setPositions(self):    # GramText
         # print("GramText.setPositions() %s" % self.rawText[:30])
         if self.engine == "tikz":
-            if self.latexTextMetricsUses == "pyx":
-                self.setCookedText()
-                self.setTextPartsTikz()
-                self.setMpTextTikz()
             self.setBB()
             # self.dump()
 
@@ -5046,9 +4773,6 @@ class GramText(GramGraphic):
     def getTikz(self):   # GramText
         gm = ['GramText.getTikz() rawText=%s' % self.rawText]
         # print(gm[0])
-
-        if self.latexTextMetricsUses == 'pyx':
-            self.setPositions()
 
         if self.mpText:
             theText = self.mpText

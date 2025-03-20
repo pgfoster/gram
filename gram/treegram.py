@@ -626,9 +626,6 @@ class TreeGram(Gram):
         # print(f"{gm[0]} engine is {self.engine}")
         # raise GramError(gm)
         # print("TreeGram.setPositions().   self.latexTextMetricsUses is %s" % self.latexTextMetricsUses)
-        if self.latexTextMetricsUses == "pyx":
-            if self.engine == 'tikz' and not self.haveStartedPyX:
-                self.startPyX()
 
         self.tikzPictureDefaults.lineThickness = self.tgDefaultLineThickness
         if self._defaultInnerSep is not None:  # it has been set by the user, maybe to zero
@@ -643,45 +640,6 @@ class TreeGram(Gram):
                 n.cB.yPosn = n.yPosn0 * self.yScale
 
         if self.engine == 'tikz':
-            # if self.latexTextMetricsUses == 'pyx':
-                # if self.wrapLeafLabelsAt:
-                #     #print(f"wrapLeafLabelsAt is {self.wrapLeafLabelsAt}")
-                #     if self.wrapLeafLabelsAt == 'commas':
-                #         for n in self.tree.iterLeavesNoRoot():
-                #             if ',' in n.label.rawText:
-                #                 print("TreeGram.setPositions() wrap", n.label.rawText)
-
-                #                 # We do not have a bounding box yet, or a textWrapWidth
-                #                 # Get the old height, for a "usual" node label, with no wrapping
-                #                 n.label.setBB()
-                #                 oldHeight = n.label.bb[3] - n.label.bb[1]
-                #                 n.label.rawText = n.label.rawText.replace(",", r",\\")
-                #                 n.label.getTikz()
-                #                 newHeight = n.label.bb[3] - n.label.bb[1]
-                #                 theExtra = newHeight - oldHeight
-                #                 print("TreeGram.setPositions() if self.wrapLeafLabelsAt: comma")
-                #                 print(f"    oldHeight={oldHeight}, newHeight={newHeight}, theExtra={theExtra}")
-                #                 self.addExtraYSpaceAtNode(n, extra=theExtra)
-
-
-                #     else:      # wrapLeafLabelsAt is not comma
-                #         assert isinstance(self.wrapLeafLabelsAt, float)
-                #         for n in self.tree.iterLeavesNoRoot():
-
-                #             # We do not have a bounding box yet, or a textWrapWidth
-                #             # Get the bounding box for unwrapped text, and unwrappedHeight and theLen
-                #             n.label.setBB()
-                #             unwrappedHeight = n.label.bb[3] - n.label.bb[1]
-                #             theLen = n.label.bb[2] - n.label.bb[0]
-                #             if theLen > self.wrapLeafLabelsAt:
-                #                 n.label.textWrapWidth = self.wrapLeafLabelsAt
-                #                 n.label.textAlign = 'flush left'
-                #                 n.label.getTikz()
-                #                 wrappedHeight = n.label.bb[3] - n.label.bb[1]
-                #                 print(f"bb is {n.label.bb}, unwrappedHeight ", end="")
-                #                 print(f"is {unwrappedHeight}, wrappedHeight is {wrappedHeight}")
-                #                 theExtra = wrappedHeight - unwrappedHeight
-                #                 self.addExtraYSpaceAtNode(n, extra=theExtra)
 
             if self.latexTextMetricsUses == 'latex':
                 myMax = 0.6
