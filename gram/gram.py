@@ -936,6 +936,7 @@ class Gram(object):
                 ss.append(r"\usepackage{unicode-math}")
                 ss.append(r"\setmainfont[SmallCapsFont={Latin Modern Roman Caps}]{Latin Modern Roman}")
                 ss.append(r"\setsansfont{Latin Modern Sans}")
+                ss.append(r"\setmonofont{Latin Modern Mono}")
                 ss.append(r"\setmathfont{Latin Modern Math}")  # OldStyle figures does not work here.
                 # not mathastext
 
@@ -945,6 +946,7 @@ class Gram(object):
                 ss.append(r"\usepackage{unicode-math}")
                 ss.append(r"\setmainfont{Latin Modern Sans}")  # no small caps
                 ss.append(r"\setsansfont{Latin Modern Sans}")
+                ss.append(r"\setmonofont{Latin Modern Mono}")
                 ss.append(r"%\setmathfont{Latin Modern Math}")
                 ss.append(r"\setmathfont{Fira Math Regular}")
                 ss.append(r"\usepackage[italic]{mathastext}")
