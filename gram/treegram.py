@@ -625,7 +625,6 @@ class TreeGram(Gram):
         gm = ["TreeGram.setPositions()"]
         # print(f"{gm[0]} engine is {self.engine}")
         # raise GramError(gm)
-        # print("TreeGram.setPositions().   self.latexTextMetricsUses is %s" % self.latexTextMetricsUses)
 
         self.tikzPictureDefaults.lineThickness = self.tgDefaultLineThickness
         if self._defaultInnerSep is not None:  # it has been set by the user, maybe to zero
@@ -640,36 +639,34 @@ class TreeGram(Gram):
                 n.cB.yPosn = n.yPosn0 * self.yScale
 
         if self.engine == 'tikz':
+            myMax = 0.6
+            myPadding = 0.4
+            needsRecalcBB = False
 
-            if self.latexTextMetricsUses == 'latex':
-                myMax = 0.6
-                myPadding = 0.4
-                needsRecalcBB = False
+            for n in self.tree.iterLeavesNoRoot():
+                if n.label.mpText or n.label.rawText.startswith(r"\includegraphics"):
+                    n.label.anchor = "west"
+                    needsRecalcBB = True
 
+
+            # If the node takes up more than myMax x yScale, then increase the space.
+            # Here myMax and myPadding (ie 1.0 - myMax, the minimum "padding" wanted) are hard-wired,
+            # may need to be adjustable?
+            for n in self.tree.iterLeavesNoRoot():
+                #print(f"node label fullHeight is {n.label.fullHeight} for {n.label.rawText[:30]}")
+                if n.label.fullHeight >= myMax * self.yScale:
+                    print("    -> needs more vertical space")
+                    # add extra ySpace.  fullHeight
+                    newSpaceWanted = n.label.fullHeight + (myPadding * self.yScale)
+                    extraSpaceNeeded = newSpaceWanted - self.yScale
+                    assert extraSpaceNeeded > 0.0
+                    print(f"    -> adding {extraSpaceNeeded}")
+                    self.addExtraYSpaceAtNode(n, extra=extraSpaceNeeded)
+                    needsRecalcBB = True
+
+            if needsRecalcBB:
                 for n in self.tree.iterLeavesNoRoot():
-                    if n.label.mpText or n.label.rawText.startswith(r"\includegraphics"):
-                        n.label.anchor = "west"
-                        needsRecalcBB = True
-
-
-                # If the node takes up more than myMax x yScale, then increase the space.
-                # Here myMax and myPadding (ie 1.0 - myMax, the minimum "padding" wanted) are hard-wired,
-                # may need to be adjustable?
-                for n in self.tree.iterLeavesNoRoot():
-                    #print(f"node label fullHeight is {n.label.fullHeight} for {n.label.rawText[:30]}")
-                    if n.label.fullHeight >= myMax * self.yScale:
-                        print("    -> needs more vertical space")
-                        # add extra ySpace.  fullHeight
-                        newSpaceWanted = n.label.fullHeight + (myPadding * self.yScale)
-                        extraSpaceNeeded = newSpaceWanted - self.yScale
-                        assert extraSpaceNeeded > 0.0
-                        print(f"    -> adding {extraSpaceNeeded}")
-                        self.addExtraYSpaceAtNode(n, extra=extraSpaceNeeded)
-                        needsRecalcBB = True
-
-                if needsRecalcBB:
-                    for n in self.tree.iterLeavesNoRoot():
-                        n.label.setBB()
+                    n.label.setBB()
 
         # Node.br.label and Node.br.uLabel
         for n in self.tree.iterNodes():

@@ -333,7 +333,6 @@ class Gram(object):
     _styleDict = {}
     _tikzPictureDefaults = None
     _htmlColorDict = {}
-    _latexTextMetricsUses = "latex"  # only latex; no more pyx
     _svgTextMetricsUses = "inkscape"  # inkscape or "rsvg"
 
 
@@ -583,16 +582,6 @@ class Gram(object):
         raise GramError("Don't set htmlColorDict, just modify it.")
     htmlColorDict = property(_getHtmlColorDict, _setHtmlColorDict)
 
-    def _getLatexTextMetricsUses(self):
-        return Gram._latexTextMetricsUses
-
-    def _setLatexTextMetricsUses(self, newVal):
-        if newVal in ["latex"]:
-            Gram._latexTextMetricsUses = newVal
-        else:
-            raise GramError("Set latexTextMetricsUses latex, only (got %s)" % newVal)
-
-    latexTextMetricsUses = property(_getLatexTextMetricsUses, _setLatexTextMetricsUses)
 
     def _getSvgTextMetricsUses(self):
         return Gram._svgTextMetricsUses
@@ -1576,8 +1565,7 @@ class Gram(object):
 
     def setTextMetrics(self):        # Gram
         if self.engine == 'tikz':
-            if self.latexTextMetricsUses == 'latex':
-                self.tikzSetTextMetricsUsingLatex()
+            self.tikzSetTextMetricsUsingLatex()
         else:
             assert self.engine == 'svg'
             self.svgSetTextMetrics()
