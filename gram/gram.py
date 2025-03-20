@@ -992,28 +992,6 @@ class Gram(object):
         # print(texStuffFontLine)
         # print("==================")
 
-        if 0:
-            f = open('Makefile', 'w')
-            f.write("TEXFILEROOT = %s\n" % self.baseName)
-            if self.latexTextMetricsUses == "pyx":
-                f.write("LATEXPROGRAM = pdflatex\n")
-            elif self.latexTextMetricsUses == "latex":
-                f.write("LATEXPROGRAM = lualatex\n")
-            #f.write("JOBNAME=%s\n" % self.baseName)
-            #f.write("OUTFILEROOT=%s\n" % self.baseName)
-            if self.theGpdf:
-                f.write("COMPOSITEROOT=c\n")
-                f.write("COMPOSITEOUTFILEROOT=composite_%s\n" % self.baseName)
-            f.write("PDFVIEWER=%s\n" % self.pdfViewer)
-            if self.latexOutputGoesToDevNull:
-                f.write(makeStuff_2)
-            else:
-                f.write(makeStuff_2b)
-            if self.theGpdf:
-                f.write(makeStuff_3)
-            f.write(makeStuff_4)
-            f.close()
-
         f = open('%s.tex' % self.baseName, 'w')
         if flavour == 'pdfPage':
             # or scrartcl?
