@@ -476,20 +476,20 @@ class Plot(Gram):
             self.barValScale = self.contentSizeY / \
                 (self.maxBarValToShow - self.minBarValToShow)
 
-        if 0:
-            print(f"Plot.setPositionsBeforeTextMetrics()  Gram._svgNormalsize_x is {Gram._svgNormalsize_x}")
-            print(f"Plot.setPositionsBeforeTextMetrics()  Gram._svgHackDoRotate is {Gram._svgHackDoRotate}")
-            print(f"Plot.setPositionsBeforeTextMetrics()  Gram._svgHack_x_Only is {Gram._svgHack_x_Only}")
+        # if 0:
+        #     print(f"Plot.setPositionsBeforeTextMetrics()  Gram._svgNormalsize_x is {Gram._svgNormalsize_x}")
+        #     print(f"Plot.setPositionsBeforeTextMetrics()  Gram._svgHackDoRotate is {Gram._svgHackDoRotate}")
+        #     print(f"Plot.setPositionsBeforeTextMetrics()  Gram._svgHack_x_Only is {Gram._svgHack_x_Only}")
 
-        doThisPrint = True
-        if Gram._svgNormalsize_x == None:
-            doThisPrint = False
-        elif Gram._svgHackDoRotate == False:
-            doThisPrint = False
-        elif Gram._svgHack_x_Only == True:
-            doThisPrint = False
+        # doThisPrint = True
+        # if Gram._svgNormalsize_x == None:
+        #     doThisPrint = False
+        # elif Gram._svgHackDoRotate == False:
+        #     doThisPrint = False
+        # elif Gram._svgHack_x_Only == True:
+        #     doThisPrint = False
 
-        #if doThisPrint:
+        # #if doThisPrint:
         if 1:
             spacer1 = ' ' * 10
             spacer2 = '    --    '
