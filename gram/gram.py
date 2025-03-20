@@ -1781,8 +1781,21 @@ class Gram(object):
         for k in kk:
             g = self.gForGIdDict.get(k)
 
-            ret = fixUnderscores(g.rawText)
-            g.rawText = ret
+            if 1:
+                ret = fixUnderscores(g.rawText)
+                g.rawText = ret
+            else:
+                # print(f"k={k} g.rawText={g.rawText} fixUnderscores")
+                beforeT = g.rawText
+                ret = fixUnderscores(g.rawText)
+                g.rawText = ret
+                afterT = g.rawText
+                # print(f"tikzSetTextMetricsUsingLatex() fixUnderscores() before {beforeT}, after {afterT}")
+            if 0:
+                if "_" in g.rawText:
+                    print(f"tikzSetTextMetricsUsingLatex() text: {g.rawText}")
+                    print("  has underscore, but fixUnderscores() is turned off")
+            #print(f"tikzSetTextMetricsUsingLatex() {k}: {g.rawText}")
 
             # This next one does parts, and wraps in a minipage or varwidth.
             # It does not do setCookedText or setBB()
