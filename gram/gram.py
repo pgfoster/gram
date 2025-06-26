@@ -842,6 +842,7 @@ class Gram(object):
             # ss.append(r"\setsansfont{Helvetica}")
             ss.append(r"\setmainfont{Tex Gyre Heros}")
             ss.append(r"\setsansfont{Tex Gyre Heros}")
+            ss.append(r"\setmonofont{Fira Mono}")
             ss.append(r"\setmathfont{Fira Math Regular}")
             ss.append(r"\usepackage{mathastext}")
 
@@ -851,14 +852,23 @@ class Gram(object):
             ss.append(r"\usepackage{unicode-math}")
             ss.append(r"\setmainfont{TeX Gyre Pagella}")
             ss.append(r"\setsansfont{Optima Regular}")
+            ss.append(r"\setmonofont{Fira Mono}")
             ss.append(r"\setmathfont{TeX Gyre Pagella Math}")
-            # ss.append(r"%\setmathfont{Euler Math}")
+
+        elif self.font == 'times':
+            ss.append(r"\usepackage{fontspec}")
+            ss.append(r"\usepackage{unicode-math}")
+            ss.append(r"\setmainfont{TeX Gyre Termes}")
+            ss.append(r"\setsansfont{Tex Gyre Heros}")
+            ss.append(r"\setmonofont{Fira Mono}")
+            ss.append(r"\setmathfont{TeX Gyre Termes Math}")
 
         elif self.font == "fira":
             ss.append(r"\usepackage{fontspec}")
             ss.append(r"\usepackage{unicode-math}")
             ss.append(r"\setmainfont[BoldFont={Fira Sans Bold}, ItalicFont={Fira Sans Italic}, BoldItalicFont={Fira Sans Bold Italic}]{Fira Sans Regular}")
             ss.append(r"\setsansfont{Fira Sans Regular}")
+            ss.append(r"\setmonofont{Fira Mono}")
             ss.append(r"\setmathfont{Fira Math Regular}")
 
 
