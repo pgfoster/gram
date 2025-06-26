@@ -6336,16 +6336,16 @@ svgLMStyleFF = """
     text,tspan {
         font-family: %s;
     }
-    text.rmfamily,tspan.rmfamily {
+    .rmfamily {
         font-family: "Latin Modern Roman", serif;
     }
-    text.sffamily,tspan.sffamily {
+    .sffamily {
         font-family: "Latin Modern Sans", sans-serif;
     }
-    text.ttfamily,tspan.ttfamily {
+    .ttfamily {
         font-family: "Latin Modern Mono", monospace;
     }
-    text.scshape,tspan.scshape {
+    .scshape {
         font-family: "Latin Modern Roman Caps", serif;
     }
 """
