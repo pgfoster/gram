@@ -304,7 +304,7 @@ class Gram(object):
     _pdfViewer = 'ls'
     _pngViewer = 'ls'
     _svgViewer = 'ls'
-    _pngResolution = 140
+    _pngResolution = 300       # was 140
 
     _config = None
     _configAttrs = """font documentFontSize pdfViewer pngViewer svgViewer
