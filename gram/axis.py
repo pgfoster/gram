@@ -423,6 +423,7 @@ class XYAxis(Axis):
         if 1:
             print("XYAxis.setPositionsBeforeTextMetrics()")
             print("    position = %s, orientation = %s" % (self.position, self.orientation))
+            print("    textRotate = %s" % (self.textRotate))
             if self.orientation == 'h':
                 print("    minXInData = %s, maxXInData = %s" % (self.plot.minXInData, self.plot.maxXInData))
                 print("    minXToShow = %s, maxXToShow = %s" % (self.plot.minXToShow, self.plot.maxXToShow))
@@ -519,6 +520,18 @@ class XYAxis(Axis):
                             elif self.position == 'r':
                                 tick.text.anchor = 'west'
 
+                            if tick.textRotate:
+                                tick.text.rotate = tick.textRotate
+                                if tick.textRotate >= 45:
+                                    if self.position == 'l':
+                                        tick.text.anchor = 'south'
+                                    elif self.position == 'r':
+                                        tick.text.anchor = 'north'
+                                elif tick.textRotate <= -45:
+                                    if self.position == 'l':
+                                        tick.text.anchor = 'north'
+                                    elif self.position == 'r':
+                                        tick.text.anchor = 'south'
 
     def setPositions(self):
 
